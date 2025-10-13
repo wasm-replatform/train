@@ -1,0 +1,59 @@
+image:
+    name: propellerhead/node-ci:18
+    username: $DOCKER_USERNAME
+    password: $DOCKER_TOKEN
+
+options:
+    docker: true
+    size: 2x
+
+clone:
+    depth: full
+
+definitions:
+    caches:
+        sonar: ~/.sonar/cache
+        npm: $HOME/.npm$BITBUCKET_BRANCH
+
+    services:
+        docker:
+            memory: 2048
+
+    steps:
+        - gitpushtovsts: &gitpushtovsts
+              name: Git push to vsts
+              script:
+                  - git push --force https://foo:$VSTS_TOKEN@aucklandtransport.visualstudio.com/$VSTS_PROJECT/_git/$BITBUCKET_REPO_SLUG $BITBUCKET_BRANCH
+
+        - unittest: &unittest
+              name: Test & Analyze with Sonar
+              caches:
+                  - sonar
+                  - npm
+              services:
+                  - docker
+              script:
+                  - printf "//`node -p \"require('url').parse('$NPM_REGISTRY_URL').host\"`/:_authToken=$NPM_TOKEN\n_auth=$NPM_TOKEN\nregistry=$NPM_REGISTRY_URL\n" > ~/.npmrc
+                  - npm ci
+                  - npm run test
+                  - |
+                      set +e
+                      npm run lint -- -f json -o test-reports/eslint/report.json
+                      echo $?
+                      set -e
+                  - pipe: sonarsource/sonarcloud-scan:2.0.0
+                    variables:
+                        SONAR_TOKEN: ${SONAR_CLOUD_SECURITY_TOKEN}
+                        EXTRA_ARGS: -Dsonar.branch.name=${BITBUCKET_BRANCH}
+                  - pipe: sonarsource/sonarcloud-quality-gate:0.1.6
+                    variables:
+                        SONAR_TOKEN: ${SONAR_CLOUD_SECURITY_TOKEN}
+
+pipelines:
+    default:
+        - step: *gitpushtovsts
+        - step: *unittest
+    branches:
+        master:
+            - step: *unittest
+            - step: *gitpushtovsts

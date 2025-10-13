@@ -1,0 +1,31 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "location": {
+        "value": "Australia East"
+      },
+      "serverFarmName": {
+        "value": "sp-ae-RealtimeIntegration-linux-d01"
+      },
+      "appServiceName": {
+        "value": "dev-at-dead-reckoning-adapter-01"
+      },
+      "environment": {
+        "value": "Development"
+      },
+      "keyVault": {
+        "value": ""
+      },
+      "redisHost": {
+        "value": "rc-dev-at-realtime"
+      },
+      "redisPassword": {
+        "value": ""
+      },
+      "newRelicKey": {
+        "value": ""
+      }
+    }
+  }
+  

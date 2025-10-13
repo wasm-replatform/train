@@ -1,0 +1,58 @@
+jobs:
+  - job: Build
+    pool:
+      vmImage: 'windows-latest'
+    variables:
+      solution: '**/*.sln'
+      buildPlatform: 'Any CPU'
+      buildConfiguration: 'Release'
+    steps:
+      - task: UseDotNet@2
+        displayName: 'Install .NET Core SDK'
+        inputs:
+          version: '8.x'
+          includePreviewVersions: false
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Restore and Build Projects'
+        inputs:
+          command: 'build'
+          projects: '**/*.csproj'
+          arguments: '--configuration $(buildConfiguration)'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run Tests'
+        inputs:
+          command: 'test'
+          projects: '**/*Tests/*.csproj'
+          arguments: '--configuration $(buildConfiguration) --logger'
+
+      - task: CopyFiles@2
+        displayName: 'Copy Azure Scripts'
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)/azure'
+          Contents: '**.json'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/azure'
+          CleanTargetFolder: true
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Publish'
+        inputs:
+          command: 'publish'
+          publishWebProjects: true
+          arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/app'
+          zipAfterPublish: true
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Azure Scripts: deploy'
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/azure'
+          ArtifactName: 'deploy'
+          publishLocation: 'Container'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: drop'
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/app'
+          ArtifactName: 'drop'
+          publishLocation: 'Container'

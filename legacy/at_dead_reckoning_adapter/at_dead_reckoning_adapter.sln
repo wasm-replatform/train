@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35013.160
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C2BD71D2-743F-4B05-BDDC-4801DEC2AA99}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AF72A2E6-53AC-4E80-AC89-987F6A79419E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeadReckoningAdapter", "src\DeadReckoningAdapter\DeadReckoningAdapter.csproj", "{89524548-3CA0-476B-A58F-8D0D796D8B45}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeadReckoningAdapter.Tests", "tests\DeadReckoningAdapter.Tests\DeadReckoningAdapter.Tests.csproj", "{6D052A36-EB1A-4125-B5A1-7D5652C3B3F0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{89524548-3CA0-476B-A58F-8D0D796D8B45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89524548-3CA0-476B-A58F-8D0D796D8B45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89524548-3CA0-476B-A58F-8D0D796D8B45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89524548-3CA0-476B-A58F-8D0D796D8B45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D052A36-EB1A-4125-B5A1-7D5652C3B3F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D052A36-EB1A-4125-B5A1-7D5652C3B3F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D052A36-EB1A-4125-B5A1-7D5652C3B3F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D052A36-EB1A-4125-B5A1-7D5652C3B3F0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{89524548-3CA0-476B-A58F-8D0D796D8B45} = {C2BD71D2-743F-4B05-BDDC-4801DEC2AA99}
+		{6D052A36-EB1A-4125-B5A1-7D5652C3B3F0} = {AF72A2E6-53AC-4E80-AC89-987F6A79419E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EF7A69F8-1DD2-49FC-BAE7-A225489C8D94}
+	EndGlobalSection
+EndGlobal

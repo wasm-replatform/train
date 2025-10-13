@@ -1,0 +1,60 @@
+{
+    "name": "at_smartrak_gtfs_adapter",
+    "version": "3.0.0",
+    "private": true,
+    "description": "AT Smartrak GTFS Realtime Adapter",
+    "homepage": "http://www.propellerhead.co.nz",
+    "bugs": {
+        "url": "https://propellerheadnz.atlassian.net"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://bitbucket.org/Propellerhead/Auckland%20Transport/at_smartrak_gtfs_adapter"
+    },
+    "license": "UNLICENSED",
+    "author": "Propellerhead",
+    "scripts": {
+        "build": "rimraf ./dist && tsc && npm run build-resource",
+        "build-resource": "copyfiles ./.env \"./resource/**/*\" ./dist",
+        "cucumber": "mkdirp test-reports/cucumber && nyc --nycrc-path ./cucumber-config/nyc.json cucumber-js --config ./cucumber-config/cucumber.json",
+        "dev": "ts-node -r dotenv/config ./src/start.ts",
+        "jest": "NEW_RELIC_ENABLED=false jest --config node_modules/at-build-common/base/jest.json",
+        "lint": "eslint \"src/**/*.{ts,tsx}\" --no-error-on-unmatched-pattern",
+        "lint:fix": "eslint \"{src,test}/**/*.{ts,tsx}\" --no-error-on-unmatched-pattern --fix",
+        "start": "cd dist || true && node -r dotenv/config src/start.js",
+        "test": "npm run jest && npm run cucumber"
+    },
+    "eslintConfig": {
+        "extends": [
+            "./node_modules/at-build-common/base/eslint.json"
+        ]
+    },
+    "dependencies": {
+        "async-lock": "^1.4.0",
+        "at-realtime-common": "^6.8.25",
+        "dotenv": "^16.3.1",
+        "moment-timezone": "^0.5.43",
+        "newrelic": "^11.5.0",
+        "node-cache": "^5.1.2",
+        "uuid": "^11.0.3"
+    },
+    "devDependencies": {
+        "@cucumber/cucumber": "^9.5.1",
+        "@cucumber/pretty-formatter": "^1.0.0",
+        "@istanbuljs/nyc-config-typescript": "^1.0.2",
+        "@nestjs/testing": "^10.2.10",
+        "@types/chai": "^4.3.6",
+        "@types/jest": "^29.5.5",
+        "@types/newrelic": "^9.14.0",
+        "@types/request": "^2.48.8",
+        "at-build-common": "10.3.3",
+        "chai": "^4.3.8",
+        "cucumber-tsflow": "^4.1.1",
+        "jest": "^29.7.0",
+        "mkdirp": "^3.0.1",
+        "nyc": "^15.1.0",
+        "request": "^2.88.2",
+        "rimraf": "^5.0.5",
+        "ts-jest": "^29.1.1"
+    }
+}

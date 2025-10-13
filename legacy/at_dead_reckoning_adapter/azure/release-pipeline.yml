@@ -1,0 +1,111 @@
+parameters:
+  - name: environmentType
+    type: string
+  - name: resourceGroupName
+    type: string
+  - name: webAppName
+    type: string
+  - name: azureSubscriptionName
+    type: string
+  - name: armTemplateParameterFile
+    type: string
+  - name: location
+    type: string
+  - name: redisPassword
+    type: string
+  - name: newRelicKey
+    type: string
+
+jobs:
+  - deployment: DeployWeb_${{parameters.environmentType}}
+    displayName: deploy Web App
+    pool:
+      vmImage: "ubuntu-latest"
+    environment: ${{parameters.environmentType}}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: DownloadBuildArtifacts@1
+              displayName: "Download Build Artifacts"
+              inputs:
+                artifactName: drop
+            - task: AzureAppServiceManage@0
+              displayName: "Cancel Swap"
+              inputs:
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                Action: "Cancel Swap"
+                WebAppName: ${{parameters.webAppName}}
+                ResourceGroupName: ${{parameters.resourceGroupName}}
+              continueOnError: true
+            - task: AzureResourceGroupDeployment@2
+              displayName: "Create/Update WebApp with slot"
+              inputs:
+                action: "Create Or Update Resource Group"
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                resourceGroupName: ${{parameters.resourceGroupName}}
+                location: ${{parameters.location}}
+                templateLocation: "Linked artifact"
+                csmFile: "$(Agent.BuildDirectory)/deploy/azuredeploy.json"
+                csmParametersFile: "$(Agent.BuildDirectory)/deploy/${{parameters.armTemplateParameterFile}}.json"
+                overrideParameters: '-redisPassword ${{parameters.redisPassword}} -newRelicKey ${{ parameters.newRelicKey }}'
+            - powershell: |
+                Write-Output "Waiting for resource creation..."
+                start-Sleep -s 30
+              displayName: "Wait for Resource-Creation"
+            - task: AzureRmWebAppDeployment@4
+              displayName: "Deploy WebApp to Slot"
+              inputs:
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                WebAppName: ${{parameters.webAppName}}
+                deployToSlotOrASE: true
+                ResourceGroupName: ${{parameters.resourceGroupName}}
+                SlotName: "staging"
+                packageForLinux: "$(Agent.BuildDirectory)/drop/*.zip"
+                enableCustomDeployment: true
+                DeploymentType: runFromZip
+            - task: AzureAppServiceManage@0
+              displayName: "Start Slot"
+              inputs:
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                Action: "Start Azure App Service"
+                WebAppName: ${{parameters.webAppName}}
+                ResourceGroupName: ${{parameters.resourceGroupName}}
+                SpecifySlotOrASE: true
+                Slot: "staging"
+            - powershell: |
+                Write-Output "Waiting for apps to start in slot..."
+                start-Sleep -s 60
+              displayName: "Wait for Slot to start"
+            - task: AzureAppServiceManage@0
+              displayName: "Start Swap With Preview"
+              inputs:
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                Action: "Start Swap With Preview"
+                WebAppName: ${{parameters.webAppName}}
+                ResourceGroupName: ${{parameters.resourceGroupName}}
+                SourceSlot: "staging"
+                PreserveVnet: true
+            - powershell: |
+                Write-Output "Waiting for apps be ready..."
+                start-Sleep -s 60
+              displayName: "Wait for swap with preview"
+            - task: AzureAppServiceManage@0
+              displayName: "Complete Swap"
+              inputs:
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                Action: "Complete Swap"
+                WebAppName: ${{parameters.webAppName}}
+                ResourceGroupName: ${{parameters.resourceGroupName}}
+                SourceSlot: "staging"
+                PreserveVnet: true
+            - task: AzureAppServiceManage@0
+              displayName: "Stop Slot"
+              inputs:
+                azureSubscription: ${{parameters.azureSubscriptionName}}
+                Action: "Stop Azure App Service"
+                WebAppName: ${{parameters.webAppName}}
+                SpecifySlotOrASE: true
+                ResourceGroupName: ${{parameters.resourceGroupName}}
+                Slot: "staging"
+              condition: always()

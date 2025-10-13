@@ -1,0 +1,71 @@
+name: realtime
+
+services:
+  r9k:
+    image: ghcr.io/wasm-replatform/runtime:latest
+    env_file: .env
+    ports:
+      - 8080:8080
+    command: ["/r9k.wasm"]
+    volumes:
+       - ./target/wasm32-wasip2/release/r9k.wasm:/r9k.wasm
+    depends_on:
+      - kafka
+      - otelcol
+
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9094:9094'
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_BROKER_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - KAFKA_CLUSTERS_0_NAME=local-kafka
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    depends_on:
+      - kafka
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - 4317:4317 # gRPC
+      - 4318:4318 # HTTP
+    depends_on:
+      - prometheus
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - 16686:16686
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - 9090:9090 
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+      # - --log.level=debug

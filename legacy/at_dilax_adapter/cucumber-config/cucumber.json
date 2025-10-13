@@ -1,0 +1,44 @@
+{
+    "default": {
+        "requireModule": [
+            "ts-node/register"
+        ],
+        "paths": [
+            "test/cucumber/features/**/*.feature"
+        ],
+        "require": [
+            "test/cucumber/steps/**/*.ts"
+        ],
+        "format": [
+            "@cucumber/pretty-formatter",
+            "./cucumber-config/junit-formatter.js:test-reports/cucumber/cucumber.xml"
+        ],
+        "formatOptions": {
+            "colorsEnabled": true,
+            "descriptionEnabled": true,
+            "theme": {
+                "feature keyword": [
+                    "magenta",
+                    "bold"
+                ],
+                "scenario keyword": [
+                    "magenta",
+                    "bold"
+                ],
+                "step keyword": [
+                    "bold"
+                ],
+                "step message": [
+                    "red"
+                ],
+                "tag": [
+                    "cyan"
+                ]
+            }
+        },
+        "publishQuiet": true,
+        "failFast": true,
+        "forceExit": true,
+        "tags": "not @ignore and not @manual and not @emulate"
+    }
+}

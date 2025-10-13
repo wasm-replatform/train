@@ -1,0 +1,183 @@
+{
+    "_environments": ["dev", "vnet-test", "vnet-preprod", "vnet-prod"],
+    "_unused": {
+        "redis_password": {
+            "type": "securestring",
+            "minLength": 8,
+            "maxLength": 128,
+            "metadata": {
+                "description": "Redis password"
+            }
+        },
+        "hybrid_connection_relay_name_cluster": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node1": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node2": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node3": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node4": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_resource_group": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_service_bus_namespace": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "use_confluent_hybrid_connection": {
+            "type": "bool",
+            "defaultValue": false
+        },
+        "use_schema_registry_producer": {
+            "type": "bool",
+            "defaultValue": false
+        }
+    },
+    "node_version": {
+        "all": "~18"
+    },
+    "log_level": {
+        "all": "info"
+    },
+    "site_name": {
+        "dev": "dev-at-dilax-adapter-01",
+        "vnet-test": "test-at-dilax-adapter-02",
+        "vnet-preprod": "pp-at-dilax-adapter-02",
+        "vnet-prod": "prod-at-dilax-adapter-02"
+    },
+    "new_relic_license_key": {
+        "all": "758ab64ebebbf5ccad30b3096226ecba9269ddf3",
+        "vnet-prod": "2c87f05915642d7adddacff8fa122b0448c90180"
+    },
+    "new_relic_app_name": {
+        "dev": "AT Dilax Adapter Dev",
+        "vnet-test": "AT Dilax Adapter Test",
+        "vnet-preprod": "AT Dilax Adapter Preprod",
+        "vnet-prod": "AT Dilax Adapter Prod"
+    },
+    "papertrail_system": {
+        "dev": "at-realtime-dev",
+        "vnet-test": "at-realtime-test",
+        "vnet-preprod": "at-realtime-preprod",
+        "vnet-prod": "at-realtime"
+    },
+    "redis_name": {
+        "dev": "rc-dev-at-realtime",
+        "vnet-test": "rc-test-at-realtime",
+        "vnet-preprod": "rc-pp-at-realtime",
+        "vnet-prod": "rc-prod-at-realtime"
+    },
+    "server_farm_id": {
+        "dev": "/subscriptions/551d0817-4f8a-4d2a-bd7e-0ece5094771d/resourceGroups/rg-ae-RealtimeIntegration-d01/providers/Microsoft.Web/serverfarms/sp-ae-RealtimeIntegration-d01",
+        "vnet-test": "/subscriptions/90cf5550-b841-4d76-8c87-60f309fce586/resourceGroups/rg-ae-RealtimeIntegration-t03/providers/Microsoft.Web/serverFarms/sp-ae-RealtimeIntegration-vnet-t01",
+        "vnet-preprod": "/subscriptions/4ef90d2d-2740-44c9-930e-b2799c4350d8/resourceGroups/rg-ae-RealtimeIntegration-u03/providers/Microsoft.Web/serverfarms/sp-ae-RealtimeIntegration-vnet-u01",
+        "vnet-prod": "/subscriptions/220195d9-5240-49da-b1f4-4fbce6833c42/resourceGroups/rg-ae-RealtimeIntegration-p03/providers/Microsoft.Web/serverfarms/sp-ae-RealtimeIntegration-vnet-p01"
+    },
+    "fleet_api_url": {
+        "dev": "https://www-dev-at-fleet-api-01.azurewebsites.net",
+        "vnet-test": "https://www-test-at-fleet-api-01.azurewebsites.net",
+        "vnet-preprod": "https://www-pp-at-fleet-api-01.azurewebsites.net",
+        "vnet-prod": "https://www-prod-at-fleet-api-01.azurewebsites.net"
+    },
+    "block_mgt_client_api_url": {
+        "dev": "https://www-dev-block-mgt-client-api-01.azurewebsites.net",
+        "vnet-test": "https://www-test-block-mgt-client-api-01.azurewebsites.net",
+        "vnet-preprod": "https://www-pp-block-mgt-client-api-01.azurewebsites.net",
+        "vnet-prod": "https://www-prod-block-mgt-client-api-01.azurewebsites.net"
+    },
+    "reset_count_on_trip_ended": {
+        "all": "true"
+    },
+    "cc_static_api_host": {
+        "dev": "https://www-dev-cc-static-api-01.azurewebsites.net",
+        "vnet-test": "https://www-test-cc-static-api-01.azurewebsites.net",
+        "vnet-preprod": "https://www-pp-cc-static-api-01.azurewebsites.net",
+        "vnet-prod": "https://www-prod-cc-static-api-01.azurewebsites.net"
+    },
+    "app_manifest_client_id": {
+        "dev": "8340ed14-0be3-497a-9807-889b24e14f10",
+        "vnet-test": "ef47e0bd-1570-42f4-ae97-9f6fb448ada8",
+        "vnet-preprod": "8f9e1021-eb7d-4c58-ad54-650c985c4279",
+        "vnet-prod": "d02af7f0-7528-4ba3-8ddd-49a089e9b628"
+    },
+    "key_vault": {
+        "dev": "kv-ae-realtime-d01",
+        "vnet-test": "kv-ae-realtime-t03",
+        "vnet-preprod": "kv-ae-realtime-u03",
+        "vnet-prod": "kv-ae-realtime-p03"
+    },
+    "key_vault_secret_name_system_client_secret": {
+        "all": "system-client-secret"
+    },
+    "gtfs_static_url": {
+        "dev": "https://www-dev-gtfs-static-api-02.azurewebsites.net/gtfs",
+        "vnet-test": "https://www-test-gtfs-static-api-02.azurewebsites.net/gtfs",
+        "vnet-preprod": "https://www-pp-gtfs-static-api-02.azurewebsites.net/gtfs",
+        "vnet-prod": "https://www-prod-gtfs-static-api-02.azurewebsites.net/gtfs"
+    },
+    "deployment_id": {
+        "all": ""
+    },
+    "slot_name": {
+        "all": "staging"
+    },
+    "dilax_connection_lost_threshold": {
+        "all": "60"
+    },
+    "subnet_name": {
+        "dev": "",
+        "vnet-test": "SN-AE-T-Paas-10.24.31.0-27",
+        "vnet-preprod": "SN-AE-PP-Paas-10.24.95.0-27",
+        "vnet-prod": "SN-AE-P-Paas-10.24.112.0-27"
+    },
+    "vnet_name": {
+        "dev": "",
+        "vnet-test": "VN-AE-T-PAAS-10.24.24-21",
+        "vnet-preprod": "VN-AE-PP-PAAS-10.24.88.0-21",
+        "vnet-prod": "VN-AE-P-PAAS-10.24.112.0-21"
+    },
+    "vnet_resource_group": {
+        "dev": "",
+        "vnet-test": "RG-AE-NETWORKING-T01",
+        "vnet-preprod": "RG-AE-NETWORKING-PP01",
+        "vnet-prod": "RG-AE-NETWORKING-P01"
+    },
+    "key_vault_secret_name_confluent_key": {
+        "all": "realtime-confluent-key"
+    },
+    "key_vault_secret_name_schema_registry_key": {
+        "all": "realtime-schema-registry-key"
+    },
+    "kafka_hosts": {
+        "all": "lkc-prx9qk-6meoz4.australiaeast.azure.glb.confluent.cloud:9092",
+        "vnet-prod": "lkc-gqzk21-61kejg.australiaeast.azure.glb.confluent.cloud:9092"
+    },
+    "kafka_environment": {
+        "dev": "dev",
+        "vnet-test": "test",
+        "vnet-preprod": "preprod",
+        "vnet-prod": "prod"
+    },
+    "kafka_consumer_group": {
+        "all": "at-dilax-adapter"
+    },
+    "secret_watcher_interval": {
+        "all": 5
+    },
+    "schema_registry_url": {
+        "all": "https://psrc-mp377.australiaeast.azure.confluent.cloud"
+    }
+}

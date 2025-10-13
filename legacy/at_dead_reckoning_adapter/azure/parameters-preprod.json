@@ -1,0 +1,31 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "location": {
+        "value": "Australia East"
+      },
+      "serverFarmName": {
+        "value": "sp-ae-RealtimeIntegration-vnet-linux-u01"
+      },
+      "appServiceName": {
+        "value": "pp-at-dead-reckoning-adapter-01"
+      },
+      "environment": {
+        "value": "PreProduction"
+      },
+      "keyVault": {
+        "value": "kv-ae-realtime-u03"
+      },
+      "redisHost": {
+        "value": "rc-pp-at-realtime"
+      },
+      "redisPassword": {
+        "value": ""
+      },
+      "newRelicKey": {
+        "value": ""
+      }
+    }
+  }
+  

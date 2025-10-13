@@ -1,0 +1,53 @@
+image: mcr.microsoft.com/dotnet/sdk:8.0
+
+options:
+  docker: true
+  size: 2x
+
+clone:
+    depth: full
+
+definitions:
+  services:
+    docker:
+      memory: 3072 # Give more memory to sonarcloud-scan Pipe, but this takes away memory available for other steps
+
+stepdefinitions:
+  - buildandtest: &buildandtest
+      name: Build and Test
+      caches:
+        - dotnetcore
+      script:
+        - apt-get update && apt-get install -y default-jre
+        - dotnet tool install --global dotnet-sonarscanner
+        - dotnet tool install --global dotnet-coverage
+        - export PATH="$PATH:/root/.dotnet/tools"
+        - dotnet sonarscanner begin /k:"$BITBUCKET_REPO_SLUG" /d:sonar.host.url="https://sonarcloud.io" /o:$SONAR_CLOUD_ORG_KEY /d:sonar.token=$SONAR_CLOUD_SECURITY_TOKEN  /d:sonar.cs.vscoveragexml.reportsPaths="coverage.xml"
+        - dotnet restore
+        - dotnet build --configuration Release
+        - dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
+        - dotnet sonarscanner end /d:sonar.token=$SONAR_CLOUD_SECURITY_TOKEN
+      artifacts:
+        - coverage.xml
+  - sonaranalysis: &sonaranalysis
+      name: Sonar Scan
+      services:
+        - docker
+      script:
+        - pipe: sonarsource/sonarcloud-scan:2.0.0
+          variables:
+            SONAR_TOKEN: ${SONAR_CLOUD_SECURITY_TOKEN}
+            EXTRA_ARGS: -Dsonar.branch.name=${BITBUCKET_BRANCH} -Dsonar.cs.vscoveragexml.reportsPaths=coverage.xml -Dsonar.exclusions=**/*.Tests/**/*
+        - pipe: sonarsource/sonarcloud-quality-gate:0.1.6
+          variables:
+            SONAR_TOKEN: ${SONAR_CLOUD_SECURITY_TOKEN}
+
+pipelines:
+  default:
+    - step: *buildandtest
+    - step:
+          name: Push To VSTS
+          script:
+            - git push --force https://foo:$VSTS_TOKEN@aucklandtransport.visualstudio.com/Realtime%20Integration/_git/at_dead_reckoning_adapter $BITBUCKET_BRANCH
+    - step: *sonaranalysis
+

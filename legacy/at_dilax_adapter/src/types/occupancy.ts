@@ -1,0 +1,9 @@
+export enum OccupancyStatus {
+    EMPTY = 0,
+    MANY_SEATS_AVAILABLE = 1,
+    FEW_SEATS_AVAILABLE = 2,
+    STANDING_ROOM_ONLY = 3,
+    CRUSHED_STANDING_ROOM_ONLY = 4,
+    FULL = 5,
+    NOT_ACCEPTING_PASSENGERS = 6,
+}

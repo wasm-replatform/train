@@ -1,0 +1,11 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  ci:
+    uses: credibil/pipeline/.github/workflows/ci.yaml@main
+    secrets:
+      CARGO_REGISTRIES_CREDIBIL_TOKEN: ${{ secrets.CARGO_REGISTRIES_CREDIBIL_TOKEN }}
+      

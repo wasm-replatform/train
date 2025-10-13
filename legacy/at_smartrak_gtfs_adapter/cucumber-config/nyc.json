@@ -1,0 +1,18 @@
+{
+    "report-dir": "test-reports/cucumber",
+    "include": [
+        "src/**/*.ts"
+    ],
+    "extension": [
+        ".ts"
+    ],
+    "require": [
+        "ts-node/register"
+    ],
+    "reporter": [
+        "text",
+        "lcov"
+    ],
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "all": true
+}

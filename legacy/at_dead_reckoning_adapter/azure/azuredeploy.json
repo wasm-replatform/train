@@ -1,0 +1,193 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location of the resource group and resources in it"
+      }
+    },
+    "serverFarmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the App Service Plan for the Web Job"
+      }
+    },
+    "appServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the App Service"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment of the App Service"
+      }
+    },
+    "keyVault": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the KeyVault used"
+      }
+    },
+    "redisHost": {
+      "type": "string",
+      "metadata": {
+        "description": "Redis host name"
+      }
+    },
+    "redisPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Redis Password"
+      }
+    },
+    "newRelicKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "New Relic Key"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2016-08-01",
+      "name": "[parameters('appServiceName')]",
+      "location": "[parameters('location')]",
+      "kind": "app",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "resources": [
+        {
+          "type": "config",
+          "apiVersion": "2016-08-01",
+          "name": "slotconfignames",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites/', parameters('appServiceName'))]"
+          ],
+          "properties": {
+            "appSettingNames": ["IS_SLOT"]
+          }
+        },
+        {
+          "type": "Microsoft.Web/sites/slots",
+          "apiVersion": "2016-08-01",
+          "name": "[concat(parameters('appServiceName'), '/staging')]",
+          "location": "[parameters('location')]",
+          "kind": "app",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+          ],
+          "properties": {
+              "enabled": true,
+              "hostNameSslStates": [
+                  {
+                      "name": "[concat(parameters('appServiceName'),'-staging.azurewebsites.net')]",
+                      "sslState": "Disabled",
+                      "hostType": "Standard"
+                  },
+                  {
+                      "name": "[concat(parameters('appServiceName'),'-staging.scm.azurewebsites.net')]",
+                      "sslState": "Disabled",
+                      "hostType": "Repository"
+                  }
+              ],
+              "serverFarmId": "[resourceId(resourceGroup().name, 'Microsoft.Web/serverfarms', parameters('serverFarmName'))]",
+              "reserved": false,
+              "httpsOnly": true,
+              "siteConfig": {
+                  "linuxFxVersion": "DOTNETCORE|8.0",
+                  "minTlsVersion": "1.2",
+                  "alwaysOn": true,
+                  "healthCheckPath": "/health",
+                  "appSettings": [
+                      {
+                          "name": "ASPNETCORE_ENVIRONMENT",
+                          "value": "[parameters('environment')]"
+                      },
+                      {
+                          "name": "IS_SLOT",
+                          "value": "true"
+                      },
+                      {
+                        "name": "WEBSITE_HEALTHCHECK_MAXPINGFAILURES",
+                        "value": "10"
+                      },
+                      {
+                        "name": "CORECLR_ENABLE_PROFILING",
+                        "value": "1"
+                      },
+                      {
+                        "name": "CORECLR_NEWRELIC_HOME",
+                        "value": "/home/site/wwwroot/newrelic"
+                      },
+                      {
+                        "name": "CORECLR_PROFILER",
+                        "value": "{36032161-FFC0-4B61-B559-F6C5D41BAE5A}"
+                      },
+                      {
+                        "name": "CORECLR_PROFILER_PATH",
+                        "value": "/home/site/wwwroot/newrelic/libNewRelicProfiler.so"
+                      },
+                      {
+                        "name": "NEW_RELIC_APP_NAME",
+                        "value": "[parameters('appServiceName')]"
+                      },
+                      {
+                        "name": "NEW_RELIC_LICENSE_KEY",
+                        "value": "[parameters('newRelicKey')]"
+                      }
+                  ],
+                  "connectionStrings": [
+                    {
+                      "name": "Redis",
+                      "connectionString": "[concat(parameters('redisHost'), '.redis.cache.windows.net:6380,password=', parameters('redisPassword'), ',ssl=True,abortConnect=False')]",
+                      "type": "Custom",
+                      "slotSetting": true
+                    }
+                  ]
+              },
+              "scmSiteAlsoStopped": false,
+              "clientAffinityEnabled": false,
+              "clientCertEnabled": false,
+              "hostNamesDisabled": false,
+              "containerSize": 0,
+              "dailyMemoryTimeQuota": 0
+          }
+        }
+      ],
+      "properties": {
+        "name": "[parameters('appServiceName')]",
+        "serverFarmId": "[resourceId(resourceGroup().name, 'Microsoft.Web/serverfarms', parameters('serverFarmName'))]",
+        "siteConfig": {
+          "alwaysOn": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+      "apiVersion": "2016-10-01",
+      "name": "[concat(parameters('keyVault'), '/add')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/', parameters('appServiceName'))]"
+      ],
+      "properties": {
+        "accessPolicies": [
+          {
+            "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2018-02-01', 'Full').identity.tenantId]",
+            "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('appServiceName')), '2018-02-01', 'Full').identity.principalId]",
+            "permissions": {              
+              "secrets": [ "get" ]              
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

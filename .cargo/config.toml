@@ -1,0 +1,12 @@
+[build]
+
+[registries]
+at-realtime = { index = "sparse+https://pkgs.dev.azure.com/at-realtime/_packaging/at-realtime/Cargo/index/" }
+credibil = { index = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/" }
+
+[registry]
+global-credential-providers = [
+    "cargo:token",
+    "cargo:macos-keychain",
+    # "cargo-credential-1password --account credibil.1password.com --vault Credibil",
+]

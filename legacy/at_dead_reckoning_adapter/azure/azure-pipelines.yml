@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md  # Exclude changes in README
+
+variables:
+  isMain: $[eq(variables['Build.SourceBranchName'], 'master')]
+
+stages:
+  - stage: Build
+    jobs:
+      - template: build-pipeline.yml
+
+  # Deploy to the dev environment.
+  - stage: Dev
+    dependsOn:
+      - Build
+    displayName: Deploy to Dev
+    variables:
+        - group: "Linux Slot Deployment - Dev"
+        - group: "Redis Dev"
+    jobs:
+      - template: release-pipeline.yml
+        parameters:
+          environmentType: Dev
+          webAppName: $(WebAppNameDev)
+          azureSubscriptionName: $(Service_Connection)
+          resourceGroupName: $(Resourcegroup_Name)
+          armTemplateParameterFile: "parameters-dev"
+          location: $(Location)
+          redisPassword: $(redis_password)
+          newRelicKey: $(New_Relic_Key)
+
+  # Deploy to the Test environment.
+  - stage: Test
+    dependsOn:
+      - Build
+    displayName: Deploy to Test
+    variables:
+        - group: "Linux & Windows Slot Deployment - Test - VNet"
+        - group: "Redis Test"
+    jobs:
+      - template: release-pipeline.yml
+        parameters:
+          environmentType: Test
+          webAppName: $(WebAppNameTest)
+          azureSubscriptionName: $(Service_Connection)
+          resourceGroupName: $(Resourcegroup_Name)
+          armTemplateParameterFile: "parameters-test"
+          location: $(Location)
+          redisPassword: $(redis_password)
+          newRelicKey: $(New_Relic_Key)
+
+  # Deploy to the Preprod environment.
+  - stage: Preprod
+    dependsOn:
+      - Build
+    condition: and(succeeded(), eq(variables.isMain, true))
+    displayName: Deploy to Preprod
+    variables:
+        - group: "Linux & Windows Slot Deployment - Preprod - VNet"
+        - group: "Redis PreProd"
+    jobs:
+      - template: release-pipeline.yml
+        parameters:
+          environmentType: Preprod
+          webAppName: $(WebAppNamePreprod)
+          azureSubscriptionName: $(Service_Connection)
+          resourceGroupName: $(Resourcegroup_Name)
+          armTemplateParameterFile: "parameters-preprod"
+          location: $(Location)
+          redisPassword: $(redis_password)
+          newRelicKey: $(New_Relic_Key)
+
+  # Deploy to the Prod environment.
+  - stage: Prod
+    dependsOn:
+      - Build
+    condition: and(succeeded(), eq(variables.isMain, true))
+    displayName: Deploy to Prod
+    variables:
+        - group: "Linux & Windows Slot Deployment - Prod - VNet"
+        - group: "Redis Prod"
+    jobs:
+      - template: release-pipeline.yml
+        parameters:
+          environmentType: Prod
+          webAppName: $(WebAppNameProd)
+          azureSubscriptionName: $(Service_Connection)
+          resourceGroupName: $(Resourcegroup_Name)
+          armTemplateParameterFile: "parameters-prod"
+          location: $(Location)
+          redisPassword: $(redis_password)
+          newRelicKey: $(New_Relic_Key) 

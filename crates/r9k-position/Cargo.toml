@@ -1,0 +1,32 @@
+[package]
+name = "r9k-position"
+description = " R9K position adapter"
+readme = "README.md"
+publish = false
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+anyhow.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
+credibil-api.workspace = true
+quick-xml = { version = "0.38.3", features = ["serde", "serialize"] }
+serde.workspace = true
+serde_json.workspace = true
+serde_repr = "0.1"
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

@@ -1,0 +1,51 @@
+{
+  "name": "at-r9k-position-adapter",
+  "version": "2.2.0",
+  "private": true,
+  "description": "AT R9K Position Adapter",
+  "homepage": "http://www.propellerhead.co.nz",
+  "bugs": {
+    "url": "https://propellerheadnz.atlassian.net"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://bitbucket.org/Propellerhead/at_r9k_gtfs_adapter"
+  },
+  "license": "UNLICENSED",
+  "author": "Propellerhead",
+  "main": "src/start.ts",
+  "scripts": {
+    "build": "rimraf ./dist && tsc",
+    "cucumber": "at-build-common --cucumber --config node_modules/at-build-common/base/cucumber.json",
+    "dev": "ts-node -r dotenv/config ./src/start.ts",
+    "jest": "jest --config node_modules/at-build-common/base/jest.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --no-error-on-unmatched-pattern",
+    "package": "at-build-common --prepare_azure_deploy && at-build-common --package",
+    "start": "node -r dotenv/config src/start.js || cd dist && node -r dotenv/config src/start.js",
+    "test": "npm run jest && npm run cucumber"
+  },
+  "prettier": "at-build-common/base/prettier",
+  "eslintConfig": {
+    "extends": [
+      "./node_modules/at-build-common/base/eslint.json"
+    ]
+  },
+  "dependencies": {
+    "@azure/identity": "^3.2.3",
+    "@azure/keyvault-secrets": "^4.7.0",
+    "at-auth-common": "^0.7.12",
+    "at-connector-common": "^15.0.0",
+    "at-realtime-common": "^3.1.1",
+    "dotenv": "^16.3.1",
+    "moment-timezone": "^0.5.37",
+    "newrelic": "^10.4.1",
+    "ta-json": "^2.5.0",
+    "x2js": "^3.4.4"
+  },
+  "devDependencies": {
+    "@types/newrelic": "^7.0.4",
+    "@types/node": "^18.8.3",
+    "at-build-common": "^9.1.4",
+    "typescript": "^4.8.4"
+  }
+}

@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
-use r9k_position_adapter::gtfs::StopInfo;
-use r9k_position_adapter::provider::{Key, Provider, Source, SourceData};
+use r9k_position::gtfs::StopInfo;
+use r9k_position::provider::{Key, Provider, Source, SourceData};
 
 #[derive(Clone, Default)]
 pub struct AppContext {

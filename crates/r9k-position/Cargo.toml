@@ -1,5 +1,5 @@
 [package]
-name = "r9k-position-adapter"
+name = "r9k-position"
 description = " R9K position adapter"
 readme = "README.md"
 publish = false

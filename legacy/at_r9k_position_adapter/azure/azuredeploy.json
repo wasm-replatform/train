@@ -1,0 +1,378 @@
+{
+    "variables": {
+        "hybridConnectionResourceId": "[resourceId(parameters('hybrid_resource_group'), 'Microsoft.Relay/namespaces', parameters('hybrid_service_bus_namespace'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(parameters('key_vault'), '/add')]",
+            "apiVersion": "2016-10-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/', parameters('site_name'))]",
+                "[resourceId('Microsoft.Web/sites/slots', parameters('site_name'), parameters('slot_name'))]"
+            ],
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('site_name')), '2018-02-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('site_name')), '2018-02-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "get"
+                            ],
+                            "certificates": [],
+                            "storage": []
+                        }
+                    },
+                    {
+                        "tenantId": "[reference(concat('Microsoft.Web/sites/', parameters('site_name'), '/slots/', parameters('slot_name')), '2018-02-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.Web/sites/', parameters('site_name'), '/slots/', parameters('slot_name')), '2018-02-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "get"
+                            ],
+                            "certificates": [],
+                            "storage": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "kind": "app",
+            "name": "[parameters('site_name')]",
+            "apiVersion": "2016-08-01",
+            "location": "[resourceGroup().location]",
+            "scale": null,
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "httpsOnly": true,
+                "siteConfig": {
+                    "minTlsVersion": "1.2"
+                },
+                "serverFarmId": "[parameters('server_farm_id')]",
+                "hostingEnvironmentProfile": null
+            },
+            "resources": [
+                {
+                    "apiVersion": "2019-08-01",
+                    "name": "virtualNetwork",
+                    "type": "networkConfig",
+                    "condition": "[greater(length(parameters('vnet_resource_group')), 0)]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('site_name'))]"
+                    ],
+                    "properties": {
+                        "subnetResourceId": "[resourceId(parameters('vnet_resource_group'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnet_name'), parameters('subnet_name'))]",
+                        "swiftSupported": true
+                    }
+                },
+                {
+                    "apiVersion": "2015-08-01",
+                    "name": "slotconfignames",
+                    "type": "config",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites/', parameters('site_name'))]"
+                    ],
+                    "properties": {
+                        "appSettingNames": [
+                            "IS_SLOT"
+                        ]
+                    }
+                },
+                {
+                    "comments": "[concat('Deployment slot ', parameters('slot_name'))]",
+                    "type": "Microsoft.Web/sites/slots",
+                    "kind": "app",
+                    "name": "[concat(parameters('site_name'), '/', parameters('slot_name'))]",
+                    "apiVersion": "2016-08-01",
+                    "location": "[resourceGroup().location]",
+                    "scale": null,
+                    "identity": {
+                        "type": "SystemAssigned"
+                    },
+                    "properties": {
+                        "enabled": true,
+                        "hostNameSslStates": [
+                            {
+                                "name": "[concat(parameters('site_name'),'.azurewebsites.net')]",
+                                "sslState": "Disabled",
+                                "virtualIP": null,
+                                "thumbprint": null,
+                                "toUpdate": null,
+                                "hostType": "Standard"
+                            },
+                            {
+                                "name": "[concat(parameters('site_name'),'.scm.azurewebsites.net')]",
+                                "sslState": "Disabled",
+                                "virtualIP": null,
+                                "thumbprint": null,
+                                "toUpdate": null,
+                                "hostType": "Repository"
+                            }
+                        ],
+                        "reserved": false,
+                        "scmSiteAlsoStopped": false,
+                        "clientAffinityEnabled": false,
+                        "clientCertEnabled": false,
+                        "hostNamesDisabled": false,
+                        "containerSize": 0,
+                        "dailyMemoryTimeQuota": 0,
+                        "cloningInfo": null,
+                        "httpsOnly": true,
+                        "siteConfig": {
+                            "minTlsVersion": "1.2",
+                            "appCommandLine": "node src/start.js",
+                            "use32BitWorkerProcess": false,
+                            "alwaysOn": true,
+                            "webSocketsEnabled": false,
+                            "healthCheckPath": "/status",
+                            "appSettings": [
+                                {
+                                    "name": "IS_SLOT",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG",
+                                    "value": "1"
+                                },
+                                {
+                                    "name": "WEBSITE_OVERRIDE_PRESERVE_DEFAULT_STICKY_SLOT_SETTINGS",
+                                    "value": "0"
+                                },
+                                {
+                                    "name": "WEBSITE_SWAP_WARMUP_PING_PATH",
+                                    "value": "/swap"
+                                },
+                                {
+                                    "name": "WEBSITE_SWAP_WARMUP_PING_STATUSES",
+                                    "value": "200"
+                                },
+                                {
+                                    "name": "WEBSITE_HEALTHCHECK_MAXPINGFAILURES",
+                                    "value": "10"
+                                },
+                                {
+                                    "name": "NEW_RELIC_NO_CONFIG_FILE",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "NEW_RELIC_LOG_ENABLED",
+                                    "value": "false"
+                                },
+                                {
+                                    "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                                    "value": "[parameters('node_version')]"
+                                },
+                                {
+                                    "name": "APP_NAME",
+                                    "value": "[parameters('site_name')]"
+                                },
+                                {
+                                    "name": "PAPERTRAIL_SYSTEM",
+                                    "value": "[parameters('papertrail_system')]"
+                                },
+                                {
+                                    "name": "NEW_RELIC_APP_NAME",
+                                    "value": "[parameters('new_relic_app_name')]"
+                                },
+                                {
+                                    "name": "NEW_RELIC_LICENSE_KEY",
+                                    "value": "[parameters('new_relic_license_key')]"
+                                },
+                                {
+                                    "name": "STATIONS",
+                                    "value": "[parameters('stations')]"
+                                },
+                                {
+                                    "name": "GTFS_CC_STATIC_URL",
+                                    "value": "[parameters('gtfs_cc_static_url')]"
+                                },
+                                {
+                                    "name": "BLOCK_MANAGEMENT_URL",
+                                    "value": "[parameters('block_management_url')]"
+                                },
+                                {
+                                    "name": "KEY_VAULT",
+                                    "value": "[parameters('key_vault')]"
+                                },
+                                {
+                                    "name": "KEY_VAULT_SECRET_NAME_SYSTEM_CLIENT_SECRET",
+                                    "value": "[parameters('key_vault_secret_name_system_client_secret')]"
+                                },
+                                {
+                                    "name": "APP_MANIFEST_CLIENT_ID",
+                                    "value": "[parameters('app_manifest_client_id')]"
+                                },
+                                {
+                                    "name": "MAX_MESSAGE_DELAY_IN_SECONDS",
+                                    "value": "[parameters('max_message_delay_in_seconds')]"
+                                },
+                                {
+                                    "name": "MIN_MESSAGE_DELAY_IN_SECONDS",
+                                    "value": "[parameters('min_message_delay_in_seconds')]"
+                                },
+                                {
+                                    "name": "SECRET_WATCHER_INTERVAL",
+                                    "value": "[parameters('secret_watcher_interval')]"
+                                },
+                                {
+                                    "name": "KEY_VAULT_SECRET_NAME_CONFLUENT_KEY",
+                                    "value": "[parameters('key_vault_secret_name_confluent_key')]"
+                                },
+                                {
+                                    "name": "KAFKA_ENVIRONMENT_PREFIX",
+                                    "value": "[parameters('kafka_environment_prefix')]"
+                                },
+                                {
+                                    "name": "KAFKA_HOSTS",
+                                    "value": "[parameters('kafka_hosts')]"
+                                },
+                                {
+                                    "name": "KAFKA_SOURCE_TOPIC",
+                                    "value": "[parameters('kafka_source_topic')]"
+                                },
+                                {
+                                    "name": "KAFKA_DEST_VP_TOPIC",
+                                    "value": "[parameters('kafka_dest_vp_topic')]"
+                                },
+                                {
+                                    "name": "KAFKA_CONSUMER_GROUP",
+                                    "value": "[parameters('kafka_consumer_group')]"
+                                },
+                                {
+                                    "name": "AUTH_LOGGING",
+                                    "value": "[parameters('auth_logging')]"
+                                }
+                            ]
+                        }
+                    },
+                    "resources": [
+                        {
+                            "apiVersion": "2019-08-01",
+                            "name": "virtualNetwork",
+                            "type": "networkConfig",
+                            "condition": "[greater(length(parameters('vnet_resource_group')), 0)]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Web/sites/', parameters('site_name'), '/slots/', parameters('slot_name'))]"
+                            ],
+                            "properties": {
+                                "subnetResourceId": "[resourceId(parameters('vnet_resource_group'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnet_name'), parameters('subnet_name'))]",
+                                "swiftSupported": true
+                            }
+                        },
+                        {
+                            "condition": "[parameters('use_confluent_hybrid_connection')]",
+                            "type": "hybridConnectionNamespaces/relays",
+                            "name": "[if(parameters('use_confluent_hybrid_connection'), concat(parameters('hybrid_service_bus_namespace'), '/', parameters('hybrid_connection_relay_name_cluster')), 'namespace/relay')]",
+                            "apiVersion": "2019-08-01",
+                            "location": "[resourceGroup().location]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Web/Sites/', parameters('site_name'), '/slots/', parameters('slot_name'))]"
+                            ],
+                            "properties": {
+                                "serviceBusNamespace": "parameters('hybrid_service_bus_namespace')",
+                                "relayName": "parameters('hybrid_connection_relay_name_cluster')",
+                                "relayArmUri": "[if(parameters('use_confluent_hybrid_connection'), concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_cluster')), json('null'))]",
+                                "hostname": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_cluster')), '2021-11-01').userMetadata)[0].value, ':')[0], json('null'))]",
+                                "port": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_cluster')), '2021-11-01').userMetadata)[0].value, ':')[1], json('null'))]",
+                                "sendKeyName": "defaultSender",
+                                "sendKeyValue": "",
+                                "serviceBusSuffix": ".servicebus.windows.net"
+                            }
+                        },
+                        {
+                            "condition": "[parameters('use_confluent_hybrid_connection')]",
+                            "type": "hybridConnectionNamespaces/relays",
+                            "name": "[if(parameters('use_confluent_hybrid_connection'), concat(parameters('hybrid_service_bus_namespace'), '/', parameters('hybrid_connection_relay_name_node1')), 'namespace/relay')]",
+                            "apiVersion": "2019-08-01",
+                            "location": "[resourceGroup().location]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Web/Sites/', parameters('site_name'), '/slots/', parameters('slot_name'))]"
+                            ],
+                            "properties": {
+                                "serviceBusNamespace": "parameters('hybrid_service_bus_namespace')",
+                                "relayName": "parameters('hybrid_connection_relay_name_cluster')",
+                                "relayArmUri": "[if(parameters('use_confluent_hybrid_connection'), concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node1')), json('null'))]",
+                                "hostname": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node1')), '2021-11-01').userMetadata)[0].value, ':')[0], json('null'))]",
+                                "port": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node1')), '2021-11-01').userMetadata)[0].value, ':')[1], json('null'))]",
+                                "sendKeyName": "defaultSender",
+                                "sendKeyValue": "",
+                                "serviceBusSuffix": ".servicebus.windows.net"
+                            }
+                        },
+                        {
+                            "condition": "[parameters('use_confluent_hybrid_connection')]",
+                            "type": "hybridConnectionNamespaces/relays",
+                            "name": "[if(parameters('use_confluent_hybrid_connection'), concat(parameters('hybrid_service_bus_namespace'), '/', parameters('hybrid_connection_relay_name_node2')), 'namespace/relay')]",
+                            "apiVersion": "2019-08-01",
+                            "location": "[resourceGroup().location]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Web/Sites/', parameters('site_name'), '/slots/', parameters('slot_name'))]"
+                            ],
+                            "properties": {
+                                "serviceBusNamespace": "parameters('hybrid_service_bus_namespace')",
+                                "relayName": "parameters('hybrid_connection_relay_name_cluster')",
+                                "relayArmUri": "[if(parameters('use_confluent_hybrid_connection'), concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node2')), json('null'))]",
+                                "hostname": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node2')), '2021-11-01').userMetadata)[0].value, ':')[0], json('null'))]",
+                                "port": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node2')), '2021-11-01').userMetadata)[0].value, ':')[1], json('null'))]",
+                                "sendKeyName": "defaultSender",
+                                "sendKeyValue": "",
+                                "serviceBusSuffix": ".servicebus.windows.net"
+                            }
+                        },
+                        {
+                            "condition": "[parameters('use_confluent_hybrid_connection')]",
+                            "type": "hybridConnectionNamespaces/relays",
+                            "name": "[if(parameters('use_confluent_hybrid_connection'), concat(parameters('hybrid_service_bus_namespace'), '/', parameters('hybrid_connection_relay_name_node3')), 'namespace/relay')]",
+                            "apiVersion": "2019-08-01",
+                            "location": "[resourceGroup().location]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Web/Sites/', parameters('site_name'), '/slots/', parameters('slot_name'))]"
+                            ],
+                            "properties": {
+                                "serviceBusNamespace": "parameters('hybrid_service_bus_namespace')",
+                                "relayName": "parameters('hybrid_connection_relay_name_cluster')",
+                                "relayArmUri": "[if(parameters('use_confluent_hybrid_connection'), concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node3')), json('null'))]",
+                                "hostname": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node3')), '2021-11-01').userMetadata)[0].value, ':')[0], json('null'))]",
+                                "port": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node3')), '2021-11-01').userMetadata)[0].value, ':')[1], json('null'))]",
+                                "sendKeyName": "defaultSender",
+                                "sendKeyValue": "",
+                                "serviceBusSuffix": ".servicebus.windows.net"
+                            }
+                        },
+                        {
+                            "condition": "[parameters('use_confluent_hybrid_connection')]",
+                            "type": "hybridConnectionNamespaces/relays",
+                            "name": "[if(parameters('use_confluent_hybrid_connection'), concat(parameters('hybrid_service_bus_namespace'), '/', parameters('hybrid_connection_relay_name_node4')), 'namespace/relay')]",
+                            "apiVersion": "2019-08-01",
+                            "location": "[resourceGroup().location]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Web/Sites/', parameters('site_name'), '/slots/', parameters('slot_name'))]"
+                            ],
+                            "properties": {
+                                "serviceBusNamespace": "parameters('hybrid_service_bus_namespace')",
+                                "relayName": "parameters('hybrid_connection_relay_name_cluster')",
+                                "relayArmUri": "[if(parameters('use_confluent_hybrid_connection'), concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node4')), json('null'))]",
+                                "hostname": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node4')), '2021-11-01').userMetadata)[0].value, ':')[0], json('null'))]",
+                                "port": "[if(parameters('use_confluent_hybrid_connection'), split(json(reference(concat(variables('hybridConnectionResourceId'), '/hybridConnections/', parameters('hybrid_connection_relay_name_node4')), '2021-11-01').userMetadata)[0].value, ':')[1], json('null'))]",
+                                "sendKeyName": "defaultSender",
+                                "sendKeyValue": "",
+                                "serviceBusSuffix": ".servicebus.windows.net"
+                            }
+                        }
+                    ],
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('site_name'))]"
+                    ]
+                }
+            ],
+            "dependsOn": []
+        }
+    ]
+}

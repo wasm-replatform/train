@@ -8,7 +8,7 @@ mod provider;
 
 use anyhow::{Context, Result};
 use credibil_api::Client as ApiClient;
-use r9k_position_adapter::R9kMessage;
+use r9k_position::R9kMessage;
 use tracing::{error, warn};
 use wit_bindings::messaging;
 use wit_bindings::messaging::incoming_handler::Configuration;

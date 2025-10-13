@@ -7,7 +7,7 @@ use std::ops::Sub;
 
 use chrono::{Duration, Timelike, Utc};
 use credibil_api::Client;
-use r9k_position_adapter::{ChangeType, Error, EventType, R9kMessage};
+use r9k_position::{ChangeType, Error, EventType, R9kMessage};
 
 use self::provider::AppContext;
 

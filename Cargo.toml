@@ -22,7 +22,7 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 anyhow.workspace = true
 credibil-api.workspace = true
-r9k-position-adapter = { path = "crates/r9k-position-adapter" }
+r9k-position = { path = "crates/r9k-position" }
 sdk-otel.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
@@ -103,9 +103,6 @@ wit-bindgen = "0.46.0"
 credibil-api = { version = "0.4.0", registry = "credibil" }
 sdk-otel = { version = "0.10.1", registry = "credibil" }
 wit-bindings = { version = "0.10.1", registry = "credibil" }
-
-# internally referenced crates
-r9k-position-adapter = { path = "crates/r9k-position-adapter" }
 
 # [patch."https://github.com/credibil/wrt"]
 # sdk-otel = { path = "../../credibil/wrt/crates/sdk-otel" }

@@ -1,0 +1,10 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    uses: credibil/pipeline/.github/workflows/release.yaml@main
+    secrets:
+      CARGO_REGISTRIES_CREDIBIL_TOKEN: ${{ secrets.CARGO_REGISTRIES_CREDIBIL_TOKEN }}

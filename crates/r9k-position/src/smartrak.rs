@@ -1,9 +1,7 @@
 //! SmarTrak event types for handling SmarTrak data.
 
-use chrono::SecondsFormat;
-use chrono::{DateTime, Utc};
-use serde::Serializer;
-use serde::{Deserialize, Serialize};
+use chrono::{DateTime, SecondsFormat, Utc};
+use serde::{Deserialize, Serialize, Serializer};
 
 use crate::stops::StopInfo;
 

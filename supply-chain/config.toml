@@ -22,6 +22,18 @@ url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 [imports.zcash]
 url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
 
+[[exemptions.axum]]
+version = "0.8.6"
+criteria = "safe-to-deploy"
+
+[[exemptions.axum-core]]
+version = "0.5.5"
+criteria = "safe-to-deploy"
+
+[[exemptions.cfg-if]]
+version = "1.0.4"
+criteria = "safe-to-deploy"
+
 [[exemptions.chrono]]
 version = "0.4.42"
 criteria = "safe-to-deploy"
@@ -35,24 +47,20 @@ version = "0.3.31"
 criteria = "safe-to-deploy"
 
 [[exemptions.getrandom]]
-version = "0.3.3"
+version = "0.3.4"
 criteria = "safe-to-deploy"
-
-[[exemptions.io-uring]]
-version = "0.7.10"
-criteria = "safe-to-run"
 
 [[exemptions.js-sys]]
 version = "0.3.81"
 criteria = "safe-to-deploy"
 
+[[exemptions.matchit]]
+version = "0.8.4"
+criteria = "safe-to-deploy"
+
 [[exemptions.nu-ansi-term]]
 version = "0.50.3"
 criteria = "safe-to-deploy"
-
-[[exemptions.object]]
-version = "0.36.0"
-criteria = "safe-to-run"
 
 [[exemptions.once_cell]]
 version = "1.21.3"
@@ -86,9 +94,33 @@ criteria = "safe-to-deploy"
 version = "1.0.27"
 criteria = "safe-to-deploy"
 
+[[exemptions.serde_path_to_error]]
+version = "0.1.20"
+criteria = "safe-to-deploy"
+
+[[exemptions.serde_yaml]]
+version = "0.9.34+deprecated"
+criteria = "safe-to-run"
+
+[[exemptions.sync_wrapper]]
+version = "1.0.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.tower-layer]]
+version = "0.3.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.tower-service]]
+version = "0.3.2"
+criteria = "safe-to-deploy"
+
 [[exemptions.tracing-opentelemetry]]
 version = "0.32.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.unsafe-libyaml]]
+version = "0.2.11"
+criteria = "safe-to-run"
 
 [[exemptions.wasm-bindgen]]
 version = "0.2.104"

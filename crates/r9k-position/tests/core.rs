@@ -5,7 +5,7 @@ mod provider;
 
 use std::ops::Sub;
 
-use chrono::{Duration, Local, Timelike, Utc};
+use chrono::{Duration, Local, Timelike};
 use credibil_api::Client;
 use r9k_position::{ChangeType, Error, EventType, R9kMessage};
 

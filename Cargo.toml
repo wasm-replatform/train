@@ -22,8 +22,11 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 anyhow.workspace = true
 credibil-api.workspace = true
+http.workspace = true
 r9k-position = { path = "crates/r9k-position" }
+sdk-http.workspace = true
 sdk-otel.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 wit-bindgen.workspace = true
@@ -39,7 +42,7 @@ categories = ["realtime"]
 edition = "2024"
 exclude = [".*", "/docs"]
 homepage = "https://propellerhead.co.nz"
-keywords = ["realtime", "timetables"]
+keywords = ["realtime", "train"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/AucklandTransportCode/train"
@@ -101,6 +104,7 @@ wit-bindgen = "0.46.0"
 
 # credibil registry
 credibil-api = { version = "0.4.0", registry = "credibil" }
+sdk-http = { version = "0.10.1", registry = "credibil" }
 sdk-otel = { version = "0.10.1", registry = "credibil" }
 wit-bindings = { version = "0.10.1", registry = "credibil" }
 

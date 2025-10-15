@@ -93,13 +93,6 @@ mod test {
 
     use super::*;
 
-    // #[test]
-    // fn test_context() {
-    //     let result = Err::<(), Error>(Error::Test).context("request context");
-    //     let err = result.unwrap_err();
-    //     println!("Error: {}", err);
-    // }
-
     // Test that error details are retuned as json.
     #[test]
     fn r9k_context() {

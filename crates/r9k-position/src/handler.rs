@@ -8,7 +8,6 @@ use anyhow::Context;
 use chrono::Utc;
 use credibil_api::{Body, Handler, Request, Response};
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 use crate::error::Error;
 use crate::provider::{HttpRequest, Provider};
@@ -55,7 +54,7 @@ impl TrainUpdate {
         // filter out irrelevant updates (not related to trip progress)
         if !change_type.is_relevant() {
             // TODO: do we need this metric?
-            info!(monotonic_counter.irrelevant_change_type = 1 ,type = %change_type);
+            tracing::info!(monotonic_counter.irrelevant_change_type = 1, type = %change_type);
             return Ok(vec![]);
         }
 
@@ -64,11 +63,11 @@ impl TrainUpdate {
         let Some(stop_info) =
             stops::stop_info(owner, provider, station, change_type.is_arrival()).await?
         else {
-            info!(monotonic_counter.irrelevant_station = 1, station = %station);
+            tracing::info!(monotonic_counter.irrelevant_station = 1, station = %station);
             return Ok(vec![]);
         };
 
-        // get allocated trains for this trip
+        // get train allocations for this trip
         let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
         let request = http::Request::builder()
             .uri(format!("{block_mgt_addr}/allocations/trips?externalRefId={}", self.train_id()))

@@ -73,8 +73,5 @@ input: |
          <origenActualizaTren>GAC</origenActualizaTren>
       </ActualizarDatosTren>
    </CCO>
-now: 1759912097631
-event_seconds: 76791
-event_date: 1759834800
-message_delay: 506
-error: !Outdated 506
+delay: 506
+error: !Outdated message delayed by 506 seconds

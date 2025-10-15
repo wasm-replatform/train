@@ -2,7 +2,7 @@
 
 use std::fmt::{Display, Formatter};
 
-use chrono::{NaiveDate, Utc};
+use chrono::{Local, NaiveDate, TimeZone};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -105,9 +105,9 @@ impl TrainUpdate {
     ///
     /// # Errors
     ///
-    /// Will return the following errors:
+    /// Will return one of the following errors:
     ///  - `Error::NoUpdate` if there are no changes
-    ///  - `Error::NoActualUpdate` if there are no changes
+    ///  - `Error::NoActualUpdate` if the arrival or departure time is -ve or 0
     ///  - `Error::Outdated` if the message is too old
     ///  - `Error::WrongTime` if the message is from the future
     pub fn validate(&self) -> Result<()> {
@@ -117,35 +117,36 @@ impl TrainUpdate {
 
         // an *actual* update will have a +ve arrival or departure time
         let change = &self.changes[0];
-        let event_seconds = if change.has_departed {
+        let from_midnight_secs = if change.has_departed {
             change.actual_departure_time
         } else if change.has_arrived {
             change.actual_arrival_time
         } else {
-            0
+            return Err(Error::NoActualUpdate);
         };
 
-        if event_seconds <= 0 {
+        if from_midnight_secs <= 0 {
             return Err(Error::NoActualUpdate);
         }
 
         // check for outdated message
-        let event_datetime =
-            self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default().and_utc().timestamp()
-                + event_seconds;
-        let delay_secs = Utc::now().timestamp() - event_datetime;
-        // let delay_secs = Utc::now().signed_duration_since(event_datetime).num_seconds();
+        let naive_time = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
+        let Some(local_time) = Local.from_local_datetime(&naive_time).earliest() else {
+            return Err(Error::WrongTime(format!("invalid local time: {naive_time}")));
+        };
+
+        let midnight_ts = local_time.timestamp();
+        let event_ts = midnight_ts + i64::from(from_midnight_secs);
+        let delay_secs = Local::now().timestamp() - event_ts;
 
         // TODO: do we need this metric?;
         tracing::info!(gauge.r9k_delay = delay_secs);
 
         if delay_secs > MAX_DELAY_SECS {
-            return Err(Error::Outdated(format!("message is too late: {delay_secs} seconds ago")));
+            return Err(Error::Outdated(format!("message delayed by {delay_secs} seconds")));
         }
         if delay_secs < MIN_DELAY_SECS {
-            return Err(Error::WrongTime(format!(
-                "message is too early: {delay_secs} seconds ago"
-            )));
+            return Err(Error::WrongTime(format!("message ahead by {delay_secs} seconds")));
         }
 
         Ok(())
@@ -170,7 +171,7 @@ pub struct Change {
     /// Scheduled arrival time as per schedule.
     /// In seconds from train update creation date at midnight.
     #[serde(rename(deserialize = "horaEntrada"))]
-    pub arrival_time: i64,
+    pub arrival_time: i32,
 
     /// Actual arrival, or estimated arrival time (based on the latest actual
     /// arrival or departure time of the preceding stations).
@@ -178,7 +179,7 @@ pub struct Change {
     /// In seconds from train update creation date at midnight. `-1` if not
     /// available.
     #[serde(rename(deserialize = "horaEntradaReal"))]
-    pub actual_arrival_time: i64,
+    pub actual_arrival_time: i32,
 
     /// The train has arrived.
     #[serde(rename(deserialize = "haEntrado"))]
@@ -187,13 +188,13 @@ pub struct Change {
     /// Difference between the actual and scheduled arrival times if the train
     /// has already arrived at the station, 0 otherwise.
     #[serde(rename(deserialize = "retrasoEntrada"))]
-    pub arrival_delay: i64,
+    pub arrival_delay: i32,
 
     /// Scheduled departure time as per schedule.
     ///
     /// In seconds from train update creation date at midnight.
     #[serde(rename(deserialize = "horaSalida"))]
-    pub departure_time: i64,
+    pub departure_time: i32,
 
     /// Actual departure, or estimated departure time (based on the latest
     /// actual arrival or departure time of the preceding stations).
@@ -201,7 +202,7 @@ pub struct Change {
     /// In seconds from train update creation date at midnight. -1 if not
     /// available.
     #[serde(rename(deserialize = "horaSalidaReal"))]
-    pub actual_departure_time: i64,
+    pub actual_departure_time: i32,
 
     /// The train has departed.
     #[serde(rename(deserialize = "haSalido"))]
@@ -210,15 +211,15 @@ pub struct Change {
     /// Difference between the actual and scheduled arrival times if the train
     /// has already arrived at the station, 0 otherwise.
     #[serde(rename(deserialize = "retrasoSalida"))]
-    pub departure_delay: i64,
+    pub departure_delay: i32,
 
     /// The time at which the train was detained.
     #[serde(rename(deserialize = "horaInicioDetencion"))]
-    pub detention_time: i64,
+    pub detention_time: i32,
 
     /// The duration for which the train was detained.
     #[serde(rename(deserialize = "duracionDetencion"))]
-    pub detention_duration: i64,
+    pub detention_duration: i32,
 
     /// The platform at which the train arrived.
     #[serde(rename(deserialize = "viaEntradaMallas"))]
@@ -369,7 +370,6 @@ mod tests {
         let xml = include_str!("../data/sample.xml");
         let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
 
-        println!("message: {message:#?}");
         let update = message.train_update;
         assert_eq!(update.even_train_id, Some("1234".to_string()));
         assert!(!update.changes.is_empty(), "should have changes");

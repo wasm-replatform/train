@@ -2,11 +2,15 @@
 
 use std::fmt::{Display, Formatter};
 
-use chrono::{DateTime, Utc};
+use chrono::{NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
+use crate::Result;
 use crate::error::Error;
+
+const MAX_DELAY_SECS: i64 = 60;
+const MIN_DELAY_SECS: i64 = -30;
 
 /// R9K train update message as deserialized from the XML received from
 /// KiwiRail.
@@ -21,7 +25,7 @@ pub struct R9kMessage {
 impl TryFrom<String> for R9kMessage {
     type Error = Error;
 
-    fn try_from(xml: String) -> Result<Self, Self::Error> {
+    fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_str(&xml).map_err(Into::into)
     }
 }
@@ -29,7 +33,7 @@ impl TryFrom<String> for R9kMessage {
 impl TryFrom<&[u8]> for R9kMessage {
     type Error = Error;
 
-    fn try_from(xml: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_reader(xml).map_err(Into::into)
     }
 }
@@ -49,7 +53,8 @@ pub struct TrainUpdate {
 
     /// The creation date of the train update.
     #[serde(rename(deserialize = "fechaCreacion"))]
-    pub created_date: DateTime<Utc>,
+    #[serde(deserialize_with = "r9k_date")]
+    pub created_date: NaiveDate,
 
     /// Train's registration number.
     #[serde(rename(deserialize = "numeroRegistro"))]
@@ -81,11 +86,69 @@ pub struct TrainUpdate {
     pub changes: Vec<Change>,
 }
 
+fn r9k_date<'de, D>(deserializer: D) -> anyhow::Result<NaiveDate, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    NaiveDate::parse_from_str(&s, "%d/%m/%Y").map_err(serde::de::Error::custom)
+}
+
 impl TrainUpdate {
     /// Get the train ID, preferring even over odd.
     #[must_use]
     pub fn train_id(&self) -> String {
         self.even_train_id.clone().unwrap_or_else(|| self.odd_train_id.clone().unwrap_or_default())
+    }
+
+    /// Validate the message.
+    ///
+    /// # Errors
+    ///
+    /// Will return the following errors:
+    ///  - `Error::NoUpdate` if there are no changes
+    ///  - `Error::NoActualUpdate` if there are no changes
+    ///  - `Error::Outdated` if the message is too old
+    ///  - `Error::WrongTime` if the message is from the future
+    pub fn validate(&self) -> Result<()> {
+        if self.changes.is_empty() {
+            return Err(Error::NoUpdate);
+        }
+
+        // an *actual* update will have a +ve arrival or departure time
+        let change = &self.changes[0];
+        let event_seconds = if change.has_departed {
+            change.actual_departure_time
+        } else if change.has_arrived {
+            change.actual_arrival_time
+        } else {
+            0
+        };
+
+        if event_seconds <= 0 {
+            return Err(Error::NoActualUpdate);
+        }
+
+        // check for outdated message
+        let event_datetime =
+            self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default().and_utc().timestamp()
+                + event_seconds;
+        let delay_secs = Utc::now().timestamp() - event_datetime;
+        // let delay_secs = Utc::now().signed_duration_since(event_datetime).num_seconds();
+
+        // TODO: do we need this metric?;
+        tracing::info!(gauge.r9k_delay = delay_secs);
+
+        if delay_secs > MAX_DELAY_SECS {
+            return Err(Error::Outdated(format!("message is too late: {delay_secs} seconds ago")));
+        }
+        if delay_secs < MIN_DELAY_SECS {
+            return Err(Error::WrongTime(format!(
+                "message is too early: {delay_secs} seconds ago"
+            )));
+        }
+
+        Ok(())
     }
 }
 
@@ -107,7 +170,7 @@ pub struct Change {
     /// Scheduled arrival time as per schedule.
     /// In seconds from train update creation date at midnight.
     #[serde(rename(deserialize = "horaEntrada"))]
-    pub arrival_time: i32,
+    pub arrival_time: i64,
 
     /// Actual arrival, or estimated arrival time (based on the latest actual
     /// arrival or departure time of the preceding stations).
@@ -115,7 +178,7 @@ pub struct Change {
     /// In seconds from train update creation date at midnight. `-1` if not
     /// available.
     #[serde(rename(deserialize = "horaEntradaReal"))]
-    pub actual_arrival_time: i32,
+    pub actual_arrival_time: i64,
 
     /// The train has arrived.
     #[serde(rename(deserialize = "haEntrado"))]
@@ -124,13 +187,13 @@ pub struct Change {
     /// Difference between the actual and scheduled arrival times if the train
     /// has already arrived at the station, 0 otherwise.
     #[serde(rename(deserialize = "retrasoEntrada"))]
-    pub arrival_delay: i32,
+    pub arrival_delay: i64,
 
     /// Scheduled departure time as per schedule.
     ///
     /// In seconds from train update creation date at midnight.
     #[serde(rename(deserialize = "horaSalida"))]
-    pub departure_time: u32,
+    pub departure_time: i64,
 
     /// Actual departure, or estimated departure time (based on the latest
     /// actual arrival or departure time of the preceding stations).
@@ -138,7 +201,7 @@ pub struct Change {
     /// In seconds from train update creation date at midnight. -1 if not
     /// available.
     #[serde(rename(deserialize = "horaSalidaReal"))]
-    pub actual_departure_time: i32,
+    pub actual_departure_time: i64,
 
     /// The train has departed.
     #[serde(rename(deserialize = "haSalido"))]
@@ -147,15 +210,15 @@ pub struct Change {
     /// Difference between the actual and scheduled arrival times if the train
     /// has already arrived at the station, 0 otherwise.
     #[serde(rename(deserialize = "retrasoSalida"))]
-    pub departure_delay: i32,
+    pub departure_delay: i64,
 
     /// The time at which the train was detained.
     #[serde(rename(deserialize = "horaInicioDetencion"))]
-    pub detention_time: i32,
+    pub detention_time: i64,
 
     /// The duration for which the train was detained.
     #[serde(rename(deserialize = "duracionDetencion"))]
-    pub detention_duration: i32,
+    pub detention_duration: i64,
 
     /// The platform at which the train arrived.
     #[serde(rename(deserialize = "viaEntradaMallas"))]
@@ -305,6 +368,8 @@ mod tests {
     fn deserialization() {
         let xml = include_str!("../data/sample.xml");
         let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
+
+        println!("message: {message:#?}");
         let update = message.train_update;
         assert_eq!(update.even_train_id, Some("1234".to_string()));
         assert!(!update.changes.is_empty(), "should have changes");

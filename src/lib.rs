@@ -25,7 +25,6 @@ const BLOCK_MGT_ADDR: &str = "https://www-dev-block-mgt-client-api-01.azurewebsi
 const SERVICE: &str = "r9k-position-adapter";
 
 pub struct Messaging;
-
 messaging::export!(Messaging with_types_in wit_bindings::messaging);
 
 impl messaging::incoming_handler::Guest for Messaging {
@@ -50,7 +49,7 @@ impl messaging::incoming_handler::Guest for Messaging {
 // Process incoming R9k messages, consolidating error handling.
 #[sdk_otel::instrument]
 async fn process(message: &[u8]) -> Result<()> {
-    let api = ApiClient::new(provider::AppContext::new());
+    let api = ApiClient::new(provider::Provider);
     let request = R9kMessage::try_from(message)?;
     let response = api.request(request).owner("owner").await?;
     let Some(events) = response.body.smartrak_events else { return Ok(()) };

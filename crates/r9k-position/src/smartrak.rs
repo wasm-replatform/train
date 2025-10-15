@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_repr::Serialize_repr;
 
-use crate::gtfs::StopInfo;
+use crate::stops::StopInfo;
 
 /// SmarTrak event.
 //  N.B. that @JsonProperty descriptors are used for deserialisation only,

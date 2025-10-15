@@ -21,6 +21,7 @@ crate-type = ["lib"]
 anyhow.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 credibil-api.workspace = true
+http.workspace = true
 quick-xml = { version = "0.38.3", features = ["serde", "serialize"] }
 serde.workspace = true
 serde_json.workspace = true
@@ -29,4 +30,5 @@ thiserror.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+serde_yaml = "0.9"
 tokio.workspace = true

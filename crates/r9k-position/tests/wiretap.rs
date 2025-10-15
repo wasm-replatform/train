@@ -81,14 +81,10 @@ async fn compare(wiretap: Wiretap) -> Result<()> {
     orig_events.into_iter().zip(curr_events).for_each(|(published, mut actual)| {
         let original: SmarTrakEvent = serde_json::from_str(&published).unwrap();
 
-        // println!("original.message_data.timestamp: {}", original.message_data.timestamp);
-        // println!("actual.message_data.timestamp:   {}", actual.message_data.timestamp);
-
-        // // add 5 seconds to the actual message timestamp the adapter sleeps 5 seconds
-        // // before output the first round
-        // let diff = original.message_data.timestamp.timestamp()
-        //     - (actual.message_data.timestamp.timestamp() + 5);
-        // assert!(diff.abs() < 3, "expected vs actual too great: {diff}");
+        // add 5 seconds to the actual message timestamp the adapter sleeps 5 seconds
+        // before output the first round
+        let diff = now.timestamp() - actual.message_data.timestamp.timestamp();
+        assert!(diff.abs() < 3, "expected vs actual too great: {diff}");
 
         // compare original published message to r9k event
         actual.received_at = original.received_at;

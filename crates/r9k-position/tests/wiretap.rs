@@ -39,7 +39,7 @@ async fn compare(wiretap: Wiretap) -> Result<()> {
         bail!("no changes in input message");
     };
 
-    // correct event time to 'now' (plus recorded delay)
+    // correct event time to 'now' (+ originally recorded delay)
     let now = Local::now();
     request.train_update.created_date = now.date_naive();
     #[allow(clippy::cast_possible_wrap)]

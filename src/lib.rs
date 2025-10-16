@@ -6,10 +6,9 @@
 
 mod provider;
 
-use std::env;
 use std::sync::LazyLock;
-use std::thread;
 use std::time::Duration;
+use std::{env, thread};
 
 use anyhow::{Context, Result};
 use credibil_api::Client;

@@ -19,6 +19,7 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
+async-trait.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 credibil-api.workspace = true
 quick-xml = { version = "0.38.3", features = ["serde", "serialize"] }

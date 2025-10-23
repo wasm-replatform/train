@@ -13,14 +13,15 @@ use crate::processor::{LocationProcessor, PassengerCountProcessor, SerialDataPro
 use crate::provider::AdapterProvider;
 
 #[derive(Debug, Clone)]
+// Mirrors legacy dispatcher in legacy/at_smartrak_gtfs_adapter/src/services/kafka-service.ts.
 pub struct Processor<P: AdapterProvider> {
     config: Arc<Config>,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
     fleet_access: FleetAccess<P>,
     trip_access: TripAccess<P>,
     block_access: BlockAccess<P>,
     location_processor: LocationProcessor<P>,
-    passenger_processor: PassengerCountProcessor<P>,
+    passenger_processor: PassengerCountProcessor,
     serial_processor: SerialDataProcessor<P>,
     locker: KeyLocker,
     god_mode: Option<GodMode>,
@@ -34,7 +35,7 @@ pub enum ProducedMessage {
 
 impl<P: AdapterProvider> Processor<P> {
     pub fn new(config: Arc<Config>, provider: P, god_mode: Option<GodMode>) -> Self {
-        let cache = Arc::new(CacheRepository::new(provider.cache_store()));
+        let cache = Arc::new(CacheRepository::new().expect("failed to create cache repository"));
         let fleet_access =
             FleetAccess::new(Arc::clone(&config), provider.clone(), Arc::clone(&cache));
         let trip_access =
@@ -99,7 +100,7 @@ impl<P: AdapterProvider> Processor<P> {
         self.passenger_processor.process(event).await
     }
 
-    pub fn cache(&self) -> &Arc<CacheRepository<P::Cache>> {
+    pub fn cache(&self) -> &Arc<CacheRepository> {
         &self.cache
     }
 

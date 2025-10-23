@@ -16,15 +16,16 @@ use crate::model::fleet::{VehicleCapacity, VehicleInfo};
 use crate::model::trip::{BlockInstance, TripInstance};
 use crate::provider::AdapterProvider;
 
+// Mirrors FleetApiService access patterns from legacy/at_smartrak_gtfs_adapter/src/apis/fleet.ts.
 #[derive(Debug, Clone)]
 pub struct FleetAccess<P: AdapterProvider> {
     config: Arc<Config>,
     provider: P,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
 }
 
 impl<P: AdapterProvider> FleetAccess<P> {
-    pub fn new(config: Arc<Config>, provider: P, cache: Arc<CacheRepository<P::Cache>>) -> Self {
+    pub fn new(config: Arc<Config>, provider: P, cache: Arc<CacheRepository>) -> Self {
         Self { config, provider, cache }
     }
 
@@ -83,38 +84,39 @@ impl<P: AdapterProvider> FleetAccess<P> {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<Option<T>>> + Send,
     {
-        if let Some(value) = self.cache.get_json::<T>(key).await? {
+        if let Some(value) = self.cache.get_json::<T>(key)? {
             return Ok(Some(value));
         }
 
         match loader().await {
             Ok(Some(value)) => {
-                self.cache.set_json_ex(key, CACHE_TTL_FLEET_SUCCESS, &value).await?;
+                self.cache.set_json_ex(key, CACHE_TTL_FLEET_SUCCESS, &value)?;
                 Ok(Some(value))
             }
             Ok(None) => {
-                self.cache.set_empty(key, CACHE_TTL_FLEET_SUCCESS).await?;
+                self.cache.set_empty(key, CACHE_TTL_FLEET_SUCCESS)?;
                 Ok(None)
             }
             Err(err) => {
                 error!(key = key, error = %err, "fleet API error");
-                self.cache.set_empty(key, CACHE_TTL_FLEET_FAILURE).await?;
+                self.cache.set_empty(key, CACHE_TTL_FLEET_FAILURE)?;
                 Ok(None)
             }
         }
     }
 }
 
+// Aligns with TripMgtApi logic from legacy/at_smartrak_gtfs_adapter/src/apis/trip-mgt.ts.
 #[derive(Debug, Clone)]
 pub struct TripAccess<P: AdapterProvider> {
     config: Arc<Config>,
     provider: P,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
     parsed_trip_cache: DashMap<String, Vec<TripInstance>>, // assists reuse within same request
 }
 
 impl<P: AdapterProvider> TripAccess<P> {
-    pub fn new(config: Arc<Config>, provider: P, cache: Arc<CacheRepository<P::Cache>>) -> Self {
+    pub fn new(config: Arc<Config>, provider: P, cache: Arc<CacheRepository>) -> Self {
         Self { config, provider, cache, parsed_trip_cache: DashMap::new() }
     }
 
@@ -178,21 +180,21 @@ impl<P: AdapterProvider> TripAccess<P> {
             return Ok(entry.clone());
         }
 
-        if let Some(trips) = self.cache.get_json::<Vec<TripInstance>>(&cache_key).await? {
+        if let Some(trips) = self.cache.get_json::<Vec<TripInstance>>(&cache_key)? {
             self.parsed_trip_cache.insert(cache_key.clone(), trips.clone());
             return Ok(trips);
         }
 
         match self.provider.fetch_trip_instances(trip_id, service_date).await {
             Ok(trips) => {
-                self.cache.set_json_ex(&cache_key, CACHE_TTL_TRIP_SUCCESS, &trips).await?;
+                self.cache.set_json_ex(&cache_key, CACHE_TTL_TRIP_SUCCESS, &trips)?;
                 self.parsed_trip_cache.insert(cache_key.clone(), trips.clone());
                 Ok(trips)
             }
             Err(err) => {
                 error!(trip_id = trip_id, service_date = service_date, error = %err, "trip management API error");
                 let placeholder = vec![TripInstance::error_marker()];
-                self.cache.set_json_ex(&cache_key, CACHE_TTL_TRIP_FAILURE, &placeholder).await?;
+                self.cache.set_json_ex(&cache_key, CACHE_TTL_TRIP_FAILURE, &placeholder)?;
                 self.parsed_trip_cache.insert(cache_key.clone(), placeholder.clone());
                 Ok(placeholder)
             }
@@ -200,15 +202,16 @@ impl<P: AdapterProvider> TripAccess<P> {
     }
 }
 
+// Mirrors BlockMgtApi behaviour from legacy/at_smartrak_gtfs_adapter/src/apis/block-mgt.ts.
 #[derive(Debug, Clone)]
 pub struct BlockAccess<P: AdapterProvider> {
     config: Arc<Config>,
     provider: P,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
 }
 
 impl<P: AdapterProvider> BlockAccess<P> {
-    pub fn new(config: Arc<Config>, provider: P, cache: Arc<CacheRepository<P::Cache>>) -> Self {
+    pub fn new(config: Arc<Config>, provider: P, cache: Arc<CacheRepository>) -> Self {
         Self { config, provider, cache }
     }
 
@@ -216,7 +219,7 @@ impl<P: AdapterProvider> BlockAccess<P> {
         &self, vehicle_id: &str, timestamp: i64,
     ) -> Result<Option<BlockInstance>> {
         let key = self.config.block_key(vehicle_id);
-        if let Some(block) = self.cache.get_json::<BlockInstance>(&key).await? {
+        if let Some(block) = self.cache.get_json::<BlockInstance>(&key)? {
             if block.trip_id.is_empty() && !block.has_error() {
                 return Ok(None);
             }
@@ -225,17 +228,17 @@ impl<P: AdapterProvider> BlockAccess<P> {
 
         match self.provider.fetch_block_allocation(vehicle_id, timestamp).await {
             Ok(Some(block)) => {
-                self.cache.set_json_ex(&key, CACHE_TTL_BLOCK_SUCCESS, &block).await?;
+                self.cache.set_json_ex(&key, CACHE_TTL_BLOCK_SUCCESS, &block)?;
                 Ok(Some(block))
             }
             Ok(None) => {
-                self.cache.set_empty(&key, CACHE_TTL_BLOCK_SUCCESS).await?;
+                self.cache.set_empty(&key, CACHE_TTL_BLOCK_SUCCESS)?;
                 Ok(None)
             }
             Err(err) => {
                 error!(vehicle_id = vehicle_id, error = %err, "block management API error");
                 let placeholder = BlockInstance { error: true, ..BlockInstance::default() };
-                self.cache.set_json_ex(&key, CACHE_TTL_BLOCK_FAILURE, &placeholder).await?;
+                self.cache.set_json_ex(&key, CACHE_TTL_BLOCK_FAILURE, &placeholder)?;
                 Ok(Some(placeholder))
             }
         }

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::trip::TripDescriptor;
 
+// Mirrors message payload from legacy/at_smartrak_gtfs_adapter/src/model/dead-reckoning.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct DeadReckoningMessage {

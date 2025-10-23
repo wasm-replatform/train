@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::trip::{ScheduleRelationship, TripDescriptor};
 
+// Matches GTFS output constructed in legacy/at_smartrak_gtfs_adapter/src/processors/location.ts.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedEntity {

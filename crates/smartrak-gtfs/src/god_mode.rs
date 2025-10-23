@@ -4,6 +4,7 @@ use tracing::debug;
 use crate::model::events::EventType;
 use crate::model::events::SmartrakEvent;
 
+// Mirrors debugging helper in legacy/at_smartrak_gtfs_adapter/src/processors/god-mode.ts.
 #[derive(Debug, Default, Clone)]
 pub struct GodMode {
     vehicle_to_trip: DashMap<String, String>,

@@ -14,17 +14,18 @@ use crate::model::trip::TripInstance;
 use crate::provider::AdapterProvider;
 
 #[derive(Debug, Clone)]
+// Port of legacy/at_smartrak_gtfs_adapter/src/processors/serial-data.ts.
 pub struct SerialDataProcessor<P: AdapterProvider> {
     config: Arc<Config>,
     trip_access: TripAccess<P>,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
     locker: KeyLocker,
     vehicle_timestamps: Arc<DashMap<String, i64>>,
 }
 
 impl<P: AdapterProvider> SerialDataProcessor<P> {
     pub fn new(
-        config: Arc<Config>, trip_access: TripAccess<P>, cache: Arc<CacheRepository<P::Cache>>,
+        config: Arc<Config>, trip_access: TripAccess<P>, cache: Arc<CacheRepository>,
     ) -> Self {
         Self {
             config,
@@ -35,6 +36,7 @@ impl<P: AdapterProvider> SerialDataProcessor<P> {
         }
     }
 
+    #[allow(clippy::missing_errors_doc)]
     pub async fn process(&self, event: &SmartrakEvent) -> Result<()> {
         debug!(event = ?event, "serial data event received");
 
@@ -110,10 +112,8 @@ impl<P: AdapterProvider> SerialDataProcessor<P> {
     }
 
     fn is_old(&self, vehicle_id: &str, timestamp: i64) -> bool {
-        if let Some(prev) = self.vehicle_timestamps.get(vehicle_id) {
-            if timestamp <= *prev {
-                return true;
-            }
+        if self.vehicle_timestamps.get(vehicle_id).is_some_and(|prev| timestamp <= *prev) {
+            return true;
         }
         self.vehicle_timestamps.insert(vehicle_id.to_string(), timestamp);
         false
@@ -126,13 +126,13 @@ impl<P: AdapterProvider> SerialDataProcessor<P> {
         let sign_on_key = self.config.sign_on_key(vehicle_id);
 
         let Some(trip_identifier) = decoded.trip_identifier() else {
-            self.cache.delete(&sign_on_key).await?;
-            self.cache.delete(&trip_key).await?;
+            self.cache.delete(&sign_on_key)?;
+            self.cache.delete(&trip_key)?;
             return Ok(());
         };
         let trip_identifier = trip_identifier.to_string();
 
-        let prev_trip = self.cache.get_json::<TripInstance>(&trip_key).await?;
+        let prev_trip = self.cache.get_json::<TripInstance>(&trip_key)?;
 
         let candidate = match prev_trip {
             Some(prev) => {
@@ -147,8 +147,8 @@ impl<P: AdapterProvider> SerialDataProcessor<P> {
                 {
                     Some(trip) if !trip.has_error() => Some(trip),
                     _ => {
-                        self.cache.delete(&sign_on_key).await?;
-                        self.cache.delete(&trip_key).await?;
+                        self.cache.delete(&sign_on_key)?;
+                        self.cache.delete(&trip_key)?;
                         return Ok(());
                     }
                 }
@@ -169,8 +169,8 @@ impl<P: AdapterProvider> SerialDataProcessor<P> {
         }
 
         info!(monotonic_counter.smartrak_trip_descriptors = 1, source = "serial");
-        self.cache.set_ex(&sign_on_key, CACHE_TTL_SIGN_ON, timestamp.to_string()).await?;
-        self.cache.set_json_ex(&trip_key, CACHE_TTL_TRIP_SERIAL, &trip).await?;
+        self.cache.set_ex(&sign_on_key, CACHE_TTL_SIGN_ON, timestamp.to_string())?;
+        self.cache.set_json_ex(&trip_key, CACHE_TTL_TRIP_SERIAL, &trip)?;
         Ok(())
     }
 }

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use tokio::sync::{Mutex, OwnedMutexGuard};
 
+// Replaces AsyncLock usage from legacy/at_smartrak_gtfs_adapter/src/processors/{location,serial-data}.ts.
 #[derive(Debug, Clone, Default)]
 pub struct KeyLocker {
     inner: Arc<KeyLockerInner>,

@@ -6,6 +6,7 @@ use chrono_tz::Tz;
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    // Tracks AppConfig parity from legacy/at_smartrak_gtfs_adapter/src/config/app.ts.
     pub timezone: Tz,
     pub enable_god_mode: bool,
     pub accuracy_threshold: f64,
@@ -97,6 +98,7 @@ impl Config {
     }
 }
 
+// Mirrors redis key layout from legacy/at_smartrak_gtfs_adapter/src/config/redis.ts.
 #[derive(Debug, Clone)]
 pub struct CacheKeys {
     pub trip_key: &'static str,
@@ -135,6 +137,7 @@ pub struct Topics {
 
 impl Topics {
     fn from_env() -> Result<Self> {
+        // Mirrors topic resolution in legacy/at_smartrak_gtfs_adapter/src/config/kafka-producer.ts.
         let env_name =
             env::var("CONFLUENT_KAFKA_ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
         let use_caf_topic = env_bool("USE_CAF_TOPIC", false);
@@ -254,6 +257,7 @@ fn env_u64(key: &str, default: u64) -> u64 {
     env::var(key).ok().and_then(|value| value.parse::<u64>().ok()).unwrap_or(default)
 }
 
+// Cache TTLs keep parity with legacy processors in legacy/at_smartrak_gtfs_adapter/src/processors.
 pub const CACHE_TTL_FLEET_SUCCESS: Duration = Duration::from_secs(10 * 60);
 pub const CACHE_TTL_FLEET_FAILURE: Duration = Duration::from_secs(60);
 pub const CACHE_TTL_TRIP_SUCCESS: Duration = Duration::from_secs(20);

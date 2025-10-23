@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// Mirrors TripInstance model from legacy/at_smartrak_gtfs_adapter/src/apis/trip-mgt.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct TripInstance {
@@ -61,6 +62,7 @@ impl TripInstance {
     }
 }
 
+// Mirrors BlockInstance model from legacy/at_smartrak_gtfs_adapter/src/apis/block-mgt.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockInstance {
@@ -82,6 +84,7 @@ impl BlockInstance {
     }
 }
 
+// Aligns with TripDescriptor usage in legacy/at_smartrak_gtfs_adapter/src/processors/location.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct TripDescriptor {

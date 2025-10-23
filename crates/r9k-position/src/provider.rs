@@ -4,6 +4,7 @@
 //! external (infrastructural) services into the application.
 
 use anyhow::Result;
+use async_trait::async_trait;
 
 use crate::gtfs::StopInfo;
 // pub use http::{Request as HttpRequest, Response as HttpResponse};
@@ -13,10 +14,9 @@ use crate::gtfs::StopInfo;
 pub trait Provider: Source + Clone + Send + Sync {}
 
 /// The `Source` trait defines the behavior for fetching data from a source.
+#[async_trait]
 pub trait Source: Send + Sync {
-    /// Fetches data from the source using the provided key. The return type
-    /// is strongly typed to match the expected source data structure.
-    fn fetch(&self, owner: &str, key: &Key) -> impl Future<Output = Result<SourceData>> + Send;
+    async fn fetch(&self, owner: &str, key: &Key) -> Result<SourceData>;
 }
 
 /// Key for caching and fetching data.

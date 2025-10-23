@@ -22,9 +22,10 @@ use crate::provider::AdapterProvider;
 use crate::service::ProducedMessage;
 
 #[derive(Debug, Clone)]
+// Port of legacy/at_smartrak_gtfs_adapter/src/processors/location.ts.
 pub struct LocationProcessor<P: AdapterProvider> {
     config: Arc<Config>,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
     fleet_access: FleetAccess<P>,
     trip_access: TripAccess<P>,
     block_access: BlockAccess<P>,
@@ -32,7 +33,7 @@ pub struct LocationProcessor<P: AdapterProvider> {
 
 impl<P: AdapterProvider> LocationProcessor<P> {
     pub fn new(
-        config: Arc<Config>, cache: Arc<CacheRepository<P::Cache>>, fleet_access: FleetAccess<P>,
+        config: Arc<Config>, cache: Arc<CacheRepository>, fleet_access: FleetAccess<P>,
         trip_access: TripAccess<P>, block_access: BlockAccess<P>,
     ) -> Self {
         Self { config, cache, fleet_access, trip_access, block_access }
@@ -155,8 +156,8 @@ impl<P: AdapterProvider> LocationProcessor<P> {
         let sign_on_key = self.config.sign_on_key(&vehicle.id);
 
         if block_instance.vehicle_ids.first().map(|id| id != &vehicle.id).unwrap_or(true) {
-            self.cache.delete(&sign_on_key).await?;
-            self.cache.delete(&trip_key).await?;
+            self.cache.delete(&sign_on_key)?;
+            self.cache.delete(&trip_key)?;
             return Ok(());
         }
 
@@ -164,7 +165,7 @@ impl<P: AdapterProvider> LocationProcessor<P> {
             return Ok(());
         }
 
-        if let Some(prev) = self.cache.get_json::<TripInstance>(&trip_key).await? {
+        if let Some(prev) = self.cache.get_json::<TripInstance>(&trip_key)? {
             if prev.trip_id == block_instance.trip_id
                 && prev.start_time() == Some(block_instance.start_time.as_str())
                 && prev.service_date() == Some(block_instance.service_date.as_str())
@@ -185,14 +186,12 @@ impl<P: AdapterProvider> LocationProcessor<P> {
 
         match new_trip {
             Some(trip) => {
-                self.cache
-                    .set_ex(&sign_on_key, CACHE_TTL_SIGN_ON, event_timestamp.to_string())
-                    .await?;
-                self.cache.set_json_ex(&trip_key, CACHE_TTL_TRIP_TRAIN, &trip).await?;
+                self.cache.set_ex(&sign_on_key, CACHE_TTL_SIGN_ON, event_timestamp.to_string())?;
+                self.cache.set_json_ex(&trip_key, CACHE_TTL_TRIP_TRAIN, &trip)?;
             }
             None => {
-                self.cache.delete(&sign_on_key).await?;
-                self.cache.delete(&trip_key).await?;
+                self.cache.delete(&sign_on_key)?;
+                self.cache.delete(&trip_key)?;
             }
         }
 
@@ -203,7 +202,7 @@ impl<P: AdapterProvider> LocationProcessor<P> {
         &self, vehicle_id: &str, event_timestamp: i64,
     ) -> Result<Option<TripInstance>> {
         let trip_key = self.config.trip_key(vehicle_id);
-        let Some(trip) = self.cache.get_json::<TripInstance>(&trip_key).await? else {
+        let Some(trip) = self.cache.get_json::<TripInstance>(&trip_key)? else {
             return Ok(None);
         };
 
@@ -215,7 +214,7 @@ impl<P: AdapterProvider> LocationProcessor<P> {
             (trip.start_time(), trip.end_time(), trip.service_date())
         {
             let sign_on_key = self.config.sign_on_key(vehicle_id);
-            if let Some(sign_on_raw) = self.cache.get(&sign_on_key).await? {
+            if let Some(sign_on_raw) = self.cache.get(&sign_on_key)? {
                 let sign_on_secs = sign_on_raw.parse::<i64>().ok();
                 if let (Some(sign_on_secs), Some(start_unix), Some(end_unix)) = (
                     sign_on_secs,
@@ -260,7 +259,7 @@ impl<P: AdapterProvider> LocationProcessor<P> {
     async fn occupancy_status(
         &self, vehicle_id: &str, trip: &TripDescriptor,
     ) -> Result<Option<OccupancyStatus>> {
-        PassengerCountProcessor::<P>::lookup_occupancy(
+        PassengerCountProcessor::lookup_occupancy(
             self.cache.as_ref(),
             self.config.as_ref(),
             vehicle_id,

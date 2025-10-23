@@ -3,21 +3,21 @@ use std::sync::Arc;
 use anyhow::Result;
 use tracing::debug;
 
-use crate::cache::{CacheRepository, CacheStore};
+use crate::cache::CacheRepository;
 use crate::config::{CACHE_TTL_PASSENGER_COUNT, Config};
 use crate::model::events::PassengerCountEvent;
 use crate::model::gtfs::OccupancyStatus;
 use crate::model::trip::TripDescriptor;
-use crate::provider::AdapterProvider;
 
 #[derive(Debug, Clone)]
-pub struct PassengerCountProcessor<P: AdapterProvider> {
+// Port of legacy/at_smartrak_gtfs_adapter/src/processors/passenger-count.ts.
+pub struct PassengerCountProcessor {
     config: Arc<Config>,
-    cache: Arc<CacheRepository<P::Cache>>,
+    cache: Arc<CacheRepository>,
 }
 
-impl<P: AdapterProvider> PassengerCountProcessor<P> {
-    pub fn new(config: Arc<Config>, cache: Arc<CacheRepository<P::Cache>>) -> Self {
+impl PassengerCountProcessor {
+    pub fn new(config: Arc<Config>, cache: Arc<CacheRepository>) -> Self {
         Self { config, cache }
     }
 
@@ -30,12 +30,12 @@ impl<P: AdapterProvider> PassengerCountProcessor<P> {
         );
 
         debug!(redis_key = %key, occupancy = ?event.occupancy_status, "storing passenger count event");
-        self.cache.set_json_ex(&key, CACHE_TTL_PASSENGER_COUNT, &event).await?;
+        self.cache.set_json_ex(&key, CACHE_TTL_PASSENGER_COUNT, &event)?;
         Ok(())
     }
 
-    pub async fn lookup_occupancy<C: CacheStore>(
-        cache: &CacheRepository<C>, config: &Config, vehicle_id: &str, trip: &TripDescriptor,
+    pub async fn lookup_occupancy(
+        cache: &CacheRepository, config: &Config, vehicle_id: &str, trip: &TripDescriptor,
     ) -> Result<Option<OccupancyStatus>> {
         let key = config.passenger_count_key(
             vehicle_id,
@@ -43,7 +43,7 @@ impl<P: AdapterProvider> PassengerCountProcessor<P> {
             trip.start_date(),
             trip.start_time(),
         );
-        let Some(event) = cache.get_json::<PassengerCountEvent>(&key).await? else {
+        let Some(event) = cache.get_json::<PassengerCountEvent>(&key)? else {
             return Ok(None);
         };
 

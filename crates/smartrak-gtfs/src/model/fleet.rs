@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// Mirrors VehicleInfo contract from legacy/at_smartrak_gtfs_adapter/src/apis/fleet.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct VehicleInfo {
@@ -62,6 +63,7 @@ pub struct VehicleType {
     pub category: Option<String>,
 }
 
+// Keeps constants aligned with legacy/at_smartrak_gtfs_adapter/src/constant.ts.
 pub struct Tags;
 
 impl Tags {

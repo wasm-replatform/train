@@ -15,12 +15,6 @@ user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
 
-[[publisher.backtrace]]
-version = "0.3.76"
-when = "2025-09-26"
-user-id = 55123
-user-login = "rust-lang-owner"
-
 [[publisher.bumpalo]]
 version = "3.19.0"
 when = "2025-06-24"
@@ -94,12 +88,12 @@ user-id = 189
 user-login = "BurntSushi"
 user-name = "Andrew Gallant"
 
-[[publisher.mio]]
-version = "1.0.4"
-when = "2025-05-24"
-user-id = 6025
-user-login = "Thomasdezeeuw"
-user-name = "Thomas de Zeeuw"
+[[publisher.mime]]
+version = "0.3.17"
+when = "2023-03-20"
+user-id = 359
+user-login = "seanmonstar"
+user-name = "Sean McArthur"
 
 [[publisher.prettyplease]]
 version = "0.2.37"
@@ -116,24 +110,18 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.regex-automata]]
-version = "0.4.12"
-when = "2025-10-11"
+version = "0.4.13"
+when = "2025-10-13"
 user-id = 189
 user-login = "BurntSushi"
 user-name = "Andrew Gallant"
 
 [[publisher.regex-syntax]]
-version = "0.8.7"
-when = "2025-10-11"
+version = "0.8.8"
+when = "2025-10-13"
 user-id = 189
 user-login = "BurntSushi"
 user-name = "Andrew Gallant"
-
-[[publisher.rustc-demangle]]
-version = "0.1.26"
-when = "2025-07-27"
-user-id = 55123
-user-login = "rust-lang-owner"
 
 [[publisher.rustversion]]
 version = "1.0.22"
@@ -220,18 +208,25 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.tokio]]
-version = "1.47.1"
-when = "2025-08-01"
+version = "1.48.0"
+when = "2025-10-14"
 user-id = 6741
 user-login = "Darksonn"
 user-name = "Alice Ryhl"
 
 [[publisher.tokio-macros]]
-version = "2.5.0"
-when = "2025-01-08"
+version = "2.6.0"
+when = "2025-10-14"
 user-id = 6741
 user-login = "Darksonn"
 user-name = "Alice Ryhl"
+
+[[publisher.tower]]
+version = "0.5.2"
+when = "2024-12-11"
+user-id = 359
+user-login = "seanmonstar"
+user-name = "Sean McArthur"
 
 [[publisher.unicode-ident]]
 version = "1.0.19"
@@ -253,13 +248,6 @@ when = "2022-01-03"
 user-id = 10
 user-login = "carllerche"
 user-name = "Carl Lerche"
-
-[[publisher.wasi]]
-version = "0.11.1+wasi-snapshot-preview1"
-when = "2025-06-10"
-user-id = 1
-user-login = "alexcrichton"
-user-name = "Alex Crichton"
 
 [[publisher.wasi]]
 version = "0.14.7+wasi-0.2.4"
@@ -336,78 +324,8 @@ user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.windows-sys]]
-version = "0.59.0"
-when = "2024-07-30"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows-sys]]
 version = "0.61.2"
 when = "2025-10-06"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows-targets]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_aarch64_gnullvm]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_aarch64_msvc]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_i686_gnu]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_i686_gnullvm]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_i686_msvc]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_x86_64_gnu]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_x86_64_gnullvm]]
-version = "0.52.6"
-when = "2024-07-03"
-user-id = 64539
-user-login = "kennykerr"
-user-name = "Kenny Kerr"
-
-[[publisher.windows_x86_64_msvc]]
-version = "0.52.6"
-when = "2024-07-03"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
@@ -583,47 +501,6 @@ publication of this crate from CI. This repository requires all PRs are reviewed
 by a Bytecode Alliance maintainer and it owned by the Bytecode Alliance itself.
 """
 
-[[audits.bytecode-alliance.audits.addr2line]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.19.0 -> 0.20.0"
-notes = "This version brings support for split-dwarf which while it uses the filesystem is always done at the behest of the caller, so everything is as expected for this update."
-
-[[audits.bytecode-alliance.audits.addr2line]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.20.0 -> 0.21.0"
-notes = "This version bump updated some dependencies and optimized some internals. All looks good."
-
-[[audits.bytecode-alliance.audits.addr2line]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.21.0 -> 0.22.0"
-
-[[audits.bytecode-alliance.audits.addr2line]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.22.0 -> 0.24.1"
-notes = "Lots of internal code refactorings and code movement. Nothing out of place however."
-
-[[audits.bytecode-alliance.audits.addr2line]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.24.1 -> 0.25.0"
-notes = "All minor changes, even a net reduction of `unsafe`."
-
-[[audits.bytecode-alliance.audits.addr2line]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.25.0 -> 0.25.1"
-notes = "Minor updates, looks like a minor bug fix, nothing awry."
-
-[[audits.bytecode-alliance.audits.adler2]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-version = "2.0.0"
-notes = "Fork of the original `adler` crate, zero unsfae code, works in `no_std`, does what it says on th tin."
-
 [[audits.bytecode-alliance.audits.bitflags]]
 who = "Jamey Sharp <jsharp@fastly.com>"
 criteria = "safe-to-deploy"
@@ -663,12 +540,6 @@ who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 delta = "1.2.30 -> 1.2.41"
 notes = "This is a trusted rust-lang/rust crate"
-
-[[audits.bytecode-alliance.audits.cfg-if]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-version = "1.0.0"
-notes = "I am the author of this crate."
 
 [[audits.bytecode-alliance.audits.find-msvc-tools]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -730,44 +601,6 @@ version = "0.3.27"
 who = "Pat Hickey <pat@moreproductive.org>"
 criteria = "safe-to-deploy"
 delta = "0.3.28 -> 0.3.31"
-
-[[audits.bytecode-alliance.audits.gimli]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.27.3 -> 0.28.0"
-notes = """
-Still looks like a good DWARF-parsing crate, nothing major was added or deleted
-and no `unsafe` code to review here.
-"""
-
-[[audits.bytecode-alliance.audits.gimli]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.28.0 -> 0.29.0"
-
-[[audits.bytecode-alliance.audits.gimli]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.29.0 -> 0.31.0"
-notes = "Various updates here and there, nothing too major, what you'd expect from a DWARF parsing crate."
-
-[[audits.bytecode-alliance.audits.gimli]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.31.0 -> 0.31.1"
-notes = "No fundmanetally new `unsafe` code, some small refactoring of existing code. Lots of changes in tests, not as many changes in the rest of the crate. More dwarf!"
-
-[[audits.bytecode-alliance.audits.gimli]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.31.1 -> 0.32.0"
-notes = "Ever more DWARF to parse, but also no new `unsafe` and everything looks like gimli."
-
-[[audits.bytecode-alliance.audits.gimli]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.32.0 -> 0.32.3"
-notes = "Ever more dwarf, it never ends! (nothing out of the ordinary)"
 
 [[audits.bytecode-alliance.audits.heck]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -831,65 +664,11 @@ criteria = "safe-to-deploy"
 delta = "0.1.0 -> 0.2.0"
 notes = "Some unsafe code, but not more than before. Nothing awry."
 
-[[audits.bytecode-alliance.audits.miniz_oxide]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-version = "0.7.1"
-notes = """
-This crate is a Rust implementation of zlib compression/decompression and has
-been used by default by the Rust standard library for quite some time. It's also
-a default dependency of the popular `backtrace` crate for decompressing debug
-information. This crate forbids unsafe code and does not otherwise access system
-resources. It's originally a port of the `miniz.c` library as well, and given
-its own longevity should be relatively hardened against some of the more common
-compression-related issues.
-"""
-
-[[audits.bytecode-alliance.audits.miniz_oxide]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.7.1 -> 0.8.0"
-notes = "Minor updates, using new Rust features like `const`, no major changes."
-
-[[audits.bytecode-alliance.audits.miniz_oxide]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.8.0 -> 0.8.5"
-notes = """
-Lots of small updates here and there, for example around modernizing Rust
-idioms. No new `unsafe` code and everything looks like what you'd expect a
-compression library to be doing.
-"""
-
-[[audits.bytecode-alliance.audits.miniz_oxide]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.8.5 -> 0.8.9"
-notes = "No new unsafe code, just refactorings."
-
 [[audits.bytecode-alliance.audits.num-traits]]
 who = "Andrew Brown <andrew.brown@intel.com>"
 criteria = "safe-to-deploy"
 version = "0.2.19"
 notes = "As advertised: a numeric library. The only `unsafe` is from some float-to-int conversions, which seems expected."
-
-[[audits.bytecode-alliance.audits.object]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.36.0 -> 0.36.5"
-notes = "No new unsafe code, lots of new relocations/objects support, everything looks nominal"
-
-[[audits.bytecode-alliance.audits.object]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.36.5 -> 0.37.1"
-notes = "New object file formats, new formatting, new other minor changes, no new `unsafe`."
-
-[[audits.bytecode-alliance.audits.object]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.37.1 -> 0.37.3"
-notes = "Lots of new support for new object features, no new unsafe or anything suspicious."
 
 [[audits.bytecode-alliance.audits.percent-encoding]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -1126,12 +905,6 @@ notes = "The Bytecode Alliance is the author of this crate"
 
 [audits.embark-studios.audits]
 
-[[audits.google.audits.addr2line]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-run"
-version = "0.19.0"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
-
 [[audits.google.audits.android_system_properties]]
 who = "Manish Goregaokar <manishearth@google.com>"
 criteria = "safe-to-deploy"
@@ -1195,12 +968,6 @@ criteria = "safe-to-deploy"
 delta = "0.1.4 -> 0.1.5"
 notes = "No new `unsafe`."
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.google.audits.gimli]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-run"
-version = "0.27.3"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
 [[audits.google.audits.heck]]
 who = "Lukasz Anforowicz <lukasza@chromium.org>"
@@ -1331,16 +1098,6 @@ notes = """
 For more detailed unsafe review notes please see https://crrev.com/c/6362797
 """
 aggregated-from = "https://chromium.googlesource.com/chromium/src/+/main/third_party/rust/chromium_crates_io/supply-chain/audits.toml?format=TEXT"
-
-[[audits.isrg.audits.cfg-if]]
-who = "David Cook <dcook@divviup.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.0 -> 1.0.1"
-
-[[audits.isrg.audits.cfg-if]]
-who = "J.C. Jones <jc@divviup.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.1 -> 1.0.3"
 
 [[audits.isrg.audits.rand]]
 who = "David Cook <dcook@divviup.org>"
@@ -1542,12 +1299,6 @@ criteria = "safe-to-deploy"
 delta = "0.3.19 -> 0.3.20"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
-[[audits.zcash.audits.adler2]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "2.0.0 -> 2.0.1"
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
 [[audits.zcash.audits.autocfg]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
@@ -1587,6 +1338,18 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.1.8 -> 1.1.9"
 aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
+
+[[audits.zcash.audits.tower-layer]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.2 -> 0.3.3"
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
+
+[[audits.zcash.audits.tower-service]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.2 -> 0.3.3"
+aggregated-from = "https://raw.githubusercontent.com/zcash/librustzcash/main/supply-chain/audits.toml"
 
 [[audits.zcash.audits.valuable]]
 who = "Jack Grigg <jack@electriccoin.co>"

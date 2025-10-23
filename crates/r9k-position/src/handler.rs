@@ -2,20 +2,18 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use anyhow::{Context, anyhow};
+use std::env;
+
+use anyhow::Context;
 use chrono::Utc;
 use credibil_api::{Body, Handler, Request, Response};
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 use crate::error::Error;
-use crate::provider::{Key, Provider, Source, SourceData};
+use crate::provider::{HttpRequest, Provider};
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
 use crate::{Result, stops};
-
-const MAX_DELAY_SECS: i64 = 60;
-const MIN_DELAY_SECS: i64 = -30;
 
 /// R9K response for SmarTrak consumption.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -46,40 +44,6 @@ impl<P: Provider> Handler<R9kResponse, P> for Request<R9kMessage> {
 impl Body for R9kMessage {}
 
 impl TrainUpdate {
-    /// Validate the message.
-    fn validate(&self) -> Result<()> {
-        if self.changes.is_empty() {
-            return Err(Error::NoUpdate);
-        }
-
-        // an *actual* update will have a +ve arrival or departure time
-        let change = &self.changes[0];
-        if (!change.has_arrived && !change.has_departed)
-            || (change.has_arrived && change.actual_arrival_time <= 0)
-            || (change.has_departed && change.actual_departure_time <= 0)
-        {
-            return Err(Error::NoActualUpdate);
-        }
-
-        // validate message delay
-        let event_dt = self.created_date;
-        let delay_secs = Utc::now().signed_duration_since(event_dt).num_seconds();
-
-        // TODO: do we need this metric?;
-        info!(gauge.r9k_delay = delay_secs);
-
-        if delay_secs > MAX_DELAY_SECS {
-            return Err(Error::Outdated(format!("message is too late: {delay_secs} seconds ago")));
-        }
-        if delay_secs < MIN_DELAY_SECS {
-            return Err(Error::WrongTime(format!(
-                "message is too early: {delay_secs} seconds ago"
-            )));
-        }
-
-        Ok(())
-    }
-
     /// Transform the R9K message to SmarTrak events
     async fn into_events(
         self, owner: &str, provider: &impl Provider,
@@ -90,7 +54,7 @@ impl TrainUpdate {
         // filter out irrelevant updates (not related to trip progress)
         if !change_type.is_relevant() {
             // TODO: do we need this metric?
-            info!(monotonic_counter.irrelevant_change_type = 1 ,type = %change_type);
+            tracing::info!(monotonic_counter.irrelevant_change_type = 1, type = %change_type);
             return Ok(vec![]);
         }
 
@@ -99,23 +63,26 @@ impl TrainUpdate {
         let Some(stop_info) =
             stops::stop_info(owner, provider, station, change_type.is_arrival()).await?
         else {
-            info!(monotonic_counter.irrelevant_station = 1, station = %station);
+            tracing::info!(monotonic_counter.irrelevant_station = 1, station = %station);
             return Ok(vec![]);
         };
 
-        // fetch allocated trains
-        let key = Key::BlockMgt(self.train_id());
-        let SourceData::BlockMgt(allocated) =
-            Source::fetch(provider, owner, &key).await.context("fetching allocated vehicles")?
-        else {
-            return Err(anyhow!("no vehicles allocated for {key:?}").into());
-        };
+        // get train allocations for this trip
+        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
+        let request = http::Request::builder()
+            .uri(format!("{block_mgt_addr}/allocations/trips?externalRefId={}", self.train_id()))
+            .body(())
+            .context("building block management request")?;
+        let response =
+            HttpRequest::fetch(provider, &request).await.context("fetching train allocations")?;
+
+        let allocated: Vec<String> = response.into_body();
 
         // convert to SmarTrak events
         let mut events = vec![];
         for train in allocated {
             events.push(SmarTrakEvent {
-                received_at: self.created_date,
+                received_at: Utc::now(),
                 event_type: EventType::Location,
                 message_data: MessageData::default(),
                 remote_data: RemoteData {

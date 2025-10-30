@@ -24,7 +24,6 @@ use dilax::processor::DilaxProcessor;
 use dilax::provider::HttpRequest as DilaxHttpRequest;
 use dilax::store::KvStore;
 use dilax::types::{DilaxEnrichedEvent, DilaxEvent};
-use provider:: WasiHttpClient;
 use r9k_position::{R9kMessage, SmarTrakEvent};
 use tracing::{error, warn};
 use wit_bindings::messaging;
@@ -33,14 +32,9 @@ use wit_bindings::messaging::types::{Client as MsgClient, Message};
 use wit_bindings::messaging::{producer, types};
 
 
-use crate::provider::AppContext;
+use crate::provider::{ AppContext, WasiHttpClient };
 
 const SERVICE: &str = "r9k-position-adapter";
-
-#[allow(unused_imports)]
-use wit_bindings::keyvalue;
-#[allow(unused_imports)]
-use wit_bindings::keyvalue::exports::wasi::keyvalue::watcher;
 
 pub struct Messaging;
 

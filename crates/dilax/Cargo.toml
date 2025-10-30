@@ -1,6 +1,6 @@
 [package]
-name = "r9k-position"
-description = " R9K position adapter"
+name = "dilax"
+description = "Dilax adapter domain logic"
 readme = "README.md"
 publish = false
 authors.workspace = true
@@ -19,17 +19,20 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-credibil-api.workspace = true
+async-trait = "0.1.83"
+chrono.workspace = true
+chrono-tz = "0.8"
+futures.workspace = true
+http.workspace = true
 jiff.workspace = true
-quick-xml = { version = "0.38.3", features = ["serde", "serialize"] }
+realtime.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_repr = "0.1"
 thiserror.workspace = true
 tracing.workspace = true
 wit-bindings.workspace = true
 
 [dev-dependencies]
-tokio.workspace = true
-serde_yaml = "0.9"
 pretty_assertions = "1.4.1"
+tokio.workspace = true
+serde_json.workspace = true

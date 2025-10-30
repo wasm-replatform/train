@@ -1,93 +1,41 @@
-# Copilot Instructions for R9K Position Adapter
+# Copilot Instructions for Train Workspace
 
-## Architecture Overview
+## Architecture
+- Root crate `train` compiles to a WASI guest; `src/lib.rs` wires WIT messaging, splits incoming Kafka topics (R9K vs Dilax), and publishes with `wit_bindgen::spawn`.
+- Domain logic lives under `crates/`: `dilax` holds the APC rewrite (processor, detectors, providers, store), `r9k-position` contains the legacy R9K transformer, and `realtime` exposes shared HTTP error helpers.
+- Persistent state goes through `KvStore` (`crates/dilax/src/store.rs`); it wraps `wit_bindings::keyvalue` to preserve TTL envelopes and set semantics—avoid calling the raw bucket APIs.
 
-This is a **WebAssembly Component Model (WASM)** microservice that transforms R9K train tracking data (XML from KiwiRail) into SmarTrak events via Kafka messaging. The codebase uses a **dual-target architecture**:
+## Dilax Flow
+- `DilaxProcessor::process` (`crates/dilax/src/processor.rs`) normalises device labels, resolves fleet/block/GTFS data, updates occupancy, saves `VehicleTripInfo`, then emits a `DilaxEnrichedEvent` back to `src/lib.rs`.
+- `migrate_legacy_keys` keeps Redis compatibility with the Node adapter; update both processor and detector if any key names change.
+- Occupancy thresholds derive from seating/total capacity and emit `OccupancyStatus` strings consumed downstream—tweak with caution and retain regression warnings.
 
-- **WASM guest** (`src/lib.rs`): Compiles to `wasm32-wasip2` with `cdylib` output, runs in a WASM runtime with WIT bindings
-- **Business logic library** (`crates/r9k-position-adapter`): Pure Rust library consumed by the WASM guest, testable on native targets
+## State & Redis Keys
+- Vehicle trip snapshots sit at `apc:vehicleTripInfo:{vehicle_id}` (48h TTL) containing the most recent Dilax payload (`crates/dilax/src/types.rs`); detectors and publishers expect that schema intact.
+- Running passenger state persists under `apc:vehicleIdState:{vehicle_id}`; `update_vehicle_state` handles deduped tokens, trip resets, and occupancy writes—reuse its helpers instead of reimplementing storage.
+- `KvStore` set helpers (`add_to_set`, `set_expiry`) back per-day dedupe sets; always pair them so restarts remain idempotent.
 
-The boundary is critical: `src/lib.rs` handles messaging/infrastructure via WIT bindings and delegates domain logic to `r9k-position-adapter` crate.
+## Lost Connection Detection
+- `DilaxLostConnectionsDetector` (`crates/dilax/src/detector.rs`) caches day-of allocations (filters diesel `ADL*`) using the injected `Clock` trait for deterministic tests and timezone control (`Config::timezone`, default `Pacific/Auckland`).
+- Alerts dedupe via `apc:lostConnections{yyyymmdd}` plus detail keys—logics assume `VehicleTripInfo` matches the processor snapshot.
+- When extending detection, maintain cache refresh cadence and reuse `set_members`/`set_json_with_ttl` so retention windows stay consistent.
 
-## Build & Test Workflow
+## HTTP Provider Pattern
+- Provider traits in `crates/dilax/src/api.rs` abstract outbound HTTP; the host implements `HttpRequest::fetch` atop `sdk_http::Client`, allowing the WASM guest to stay async.
+- Fleet/GTFS providers cache successes for 24h and short misses for minutes (`FLEET_SUCCESS_TTL`, etc.); respect these constants when adding endpoints or altering keys.
+- `CcStaticProvider::stops_by_location` issues JSON GETs with 150 m radius and returns minimal `StopInfo` structs—mirror headers (`Accept`, `Content-Type`) to avoid 415 responses.
 
-**Use `cargo-make` exclusively** (not raw `cargo` commands):
-```bash
-make build          # Clean + build all targets
-make test           # Run nextest with all features
-make check          # Full hygiene: audit, fmt, lint, outdated, unused
-make fmt            # Format code (requires nightly rustfmt)
-```
+## Messaging & Configuration
+- `src/config.rs` centralises environment defaults for Fleet, BlockMgt, GTFS, and Kafka topics; thread new settings through strongly typed configs instead of reading env vars ad hoc.
+- `Messaging::configure()` subscribes to both R9K and Dilax source topics; publishing uses `config::get_dilax_outbound_topic()` with message keys matching `trip_id`/device identifiers.
+- Instrument new async code with `sdk_otel::instrument` and increment `monotonic_counter.*` metrics so existing dashboards remain accurate.
 
-**Building WASM for local deployment:**
-```bash
-cargo build --package r9k --target wasm32-wasip2 --release
-docker compose up   # Runs ./target/wasm32-wasip2/release/r9k.wasm
-```
+## Build & Test Workflows
+- `make build`, `make test`, and `make check` run cargo-make (fmt via nightly, clippy, audit, machete) with `RUSTFLAGS=-Dwarnings` enforced.
+- CI-grade testing prefers `cargo nextest run --all --no-fail-fast --all-features`; build the deployable guest with `cargo build --package train --target wasm32-wasip2 --release`.
+- `compose.yaml` expects `target/wasm32-wasip2/release/r9k_position.wasm`; align environment values with the Confluent defaults documented in `README.md` when running the stack locally.
 
-The `Makefile` delegates to `Makefile.toml` (cargo-make configuration). Tests use `cargo-nextest` with `--no-fail-fast --all-features`.
-
-## Code Structure Patterns
-
-### Provider Pattern for External Dependencies
-
-The `Provider` trait (in `r9k-position-adapter/src/provider.rs`) abstracts external API calls:
-- **Production**: `src/provider.rs` (WASM guest) returns hardcoded mock data (TODO: implement real API calls)
-- **Tests**: `tests/provider.rs` implements test fixtures
-- Key types: `Key::StopInfo(stop_code)` → GTFS API, `Key::BlockMgt(train_id)` → Block Management API
-
-When implementing features that need external data, extend the `Key` and `SourceData` enums, then implement `Source::fetch()`.
-
-### Handler Pattern with credibil-api
-
-The `credibil-api` crate provides a generic `Handler<Response, Provider>` trait. See `crates/r9k-position-adapter/src/handler.rs`:
-- Implement `Handler` on `Request<YourMessage>` 
-- Use `#[sdk_otel::instrument]` for tracing (from `sdk-otel` crate)
-- Handlers are async and return `Result<Response<YourResponse>>`
-
-### WIT Bindings & Messaging
-
-The WASM guest exports `messaging::incoming_handler::Guest` (see `src/lib.rs`):
-- `handle(message)` processes Kafka messages from topic "r9k.request"
-- `configure()` returns topic subscriptions
-- Use `wit_bindgen::spawn()` for background tasks (e.g., publishing responses)
-- OpenTelemetry instrumentation via `#[sdk_otel::instrument]` attributes
-
-## Code Quality Standards
-
-### Linting Configuration
-- **clippy.toml**: Defines domain-specific valid identifiers (`R9K`, `SmarTrak`, `KiwiRail`)
-- **rustfmt.toml**: Uses `max_width = 100`, `group_imports = "StdExternalCrate"`, requires nightly for unstable features
-- **deny.toml**: License checks, bans duplicate `tokio` versions, allows specific duplicates (see `allowed-duplicate-crates`)
-
-### Custom Lints (Cargo.toml)
-Workspace enables aggressive linting: `all`, `nursery`, `pedantic`, `cargo` + cherry-picked `restriction` lints following [Microsoft Rust Guidelines](https://microsoft.github.io/rust-guidelines/). Examples:
-- `undocumented_unsafe_blocks`, `map_err_ignore`, `renamed_function_params`
-
-## Dependency Management
-
-- **Custom registries**: `credibil` and `at-realtime` via Azure DevOps (see `.cargo/config.toml`)
-- **Cargo-vet**: After dependency updates, run `cargo vet regenerate imports/exemptions` (see `supply-chain/README.md`)
-- **Version pinning**: Workspace dependencies in `Cargo.toml` [workspace.dependencies]
-
-## Environment & Deployment
-
-- `.env.example` shows required environment variables (GTFS_API_ADDR, BLOCK_MGT_ADDR, OTEL endpoints, etc.)
-- **Docker Compose stack**: Kafka, Kafka UI (port 8081), Jaeger (16686), Prometheus (9090), OpenTelemetry Collector
-- WASM runtime expects `/r9k.wasm` mounted from `target/wasm32-wasip2/release/`
-
-## Common Patterns
-
-**XML deserialization** (R9K messages):
-- Uses `quick-xml` with `serde` features
-- Spanish field names mapped via `#[serde(rename(deserialize = "..."))]` (see `r9k.rs`)
-- Implement `TryFrom<&[u8]>` for message parsing
-
-**Error handling**:
-- Custom `Error` enum in `r9k-position-adapter/src/error.rs`
-- Validation errors: `Error::NoUpdate`, `Error::Outdated`, `Error::WrongTime`
-- Time constraints: `MAX_DELAY_SECS = 60`, `MIN_DELAY_SECS = -30`
-
-**Metrics/Logging**:
-- Use `tracing` macros with structured fields: `info!(gauge.r9k_delay = delay_secs)`
-- Counters: `monotonic_counter.processing_errors = 1`
+## Legacy References & Conventions
+- Behaviour mirrors `legacy/at_dilax_adapter`; consult it for migration shims, stop resolution, and occupancy intent before diverging.
+- Follow `crates/r9k-position` patterns for provider mocks and integration-style tests to keep the Dilax rewrite consistent with the existing pipeline.
+- Error propagation should use `anyhow::Context` and `realtime::bad_gateway!`; keep logs ASCII with `vehicle_id`, `trip_id`, and `token` fields for downstream alerting.

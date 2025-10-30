@@ -4,87 +4,184 @@
 //!
 //! Transforms R9K messages into SmarTrak events.
 
+mod block_mgt;
+mod config;
+mod gtfs;
 mod provider;
 
-use std::sync::LazyLock;
+
+use std::sync::Arc;
+use std::thread;
 use std::time::Duration;
-use std::{env, thread};
 
 use anyhow::{Context, Result};
-use credibil_api::Client;
-use r9k_position::R9kMessage;
-use tracing::{error, info, warn};
+use credibil_api::Client as ApiClient;
+use dilax::api::{
+    BlockMgtClient, BlockMgtProvider, CcStaticProvider, CcStaticProviderImpl, FleetApiProvider,
+    FleetProvider, GtfsStaticProvider, GtfsStaticProviderImpl,
+};
+use dilax::processor::DilaxProcessor;
+use dilax::provider::HttpRequest as DilaxHttpRequest;
+use dilax::store::KvStore;
+use dilax::types::{DilaxEnrichedEvent, DilaxEvent};
+use provider:: WasiHttpClient;
+use r9k_position::{R9kMessage, SmarTrakEvent};
+use tracing::{error, warn};
 use wit_bindings::messaging;
 use wit_bindings::messaging::incoming_handler::Configuration;
 use wit_bindings::messaging::types::{Client as MsgClient, Message};
 use wit_bindings::messaging::{producer, types};
 
-// use crate::{Error, R9kMessage};
+
+use crate::provider::AppContext;
 
 const SERVICE: &str = "r9k-position-adapter";
-const SMARTRAK_TOPIC: &str = "dev-realtime-r9k-to-smartrak.v1";
-static R9K_TOPIC: LazyLock<String> =
-    LazyLock::new(|| env::var("R9K_TOPIC").unwrap_or_else(|_| "dev-realtime-r9k.v1".to_string()));
+
+#[allow(unused_imports)]
+use wit_bindings::keyvalue;
+#[allow(unused_imports)]
+use wit_bindings::keyvalue::exports::wasi::keyvalue::watcher;
 
 pub struct Messaging;
+
 messaging::export!(Messaging with_types_in wit_bindings::messaging);
 
 impl messaging::incoming_handler::Guest for Messaging {
     #[sdk_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
-        if topic != *R9K_TOPIC {
+        let r9k_topic = config::get_r9k_source_topic();
+        let dilax_topic = config::get_dilax_source_topic();
+
+        if topic != r9k_topic && topic != dilax_topic {
             warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
         }
 
-        if let Err(e) = r9k_message(&message.data()).await {
+        match topic.as_str() {
+            current if current == r9k_topic.as_str() => {
+                if let Err(e) = process_r9k(&message.data()).await {
+                    error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
+                }
+            }
+            current if current == dilax_topic.as_str() => {
+                if let Err(e) = process_dilax(&message.data()).await {
+                    error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
+                }
+            }
+            _ => {}
+        }
+
+        if let Err(e) = process_r9k(&message.data()).await {
             error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
         }
         Ok(())
     }
 
     async fn configure() -> Result<Configuration, types::Error> {
-        Ok(Configuration { topics: vec![R9K_TOPIC.clone()] })
+        Ok(Configuration {
+            topics: vec![config::get_r9k_source_topic(), config::get_dilax_source_topic()],
+        })
     }
 }
 
 // Process incoming R9k messages, consolidating error handling.
 #[sdk_otel::instrument]
-async fn r9k_message(message: &[u8]) -> Result<()> {
-    let dest_topic = env::var("SMARTRAK_TOPIC").unwrap_or_else(|_| SMARTRAK_TOPIC.to_string());
-
-    let api = Client::new(provider::Provider);
-    let request = R9kMessage::try_from(message).context("parsing message")?;
+async fn process_r9k(message: &[u8]) -> Result<()> {
+    let context = AppContext::default();
+    let api = ApiClient::new(context);
+    let request =
+        R9kMessage::try_from(message).context(String::from_utf8_lossy(message).to_string())?;
     let response = api.request(request).owner("owner").await?;
-    let Some(events) = response.body.smartrak_events.as_ref() else { return Ok(()) };
 
-    // publish events 2x in order to properly signal departure from the station
-    // (for schedule adherence)
-    for _ in 0..2 {
-        thread::sleep(Duration::from_secs(5));
+    // This twoTap is used for schedule adherence to depart vehicle from the station properly
+    thread::sleep(Duration::from_secs(5));
+    publish_r9k(&response.body.smartrak_events)?;
 
-        for evt in events {
-            let external_id = &evt.remote_data.external_id;
-            let msg = serde_json::to_vec(&evt).context("serializing event")?;
-            let message = Message::new(&msg);
-            message.add_metadata("key", external_id);
+    thread::sleep(Duration::from_secs(5));
+    publish_r9k(&response.body.smartrak_events)?;
 
-            let client = MsgClient::connect("").context("connecting to message broker")?;
-            let topic = dest_topic.clone();
+    Ok(())
+}
 
-            wit_bindgen::spawn(async move {
-                if let Err(e) = producer::send(client, topic, message).await {
-                    error!(
-                        monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
-                    );
-                }
-            });
+fn publish_r9k(events: &[SmarTrakEvent]) -> Result<()> {
+    let now = jiff::Timestamp::now();
+    for evt in events {
+        let client = MsgClient::connect("<not used>").context("connecting to message broker")?;
+        let key = evt.remote_data.external_id.clone();
+        let value = evt.clone_with_new_message_timestamp(now);
+        let msg = serde_json::to_vec(&value).unwrap();
 
-            info!(
-                monotonic_counter.messages_sent = 1, external_id = %external_id, service = %SERVICE
-            );
-        }
+        let message = Message::new(&msg);
+        message.add_metadata("key", &key);
+
+        wit_bindgen::spawn(async move {
+            if let Err(e) = producer::send(client, "r9k.response".to_string(), message).await {
+                error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
+            }
+        });
     }
+    Ok(())
+}
 
+#[sdk_otel::instrument]
+async fn process_dilax(message: &[u8]) -> Result<()> {
+    let event: DilaxEvent =
+        serde_json::from_slice(message).context(String::from_utf8_lossy(message).to_string())?;
+    let config = dilax::config::Config::default();
+    let kv_store = KvStore::open("dilax").context("opening dilax store")?;
+
+    let vehicle_label_key = config.redis.vehicle_label_key.clone().into_owned();
+    let fleet_api_url = config::get_fleet_api_url();
+    let block_mgt_url = config::get_block_mgt_url();
+    let gtfs_static_url = config::get_gtfs_static_url();
+    let cc_static_url = config::get_gtfs_cc_static_url();
+    let block_mgt_bearer = config::get_block_mgt_bearer_token();
+
+    let http_client: Arc<dyn DilaxHttpRequest> = Arc::new(WasiHttpClient);
+
+    let fleet: Arc<dyn FleetProvider> = Arc::new(FleetApiProvider::new(
+        kv_store.clone(),
+        fleet_api_url,
+        vehicle_label_key,
+        Arc::clone(&http_client),
+    ));
+    let cc_static: Arc<dyn CcStaticProvider> =
+        Arc::new(CcStaticProviderImpl::new(cc_static_url, Arc::clone(&http_client)));
+    let gtfs: Arc<dyn GtfsStaticProvider> = Arc::new(GtfsStaticProviderImpl::new(
+        kv_store.clone(),
+        gtfs_static_url,
+        Arc::clone(&http_client),
+    ));
+    let block: Arc<dyn BlockMgtProvider> =
+        Arc::new(BlockMgtClient::new(block_mgt_url, block_mgt_bearer, http_client));
+
+    let processor = DilaxProcessor::with_providers(
+        config,
+        kv_store,
+        fleet,
+        cc_static,
+        gtfs,
+        block,
+    );
+
+    let enriched =
+        processor.process(event).await.context(String::from_utf8_lossy(message).to_string())?;
+
+    publish_dilax(&enriched)?;
+
+    Ok(())
+}
+
+fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
+    let client = MsgClient::connect("<not used>").context("connecting to message broker")?;    
+    let key = event.trip_id.clone().unwrap_or_default();
+    let msg = serde_json::to_vec(&event).unwrap();
+    let message = Message::new(&msg);
+    message.add_metadata("key", &key);
+    wit_bindgen::spawn(async move {
+        if let Err(e) = producer::send(client, config::get_dilax_outbound_topic(), message).await {
+            error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
+        }
+    });
     Ok(())
 }

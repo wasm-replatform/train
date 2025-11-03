@@ -2,8 +2,13 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use anyhow::{Context, anyhow};
+use std::env;
+
+use anyhow::Context;
+use bytes::Bytes;
+use chrono::Utc;
 use credibil_api::{Body, Handler, Request, Response};
+use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -106,13 +111,18 @@ impl TrainUpdate {
             return Ok(vec![]);
         };
 
-        // fetch allocated trains
-        let key = Key::BlockMgt(self.train_id());
-        let SourceData::BlockMgt(allocated) =
-            Source::fetch(provider, owner, &key).await.context("fetching allocated vehicles")?
-        else {
-            return Err(anyhow!("no vehicles allocated for {key:?}").into());
-        };
+        // get train allocations for this trip
+        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
+        let request = http::Request::builder()
+            .uri(format!("{block_mgt_addr}/allocations/trips?externalRefId={}", self.train_id()))
+            .body(Empty::<Bytes>::new())
+            .context("building block management request")?;
+        let response =
+            HttpRequest::fetch(provider, request).await.context("fetching train allocations")?;
+
+        let bytes = response.into_body();
+        let allocated: Vec<String> =
+            serde_json::from_slice(&bytes).context("deserializing block management response")?;
 
         // convert to SmarTrak events
         let mut events = vec![];

@@ -1,80 +1,19 @@
-use std::cmp::Ordering;
-use std::fs;
-use std::path::Path;
+//! Wiretap tests that compare recorded input and output of the Typescript adapter.
+#![cfg(not(miri))]
 
-use anyhow::{Result, bail};
-use credibil_api::Client as ApiClient;
-use jiff::tz::TimeZone;
-use jiff::{Timestamp, ToSpan, Zoned};
-use pretty_assertions::assert_eq;
-use r9k_position::gtfs::StopInfo;
-use r9k_position::provider::{Key, Provider, Source, SourceData, Time};
-use r9k_position::{Error, R9kMessage, SmarTrakEvent};
+mod provider;
+
+use std::any::Any;
+use std::error::Error;
+use std::fs::{self, File};
+
+use anyhow::{Context, Result, anyhow, bail};
+use bytes::Bytes;
+use chrono::{Local, Timelike};
+use credibil_api::Client;
+use http::{Request, Response};
+use r9k_position::{HttpRequest, Provider, R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
-
-/// One recording session of the Typescript adapter.
-#[derive(Deserialize, Clone)]
-#[allow(dead_code)]
-struct Wiretap {
-    input: String,
-    /// Unix epoch in milliseconds
-    now: Option<i64>,
-    /// Seconds since midnight
-    event_seconds: Option<i32>,
-    /// Unix epoch in seconds
-    event_date: Option<i32>,
-    message_delay: Option<i32>,
-    stop_info: Option<StopInfo>,
-    allocated_vehicles: Option<Vec<String>>,
-    error: Option<Error>,
-    not_relevant_type: Option<bool>,
-    not_relevant_station: Option<bool>,
-    publishing: Option<Vec<Publish>>,
-}
-
-/// An instance of a value published by Typescript.
-#[derive(Deserialize, Clone, Debug)]
-struct Publish {
-    key: String,
-    /// JSON encoded value.
-    value: String,
-}
-
-impl Source for Wiretap {
-    async fn fetch(&self, _owner: &str, key: &Key) -> Result<SourceData> {
-        match key {
-            Key::StopInfo(stop_code) => match &self.stop_info {
-                None => bail!("no stop info in wiretap"),
-                Some(stop_info) => {
-                    if stop_info.stop_code == *stop_code {
-                        Ok(SourceData::StopInfo(stop_info.clone()))
-                    } else {
-                        bail!("stop info in wiretap does not match requested stop code")
-                    }
-                }
-            },
-            Key::BlockMgt(_train_id) => match &self.allocated_vehicles {
-                None => bail!("no allocated vehicles in wiretap"),
-                Some(allocated) => Ok(SourceData::BlockMgt(allocated.clone())),
-            },
-        }
-    }
-}
-
-impl Time for Wiretap {
-    #[allow(clippy::option_if_let_else)]
-    fn now(&self) -> Zoned {
-        match self.now {
-            Some(s) => Zoned::new(
-                Timestamp::from_millisecond(s).unwrap(),
-                TimeZone::get("Pacific/Auckland").unwrap(),
-            ),
-            None => panic!("Wiretap data is missing now field"),
-        }
-    }
-}
-
-impl Provider for Wiretap {}
 
 /// This test runs through a folder of files that recorded the input and output
 /// of the Typescript adapter.
@@ -174,3 +113,81 @@ async fn run_wiretap(wiretap: Wiretap) -> Result<()> {
 
     Ok(())
 }
+
+struct MockProvider {
+    wiretap: Wiretap,
+}
+
+impl MockProvider {
+    #[allow(unused)]
+    #[must_use]
+    fn new(wiretap: Wiretap) -> Self {
+        // SAFETY:
+        // This is safe in a test context as tests are run sequentially.
+        unsafe {
+            std::env::set_var("BLOCK_MGT_ADDR", "http://localhost:8080");
+            std::env::set_var("GTFS_API_ADDR", "http://localhost:8080");
+        };
+
+        Self { wiretap }
+    }
+}
+
+/// One recording session of the Typescript adapter.
+#[derive(Deserialize, Clone)]
+// #[allow(dead_code)]
+struct Wiretap {
+    input: String,
+    // now: Option<i64>,
+    // event_seconds: Option<i32>,
+    // event_date: Option<i32>,
+    delay: Option<i32>,
+    stop_info: Option<StopInfo>,
+    allocated_vehicles: Option<Vec<String>>,
+    error: Option<r9k_position::Error>,
+    not_relevant_type: Option<bool>,
+    not_relevant_station: Option<bool>,
+    output: Option<Vec<String>>,
+}
+
+impl Provider for MockProvider {}
+
+impl HttpRequest for MockProvider {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
+    where
+        T: http_body::Body + Any,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
+    {
+        let data = match request.uri().path() {
+            "/gtfs/stops" => {
+                let stops =
+                    self.wiretap.stop_info.as_ref().map(|s| vec![s.clone()]).unwrap_or_default();
+                serde_json::to_vec(&stops).context("failed to serialize stops")?
+            }
+            "/allocations/trips" => {
+                let vehicles = self.wiretap.allocated_vehicles.clone().unwrap_or_default();
+                serde_json::to_vec(&vehicles).context("failed to serialize vehicles")?
+            }
+            _ => {
+                return Err(anyhow!("unknown path: {}", request.uri().path()));
+            }
+        };
+
+        let body = Bytes::from(data);
+        Response::builder().status(200).body(body).context("failed to build response")
+    }
+}
+
+// impl Time for Wiretap {
+//     #[allow(clippy::option_if_let_else)]
+//     fn now(&self) -> Zoned {
+//         match self.now {
+//             Some(s) => Zoned::new(
+//                 Timestamp::from_millisecond(s).unwrap(),
+//                 TimeZone::get("Pacific/Auckland").unwrap(),
+//             ),
+//             None => panic!("Wiretap data is missing now field"),
+//         }
+//     }
+// }

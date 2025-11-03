@@ -1,11 +1,13 @@
 #![allow(missing_docs)]
 
-use std::collections::HashMap;
+use std::any::Any;
+use std::env;
+use std::error::Error;
 
-use anyhow::{Result, anyhow};
-use jiff::Zoned;
-use r9k_position::gtfs::StopInfo;
-use r9k_position::provider::{Key, Provider, Source, SourceData, Time};
+use anyhow::{Context, Result, anyhow};
+use bytes::Bytes;
+use http::{Request, Response};
+use r9k_position::{HttpRequest, Provider, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct AppContext {
@@ -38,29 +40,31 @@ impl AppContext {
 
 impl Provider for AppContext {}
 
-impl Time for AppContext {
-    fn now(&self) -> Zoned {
-        Zoned::now()
-    }
-}
+impl HttpRequest for MockProvider {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
+    where
+        T: http_body::Body + Any,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
+    {
+        let data = match request.uri().path() {
+            "/gtfs/stops" => {
+                serde_json::to_vec(&self.stops).context("failed to serialize stops")?
+            }
+            "/allocations/trips" => {
+                let query = request.uri().query().unwrap_or("");
+                if query.contains("externalRefId=5226") {
+                    serde_json::to_vec(&self.vehicles).context("failed to serialize")?
+                } else {
+                    serde_json::to_vec(&Vec::<String>::new()).context("failed to serialize")?
+                }
+            }
+            _ => {
+                return Err(anyhow!("unknown path: {}", request.uri().path()));
+            }
+        };
 
-impl Source for AppContext {
-    async fn fetch(&self, _owner: &str, key: &Key) -> Result<SourceData> {
-        match key {
-            Key::StopInfo(stop_code) => {
-                let stop_info = self
-                    .stops
-                    .get(stop_code.as_str())
-                    .cloned()
-                    .ok_or_else(|| anyhow!("stop info not found for stop code {stop_code}"))?;
-                Ok(SourceData::StopInfo(stop_info))
-            }
-            Key::BlockMgt(train_id) => {
-                let Some(vehicle) = self.vehicles.get(train_id.as_str()) else {
-                    return Ok(SourceData::BlockMgt(vec![]));
-                };
-                Ok(SourceData::BlockMgt(vec![vehicle.clone()]))
-            }
-        }
+        let body = Bytes::from(data);
+        Response::builder().status(200).body(body).context("failed to build response")
     }
 }

@@ -87,6 +87,59 @@ impl TrainUpdate {
     pub fn train_id(&self) -> String {
         self.even_train_id.clone().unwrap_or_else(|| self.odd_train_id.clone().unwrap_or_default())
     }
+
+    /// Validate the message.
+    ///
+    /// # Errors
+    ///
+    /// Will return one of the following errors:
+    ///  - `Error::NoUpdate` if there are no changes
+    ///  - `Error::NoActualUpdate` if the arrival or departure time is -ve or 0
+    ///  - `Error::Outdated` if the message is too old
+    ///  - `Error::WrongTime` if the message is from the future
+    pub fn validate(&self) -> Result<()> {
+        if self.changes.is_empty() {
+            return Err(Error::NoUpdate);
+        }
+
+        // an *actual* update will have a +ve arrival or departure time
+        let change = &self.changes[0];
+        let from_midnight_secs = if change.has_departed {
+            change.actual_departure_time
+        } else if change.has_arrived {
+            change.actual_arrival_time
+        } else {
+            return Err(Error::NoActualUpdate);
+        };
+
+        if from_midnight_secs <= 0 {
+            return Err(Error::NoActualUpdate);
+        }
+
+        // check for outdated message
+        let naive_time = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
+        let Some(local_time) = Local.from_local_datetime(&naive_time).earliest() else {
+            return Err(Error::WrongTime(format!("invalid local time: {naive_time}")));
+        };
+
+        let midnight_ts = local_time.timestamp();
+        println!("midnight_ts: {midnight_ts}");
+
+        let event_ts = midnight_ts + i64::from(from_midnight_secs);
+        let delay_secs = Local::now().timestamp() - event_ts;
+
+        // TODO: do we need this metric?;
+        tracing::info!(gauge.r9k_delay = delay_secs);
+
+        if delay_secs > MAX_DELAY_SECS {
+            return Err(Error::Outdated(format!("message delayed by {delay_secs} seconds")));
+        }
+        if delay_secs < MIN_DELAY_SECS {
+            return Err(Error::WrongTime(format!("message ahead by {delay_secs} seconds")));
+        }
+
+        Ok(())
+    }
 }
 
 /// R9K train update change.

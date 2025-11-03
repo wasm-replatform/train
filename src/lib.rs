@@ -15,6 +15,11 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
+use credibil_api::Client;
+use r9k_position::R9kMessage;
+use tracing::{error, info, warn};
+use wasi_messaging::types::{Client as MsgClient, Message};
+use wasi_messaging::{producer, types};
 use credibil_api::Client as ApiClient;
 use dilax::api::{
     BlockMgtClient, BlockMgtProvider, CcStaticProvider, CcStaticProviderImpl, FleetApiProvider,
@@ -35,15 +40,22 @@ use wit_bindings::messaging::{producer, types};
 use crate::provider::{ AppContext, WasiHttpClient };
 
 const SERVICE: &str = "r9k-position-adapter";
+const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
+const R9K_TOPIC: &str = "realtime-r9k.v1";
+
+static ENV: LazyLock<String> =
+    LazyLock::new(|| env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string()));
 
 pub struct Messaging;
+wasi_messaging::export!(Messaging with_types_in wasi_messaging);
 
 messaging::export!(Messaging with_types_in wit_bindings::messaging);
 
-impl messaging::incoming_handler::Guest for Messaging {
-    #[sdk_otel::instrument(name = "messaging_guest_handle")]
+impl wasi_messaging::incoming_handler::Guest for Messaging {
+    #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
+        if topic != format!("{}-{R9K_TOPIC}", *ENV) {
         let r9k_topic = config::get_r9k_source_topic();
         let dilax_topic = config::get_dilax_source_topic();
 
@@ -79,6 +91,12 @@ impl messaging::incoming_handler::Guest for Messaging {
 }
 
 // Process incoming R9k messages, consolidating error handling.
+#[wasi_otel::instrument]
+async fn r9k_message(message: &[u8]) -> Result<()> {
+    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
+
+    let api = Client::new(provider::Provider);
+    let request = R9kMessage::try_from(message).context("parsing message")?;
 #[sdk_otel::instrument]
 async fn process_r9k(message: &[u8]) -> Result<()> {
     let context = AppContext::default();
@@ -108,6 +126,19 @@ fn publish_r9k(events: &[SmarTrakEvent]) -> Result<()> {
         let message = Message::new(&msg);
         message.add_metadata("key", &key);
 
+            wit_bindgen::spawn(async move {
+                if let Err(e) = producer::send(&client, topic, message).await {
+                    error!(
+                        monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
+                    );
+                }
+            });
+
+            info!(
+                monotonic_counter.messages_sent = 1, external_id = %external_id, service = %SERVICE
+            );
+        }
+    }
         wit_bindgen::spawn(async move {
             if let Err(e) = producer::send(client, "r9k.response".to_string(), message).await {
                 error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);

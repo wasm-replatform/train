@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use wit_bindings::keyvalue::store;
+use wasi_keyvalue::store;
 
 #[derive(Clone)]
 pub struct KvStore {

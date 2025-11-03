@@ -1,3 +1,4 @@
+
 //! # R9K Errors
 
 use quick_xml::DeError;
@@ -11,13 +12,11 @@ pub enum Error {
     #[error("code: invalid_format, description: {0}")]
     InvalidFormat(String),
 
-    /// Delay
-    #[error("code: outdated, description: delayed by {0} seconds")]
-    Outdated(i64),
+    #[error("code: outdated, description: {0}")]
+    Outdated(String),
 
-    /// Delay
-    #[error("code: wrong_time, description: {0} seconds too early")]
-    WrongTime(i64),
+    #[error("code: wrong_time, description: {0}")]
+    WrongTime(String),
 
     #[error("code: server_error, description: {0}")]
     ServerError(String),
@@ -54,8 +53,8 @@ impl From<anyhow::Error> for Error {
     fn from(err: anyhow::Error) -> Self {
         match err.downcast_ref::<Self>() {
             Some(Self::InvalidFormat(e)) => Self::InvalidFormat(format!("{err}: {e}")),
-            Some(Self::Outdated(delay)) => Self::Outdated(*delay),
-            Some(Self::WrongTime(delay)) => Self::WrongTime(*delay),
+            Some(Self::Outdated(e)) => Self::Outdated(format!("{err}: {e}")),
+            Some(Self::WrongTime(e)) => Self::WrongTime(format!("{err}: {e}")),
             Some(Self::ServerError(e)) => Self::ServerError(format!("{err}: {e}")),
 
             // Handle the specific cases for NoUpdate and NoActualUpdate
@@ -94,13 +93,6 @@ mod test {
     use serde_json::Value;
 
     use super::*;
-
-    // #[test]
-    // fn test_context() {
-    //     let result = Err::<(), Error>(Error::Test).context("request context");
-    //     let err = result.unwrap_err();
-    //     println!("Error: {}", err);
-    // }
 
     // Test that error details are retuned as json.
     #[test]

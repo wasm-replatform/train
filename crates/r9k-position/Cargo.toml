@@ -31,7 +31,7 @@ serde_json.workspace = true
 serde_repr = "0.1"
 thiserror.workspace = true
 tracing.workspace = true
-wit-bindings.workspace = true
+wit-bindgen.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

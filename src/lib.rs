@@ -1,26 +1,13 @@
 #![cfg(target_arch = "wasm32")]
 
-//! # R9K  Transformer
-//!
-//! Transforms R9K messages into SmarTrak events.
-
-mod block_mgt;
 mod config;
-mod gtfs;
 mod provider;
 
+use std::env;
+use std::sync::{Arc, LazyLock};
 
-use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
-
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use credibil_api::Client;
-use r9k_position::R9kMessage;
-use tracing::{error, info, warn};
-use wasi_messaging::types::{Client as MsgClient, Message};
-use wasi_messaging::{producer, types};
-use credibil_api::Client as ApiClient;
 use dilax::api::{
     BlockMgtClient, BlockMgtProvider, CcStaticProvider, CcStaticProviderImpl, FleetApiProvider,
     FleetProvider, GtfsStaticProvider, GtfsStaticProviderImpl,
@@ -30,183 +17,163 @@ use dilax::provider::HttpRequest as DilaxHttpRequest;
 use dilax::store::KvStore;
 use dilax::types::{DilaxEnrichedEvent, DilaxEvent};
 use r9k_position::{R9kMessage, SmarTrakEvent};
-use tracing::{error, warn};
-use wit_bindings::messaging;
-use wit_bindings::messaging::incoming_handler::Configuration;
-use wit_bindings::messaging::types::{Client as MsgClient, Message};
-use wit_bindings::messaging::{producer, types};
+use tracing::{error, info, warn};
+use wasi_messaging::incoming_handler;
+use wasi_messaging::types::{Client as MsgClient, Message};
+use wasi_messaging::{producer, types};
 
-
-use crate::provider::{ AppContext, WasiHttpClient };
+use crate::provider::{Provider as R9kProvider, WasiHttpClient};
 
 const SERVICE: &str = "r9k-position-adapter";
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
-const R9K_TOPIC: &str = "realtime-r9k.v1";
+const DEFAULT_OWNER: &str = "owner";
 
-static ENV: LazyLock<String> =
+static ENVIRONMENT: LazyLock<String> =
     LazyLock::new(|| env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string()));
+static OWNER: LazyLock<String> =
+    LazyLock::new(|| env::var("R9K_OWNER").unwrap_or_else(|_| DEFAULT_OWNER.to_string()));
 
 pub struct Messaging;
+
 wasi_messaging::export!(Messaging with_types_in wasi_messaging);
 
-messaging::export!(Messaging with_types_in wit_bindings::messaging);
-
-impl wasi_messaging::incoming_handler::Guest for Messaging {
-    #[wasi_otel::instrument(name = "messaging_guest_handle")]
+impl incoming_handler::Guest for Messaging {
+    #[allow(clippy::future_not_send)]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
-        if topic != format!("{}-{R9K_TOPIC}", *ENV) {
+        let payload = message.data();
+
         let r9k_topic = config::get_r9k_source_topic();
         let dilax_topic = config::get_dilax_source_topic();
 
-        if topic != r9k_topic && topic != dilax_topic {
-            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
+        if topic == r9k_topic {
+            if let Err(err) = process_r9k(&payload).await {
+                error!(
+                    monotonic_counter.processing_errors = 1,
+                    error = %err,
+                    topic = %topic,
+                    service = %SERVICE
+                );
+            }
+            return Ok(());
         }
 
-        match topic.as_str() {
-            current if current == r9k_topic.as_str() => {
-                if let Err(e) = process_r9k(&message.data()).await {
-                    error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
-                }
+        if topic == dilax_topic {
+            if let Err(err) = process_dilax(&payload).await {
+                error!(
+                    monotonic_counter.processing_errors = 1,
+                    error = %err,
+                    topic = %topic,
+                    service = %SERVICE
+                );
             }
-            current if current == dilax_topic.as_str() => {
-                if let Err(e) = process_dilax(&message.data()).await {
-                    error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
-                }
-            }
-            _ => {}
+            return Ok(());
         }
 
-        if let Err(e) = process_r9k(&message.data()).await {
-            error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
-        }
+        warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
         Ok(())
     }
-
-    async fn configure() -> Result<Configuration, types::Error> {
-        Ok(Configuration {
-            topics: vec![config::get_r9k_source_topic(), config::get_dilax_source_topic()],
-        })
-    }
 }
+#[allow(clippy::future_not_send)]
+async fn process_r9k(payload: &[u8]) -> Result<()> {
+    let message = R9kMessage::try_from(payload).context("parsing R9K payload")?;
+    let client = Client::new(R9kProvider);
+    let response = client
+        .request(message)
+        .owner(OWNER.as_str())
+        .await
+        .context("processing R9K request")?;
 
-// Process incoming R9k messages, consolidating error handling.
-#[wasi_otel::instrument]
-async fn r9k_message(message: &[u8]) -> Result<()> {
-    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
-
-    let api = Client::new(provider::Provider);
-    let request = R9kMessage::try_from(message).context("parsing message")?;
-#[sdk_otel::instrument]
-async fn process_r9k(message: &[u8]) -> Result<()> {
-    let context = AppContext::default();
-    let api = ApiClient::new(context);
-    let request =
-        R9kMessage::try_from(message).context(String::from_utf8_lossy(message).to_string())?;
-    let response = api.request(request).owner("owner").await?;
-
-    // This twoTap is used for schedule adherence to depart vehicle from the station properly
-    thread::sleep(Duration::from_secs(5));
-    publish_r9k(&response.body.smartrak_events)?;
-
-    thread::sleep(Duration::from_secs(5));
-    publish_r9k(&response.body.smartrak_events)?;
+    if let Some(events) = response.body.smartrak_events.as_ref() {
+        publish_r9k(events).await?;
+    }
 
     Ok(())
 }
+#[allow(clippy::future_not_send)]
+async fn publish_r9k(events: &[SmarTrakEvent]) -> Result<()> {
+    if events.is_empty() {
+        return Ok(());
+    }
 
-fn publish_r9k(events: &[SmarTrakEvent]) -> Result<()> {
-    let now = jiff::Timestamp::now();
-    for evt in events {
-        let client = MsgClient::connect("<not used>").context("connecting to message broker")?;
-        let key = evt.remote_data.external_id.clone();
-        let value = evt.clone_with_new_message_timestamp(now);
-        let msg = serde_json::to_vec(&value).unwrap();
+    let client = MsgClient::connect("<not used>").context("connecting to message broker")?;
+    let topic = format!("{}-{SMARTRAK_TOPIC}", ENVIRONMENT.as_str());
 
-        let message = Message::new(&msg);
-        message.add_metadata("key", &key);
-
-            wit_bindgen::spawn(async move {
-                if let Err(e) = producer::send(&client, topic, message).await {
-                    error!(
-                        monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
-                    );
-                }
-            });
-
-            info!(
-                monotonic_counter.messages_sent = 1, external_id = %external_id, service = %SERVICE
-            );
+    for event in events {
+        let payload = serde_json::to_vec(event).context("serializing SmarTrak event")?;
+        let message = Message::new(&payload);
+        if !event.remote_data.external_id.is_empty() {
+            message.add_metadata("key", &event.remote_data.external_id);
         }
+
+        producer::send(&client, topic.clone(), message)
+            .await
+            .map_err(|err| anyhow!("failed to publish R9K event: {err}"))?;
+
+        info!(
+            monotonic_counter.messages_sent = 1,
+            external_id = %event.remote_data.external_id,
+            service = %SERVICE
+        );
     }
-        wit_bindgen::spawn(async move {
-            if let Err(e) = producer::send(client, "r9k.response".to_string(), message).await {
-                error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
-            }
-        });
-    }
+
     Ok(())
 }
+#[allow(clippy::future_not_send)]
+async fn process_dilax(payload: &[u8]) -> Result<()> {
+    let event: DilaxEvent = serde_json::from_slice(payload).context("deserializing Dilax event")?;
 
-#[sdk_otel::instrument]
-async fn process_dilax(message: &[u8]) -> Result<()> {
-    let event: DilaxEvent =
-        serde_json::from_slice(message).context(String::from_utf8_lossy(message).to_string())?;
     let config = dilax::config::Config::default();
-    let kv_store = KvStore::open("dilax").context("opening dilax store")?;
-
     let vehicle_label_key = config.redis.vehicle_label_key.clone().into_owned();
-    let fleet_api_url = config::get_fleet_api_url();
-    let block_mgt_url = config::get_block_mgt_url();
-    let gtfs_static_url = config::get_gtfs_static_url();
-    let cc_static_url = config::get_gtfs_cc_static_url();
-    let block_mgt_bearer = config::get_block_mgt_bearer_token();
-
+    let kv_store = KvStore::open("dilax").context("opening dilax store")?;
     let http_client: Arc<dyn DilaxHttpRequest> = Arc::new(WasiHttpClient);
 
     let fleet: Arc<dyn FleetProvider> = Arc::new(FleetApiProvider::new(
         kv_store.clone(),
-        fleet_api_url,
+        config::get_fleet_api_url(),
         vehicle_label_key,
         Arc::clone(&http_client),
     ));
-    let cc_static: Arc<dyn CcStaticProvider> =
-        Arc::new(CcStaticProviderImpl::new(cc_static_url, Arc::clone(&http_client)));
-    let gtfs: Arc<dyn GtfsStaticProvider> = Arc::new(GtfsStaticProviderImpl::new(
-        kv_store.clone(),
-        gtfs_static_url,
+    let cc_static: Arc<dyn CcStaticProvider> = Arc::new(CcStaticProviderImpl::new(
+        config::get_gtfs_cc_static_url(),
         Arc::clone(&http_client),
     ));
-    let block: Arc<dyn BlockMgtProvider> =
-        Arc::new(BlockMgtClient::new(block_mgt_url, block_mgt_bearer, http_client));
+    let gtfs: Arc<dyn GtfsStaticProvider> = Arc::new(GtfsStaticProviderImpl::new(
+        kv_store.clone(),
+        config::get_gtfs_static_url(),
+        Arc::clone(&http_client),
+    ));
+    let block: Arc<dyn BlockMgtProvider> = Arc::new(BlockMgtClient::new(
+        config::get_block_mgt_url(),
+        config::get_block_mgt_bearer_token(),
+        Arc::clone(&http_client),
+    ));
 
-    let processor = DilaxProcessor::with_providers(
-        config,
-        kv_store,
-        fleet,
-        cc_static,
-        gtfs,
-        block,
-    );
+    let processor = DilaxProcessor::with_providers(config, kv_store, fleet, cc_static, gtfs, block);
 
-    let enriched =
-        processor.process(event).await.context(String::from_utf8_lossy(message).to_string())?;
+    let enriched = processor
+        .process(event)
+        .await
+        .context("processing Dilax event")?;
 
-    publish_dilax(&enriched)?;
+    publish_dilax(&enriched).await?;
 
     Ok(())
 }
+#[allow(clippy::future_not_send)]
+async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
+    let client = MsgClient::connect("<not used>").context("connecting to message broker")?;
+    let payload = serde_json::to_vec(event).context("serializing Dilax enriched event")?;
+    let message = Message::new(&payload);
+    if let Some(key) = event.trip_id.as_deref() {
+        message.add_metadata("key", key);
+    }
 
-fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
-    let client = MsgClient::connect("<not used>").context("connecting to message broker")?;    
-    let key = event.trip_id.clone().unwrap_or_default();
-    let msg = serde_json::to_vec(&event).unwrap();
-    let message = Message::new(&msg);
-    message.add_metadata("key", &key);
-    wit_bindgen::spawn(async move {
-        if let Err(e) = producer::send(client, config::get_dilax_outbound_topic(), message).await {
-            error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
-        }
-    });
+    producer::send(&client, config::get_dilax_outbound_topic(), message)
+        .await
+        .map_err(|err| anyhow!("failed to publish Dilax event: {err}"))?;
+
+    info!(monotonic_counter.messages_sent = 1, service = %SERVICE, event = "dilax");
+
     Ok(())
 }

@@ -9,9 +9,8 @@ use anyhow::Result;
 use bytes::Bytes;
 use http::{Request, Response};
 
-/// The `Provider` trait is implemented by library users in order to provide
-/// source data and caching services required by the application.
-pub trait Provider: Source + Time + Clone + Send + Sync {}
+/// Provider entry point implemented by the host application.
+pub trait Provider: HttpRequest {}
 
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {

@@ -2,11 +2,15 @@
 
 use std::fmt::{Display, Formatter};
 
+use chrono::{Local, NaiveDate, TimeZone};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
+use crate::Result;
 use crate::error::Error;
-use crate::r9k_date::R9kDate;
+
+const MAX_DELAY_SECS: i64 = 60;
+const MIN_DELAY_SECS: i64 = -30;
 
 /// R9K train update message as deserialized from the XML received from
 /// KiwiRail.
@@ -21,7 +25,7 @@ pub struct R9kMessage {
 impl TryFrom<String> for R9kMessage {
     type Error = Error;
 
-    fn try_from(xml: String) -> Result<Self, Self::Error> {
+    fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_str(&xml).map_err(Into::into)
     }
 }
@@ -29,7 +33,7 @@ impl TryFrom<String> for R9kMessage {
 impl TryFrom<&[u8]> for R9kMessage {
     type Error = Error;
 
-    fn try_from(xml: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_reader(xml).map_err(Into::into)
     }
 }
@@ -49,7 +53,8 @@ pub struct TrainUpdate {
 
     /// The creation date of the train update.
     #[serde(rename(deserialize = "fechaCreacion"))]
-    pub created_date: R9kDate,
+    #[serde(deserialize_with = "r9k_date")]
+    pub created_date: NaiveDate,
 
     /// Train's registration number.
     #[serde(rename(deserialize = "numeroRegistro"))]
@@ -79,6 +84,14 @@ pub struct TrainUpdate {
     /// N.B. Only the first entry is used as the remainder are a schedule only.
     #[serde(rename(deserialize = "pasoTren"), default)]
     pub changes: Vec<Change>,
+}
+
+fn r9k_date<'de, D>(deserializer: D) -> anyhow::Result<NaiveDate, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    NaiveDate::parse_from_str(&s, "%d/%m/%Y").map_err(serde::de::Error::custom)
 }
 
 impl TrainUpdate {
@@ -181,7 +194,7 @@ pub struct Change {
 
     /// Scheduled departure time as per schedule.
     ///
-    /// In seconds from train update creation date at midnight. -1 if not available.
+    /// In seconds from train update creation date at midnight.
     #[serde(rename(deserialize = "horaSalida"))]
     pub departure_time: i32,
 
@@ -358,6 +371,7 @@ mod tests {
     fn deserialization() {
         let xml = include_str!("../data/sample.xml");
         let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
+
         let update = message.train_update;
         assert_eq!(update.even_train_id, Some("1234".to_string()));
         assert!(!update.changes.is_empty(), "should have changes");

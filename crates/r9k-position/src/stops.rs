@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow};
@@ -18,7 +19,7 @@ pub struct StopInfo {
 }
 
 pub async fn stop_info(
-    owner: &str, provider: &impl Provider, station: u32, is_arrival: bool,
+    _owner: &str, provider: &impl Provider, station: u32, is_arrival: bool,
 ) -> Result<Option<StopInfo>> {
     if !ACTIVE_STATIONS.contains(&station) {
         return Ok(None);

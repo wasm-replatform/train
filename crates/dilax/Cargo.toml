@@ -24,13 +24,12 @@ chrono.workspace = true
 chrono-tz = "0.8"
 futures.workspace = true
 http.workspace = true
-jiff.workspace = true
 realtime.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
-wit-bindings.workspace = true
+wasi-keyvalue.workspace = true
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

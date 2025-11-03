@@ -3112,7 +3112,6 @@ dependencies = [
  "http",
  "http-body",
  "r9k-position",
- "serde",
  "serde_json",
  "tracing",
  "wasi-http",

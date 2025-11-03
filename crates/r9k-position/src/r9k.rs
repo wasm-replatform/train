@@ -136,6 +136,8 @@ impl TrainUpdate {
         };
 
         let midnight_ts = local_time.timestamp();
+        println!("midnight_ts: {midnight_ts}");
+
         let event_ts = midnight_ts + i64::from(from_midnight_secs);
         let delay_secs = Local::now().timestamp() - event_ts;
 

@@ -2,9 +2,12 @@
 //!
 //! Provider defines external data interfaces for the crate.
 
+use std::any::Any;
+use std::error::Error;
+
 use anyhow::Result;
+use bytes::Bytes;
 use http::{Request, Response};
-use serde::de::DeserializeOwned;
 
 /// Provider entry point implemented by the host application.
 pub trait Provider: HttpRequest {}
@@ -12,7 +15,9 @@ pub trait Provider: HttpRequest {}
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {
     /// Make outbound HTTP request.
-    fn fetch<B: Sync, U: DeserializeOwned>(
-        &self, request: &Request<B>,
-    ) -> impl Future<Output = Result<Response<U>>> + Send;
+    fn fetch<T>(&self, request: Request<T>) -> impl Future<Output = Result<Response<Bytes>>> + Send
+    where
+        T: http_body::Body + Any + Send,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>;
 }

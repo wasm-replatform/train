@@ -1,30 +1,23 @@
-use anyhow::{Context, Result, anyhow};
+use std::any::Any;
+use std::error::Error;
+
+use anyhow::Result;
+use bytes::Bytes;
 use http::{Request, Response};
 use r9k_position::HttpRequest;
-use serde::de::DeserializeOwned;
 
 pub struct Provider;
 
 impl r9k_position::Provider for Provider {}
 
 impl HttpRequest for Provider {
-    async fn fetch<B: Sync, U: DeserializeOwned>(
-        &self, request: &Request<B>,
-    ) -> Result<Response<U>> {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
+    where
+        T: http_body::Body + Any,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
+    {
         tracing::debug!("request: {:?}", request.uri());
-
-        let response = sdk_http::Client::new()
-            .get(request.uri())
-            .headers(request.headers())
-            .send()
-            .map_err(|e| anyhow!(e))?;
-
-        let data = response.body();
-        if data.is_empty() {
-            return Err(anyhow!("empty response"));
-        }
-
-        let body = serde_json::from_slice::<U>(data).context("deserializing response body")?;
-        Response::builder().status(200).body(body).map_err(|e| anyhow!(e))
+        wasi_http::handle(request).await
     }
 }

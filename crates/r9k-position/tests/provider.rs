@@ -1,11 +1,13 @@
 #![allow(missing_docs)]
 
+use std::any::Any;
 use std::env;
+use std::error::Error;
 
 use anyhow::{Context, Result, anyhow};
+use bytes::Bytes;
 use http::{Request, Response};
 use r9k_position::{HttpRequest, Provider, StopInfo};
-use serde::de::DeserializeOwned;
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
@@ -38,9 +40,12 @@ impl MockProvider {
 impl Provider for MockProvider {}
 
 impl HttpRequest for MockProvider {
-    async fn fetch<B: Sync, U: DeserializeOwned>(
-        &self, request: &Request<B>,
-    ) -> Result<Response<U>> {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
+    where
+        T: http_body::Body + Any,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
+    {
         let data = match request.uri().path() {
             "/gtfs/stops" => {
                 serde_json::to_vec(&self.stops).context("failed to serialize stops")?
@@ -58,7 +63,7 @@ impl HttpRequest for MockProvider {
             }
         };
 
-        let body = serde_json::from_slice::<U>(&data)?;
+        let body = Bytes::from(data);
         Response::builder().status(200).body(body).context("failed to build response")
     }
 }

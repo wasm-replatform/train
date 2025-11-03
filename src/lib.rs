@@ -14,26 +14,24 @@ use anyhow::{Context, Result};
 use credibil_api::Client;
 use r9k_position::R9kMessage;
 use tracing::{error, info, warn};
-use wit_bindings::messaging;
-use wit_bindings::messaging::incoming_handler::Configuration;
-use wit_bindings::messaging::types::{Client as MsgClient, Message};
-use wit_bindings::messaging::{producer, types};
-
-// use crate::{Error, R9kMessage};
+use wasi_messaging::types::{Client as MsgClient, Message};
+use wasi_messaging::{producer, types};
 
 const SERVICE: &str = "r9k-position-adapter";
-const SMARTRAK_TOPIC: &str = "dev-realtime-r9k-to-smartrak.v1";
-static R9K_TOPIC: LazyLock<String> =
-    LazyLock::new(|| env::var("R9K_TOPIC").unwrap_or_else(|_| "dev-realtime-r9k.v1".to_string()));
+const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
+const R9K_TOPIC: &str = "realtime-r9k.v1";
+
+static ENV: LazyLock<String> =
+    LazyLock::new(|| env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string()));
 
 pub struct Messaging;
-messaging::export!(Messaging with_types_in wit_bindings::messaging);
+wasi_messaging::export!(Messaging with_types_in wasi_messaging);
 
-impl messaging::incoming_handler::Guest for Messaging {
-    #[sdk_otel::instrument(name = "messaging_guest_handle")]
+impl wasi_messaging::incoming_handler::Guest for Messaging {
+    #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
-        if topic != *R9K_TOPIC {
+        if topic != format!("{}-{R9K_TOPIC}", *ENV) {
             warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
         }
 
@@ -42,16 +40,12 @@ impl messaging::incoming_handler::Guest for Messaging {
         }
         Ok(())
     }
-
-    async fn configure() -> Result<Configuration, types::Error> {
-        Ok(Configuration { topics: vec![R9K_TOPIC.clone()] })
-    }
 }
 
 // Process incoming R9k messages, consolidating error handling.
-#[sdk_otel::instrument]
+#[wasi_otel::instrument]
 async fn r9k_message(message: &[u8]) -> Result<()> {
-    let dest_topic = env::var("SMARTRAK_TOPIC").unwrap_or_else(|_| SMARTRAK_TOPIC.to_string());
+    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
 
     let api = Client::new(provider::Provider);
     let request = R9kMessage::try_from(message).context("parsing message")?;
@@ -73,7 +67,7 @@ async fn r9k_message(message: &[u8]) -> Result<()> {
             let topic = dest_topic.clone();
 
             wit_bindgen::spawn(async move {
-                if let Err(e) = producer::send(client, topic, message).await {
+                if let Err(e) = producer::send(&client, topic, message).await {
                     error!(
                         monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
                     );

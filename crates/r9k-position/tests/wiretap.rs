@@ -3,15 +3,17 @@
 
 mod provider;
 
+use std::any::Any;
+use std::error::Error;
 use std::fs::{self, File};
 
 use anyhow::{Context, Result, anyhow, bail};
+use bytes::Bytes;
 use chrono::{Local, Timelike};
 use credibil_api::Client;
 use http::{Request, Response};
-use r9k_position::{Error, HttpRequest, Provider, R9kMessage, SmarTrakEvent, StopInfo};
+use r9k_position::{HttpRequest, Provider, R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
-use serde::de::DeserializeOwned;
 
 /// This test runs through a folder of files that recorded the input and output
 /// of the Typescript adapter.
@@ -128,7 +130,7 @@ struct Wiretap {
     delay: Option<i32>,
     stop_info: Option<StopInfo>,
     allocated_vehicles: Option<Vec<String>>,
-    error: Option<Error>,
+    error: Option<r9k_position::Error>,
     not_relevant_type: Option<bool>,
     not_relevant_station: Option<bool>,
     output: Option<Vec<String>>,
@@ -137,9 +139,12 @@ struct Wiretap {
 impl Provider for MockProvider {}
 
 impl HttpRequest for MockProvider {
-    async fn fetch<B: Sync, U: DeserializeOwned>(
-        &self, request: &Request<B>,
-    ) -> Result<Response<U>> {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
+    where
+        T: http_body::Body + Any,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
+    {
         let data = match request.uri().path() {
             "/gtfs/stops" => {
                 let stops =
@@ -155,7 +160,7 @@ impl HttpRequest for MockProvider {
             }
         };
 
-        let body = serde_json::from_slice::<U>(&data)?;
+        let body = Bytes::from(data);
         Response::builder().status(200).body(body).context("failed to build response")
     }
 }

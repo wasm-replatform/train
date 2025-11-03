@@ -42,7 +42,7 @@ When implementing features that need external data, extend the `Key` and `Source
 
 The `credibil-api` crate provides a generic `Handler<Response, Provider>` trait. See `crates/r9k-position-adapter/src/handler.rs`:
 - Implement `Handler` on `Request<YourMessage>` 
-- Use `#[sdk_otel::instrument]` for tracing (from `sdk-otel` crate)
+- Use `#[wasi_otel::instrument]` for tracing (from `sdk-otel` crate)
 - Handlers are async and return `Result<Response<YourResponse>>`
 
 ### WIT Bindings & Messaging
@@ -51,7 +51,7 @@ The WASM guest exports `messaging::incoming_handler::Guest` (see `src/lib.rs`):
 - `handle(message)` processes Kafka messages from topic "r9k.request"
 - `configure()` returns topic subscriptions
 - Use `wit_bindgen::spawn()` for background tasks (e.g., publishing responses)
-- OpenTelemetry instrumentation via `#[sdk_otel::instrument]` attributes
+- OpenTelemetry instrumentation via `#[wasi_otel::instrument]` attributes
 
 ## Code Quality Standards
 

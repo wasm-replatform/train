@@ -3,6 +3,9 @@ use std::env;
 use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow};
+// use credibil_api::Empty;
+use bytes::Bytes;
+use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::provider::{HttpRequest, Provider};
@@ -31,11 +34,14 @@ pub async fn stop_info(
     let gtfs_api_addr = env::var("GTFS_API_ADDR").context("getting `GTFS_API_ADDR`")?;
     let request = http::Request::builder()
         .uri(format!("{gtfs_api_addr}/gtfs/stops?fields=stop_code,stop_lon,stop_lat"))
-        .body(())
+        .body(Empty::<Bytes>::new())
         .context("building block management request")?;
-    let response = HttpRequest::fetch(provider, &request).await.context("fetching stops")?;
+    let response = HttpRequest::fetch(provider, request).await.context("fetching stops")?;
 
-    let stops: Vec<StopInfo> = response.into_body();
+    let bytes = response.into_body();
+    let stops: Vec<StopInfo> =
+        serde_json::from_slice(&bytes).context("deserializing block management response")?;
+
     let Some(mut stop_info) = stops.into_iter().find(|stop| stop.stop_code == *stop_code) else {
         return Err(anyhow!("stop info not found for stop code {stop_code}"));
     };

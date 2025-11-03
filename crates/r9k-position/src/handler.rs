@@ -5,8 +5,10 @@
 use std::env;
 
 use anyhow::Context;
+use bytes::Bytes;
 use chrono::Utc;
 use credibil_api::{Body, Handler, Request, Response};
+use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
@@ -71,12 +73,14 @@ impl TrainUpdate {
         let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
         let request = http::Request::builder()
             .uri(format!("{block_mgt_addr}/allocations/trips?externalRefId={}", self.train_id()))
-            .body(())
+            .body(Empty::<Bytes>::new())
             .context("building block management request")?;
         let response =
-            HttpRequest::fetch(provider, &request).await.context("fetching train allocations")?;
+            HttpRequest::fetch(provider, request).await.context("fetching train allocations")?;
 
-        let allocated: Vec<String> = response.into_body();
+        let bytes = response.into_body();
+        let allocated: Vec<String> =
+            serde_json::from_slice(&bytes).context("deserializing block management response")?;
 
         // convert to SmarTrak events
         let mut events = vec![];

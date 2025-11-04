@@ -9,7 +9,8 @@ use std::fs::{self, File};
 
 use anyhow::{Context, Result, anyhow, bail};
 use bytes::Bytes;
-use chrono::{Local, Timelike};
+use chrono::{Timelike, Utc};
+use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use http::{Request, Response};
 use r9k_position::{HttpRequest, Provider, R9kMessage, SmarTrakEvent, StopInfo};
@@ -42,7 +43,8 @@ async fn compare(wiretap: Wiretap) -> Result<()> {
     };
 
     // correct event time to 'now' (+ originally recorded delay)
-    let now = Local::now();
+    let now = Utc::now().with_timezone(&Auckland);
+
     request.train_update.created_date = now.date_naive();
     #[allow(clippy::cast_possible_wrap)]
     let from_midnight = now.num_seconds_from_midnight() as i32;

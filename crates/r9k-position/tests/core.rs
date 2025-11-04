@@ -5,7 +5,8 @@ mod provider;
 
 use std::ops::Sub;
 
-use chrono::{Duration, Local, Timelike};
+use chrono::{Duration, Timelike, Utc};
+use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use r9k_position::{ChangeType, Error, EventType, R9kMessage};
 
@@ -242,7 +243,8 @@ impl<'a> XmlBuilder<'a> {
         }
 
         // create update message
-        let event_dt = Local::now().sub(Duration::seconds(self.delay_secs));
+        let now = Utc::now().with_timezone(&Auckland);
+        let event_dt = now.sub(Duration::seconds(self.delay_secs));
         let created_date = event_dt.format("%d/%m/%Y");
         let event_secs = event_dt.num_seconds_from_midnight();
 

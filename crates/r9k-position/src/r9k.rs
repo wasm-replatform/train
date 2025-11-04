@@ -130,7 +130,7 @@ impl TrainUpdate {
             return Err(Error::NoActualUpdate);
         }
 
-        // check for outdated message
+        // rebuild the event timestamp from the creation date + seconds from midnight
         let naive_dt = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
         let Some(midnight_dt) = naive_dt.and_local_timezone(Auckland).earliest() else {
             return Err(Error::WrongTime(format!("invalid local time: {naive_dt}")));
@@ -138,6 +138,7 @@ impl TrainUpdate {
         let midnight_ts = midnight_dt.timestamp();
         let event_ts = midnight_ts + i64::from(since_midnight_secs);
 
+        // calculate delay from 'now'
         let now_ts = Utc::now().with_timezone(&Auckland).timestamp();
         let delay_secs = now_ts - event_ts;
 

@@ -43,7 +43,6 @@ async fn compare(wiretap: Wiretap) -> Result<()> {
     };
 
     // correct event time to 'now' (+ originally recorded delay)
-    // let now = Local::now();
     let now = Utc::now().with_timezone(&Auckland);
 
     request.train_update.created_date = now.date_naive();

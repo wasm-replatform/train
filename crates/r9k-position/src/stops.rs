@@ -3,7 +3,6 @@ use std::env;
 use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow};
-// use credibil_api::Empty;
 use bytes::Bytes;
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};

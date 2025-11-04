@@ -112,10 +112,8 @@ wasi-http = { version = "0.12.0", registry = "credibil" }
 wasi-messaging = { version = "0.12.0", registry = "credibil" }
 wasi-otel = { version = "0.12.0", registry = "credibil" }
 
-# [patch."https://github.com/credibil/wrt"]
+# [patch.credibil]
 # wasi-http = { path = "../../credibil/wrt/crates/wasi-http" }
-# wasi-messaging = { path = "../../credibil/wrt/crates/wasi-messaging" }
-# wasi-otel = { path = "../../credibil/wrt/crates/wasi-otel" }
 
 [profile.release]
 lto = "thin"

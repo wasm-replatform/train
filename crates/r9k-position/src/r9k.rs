@@ -2,7 +2,8 @@
 
 use std::fmt::{Display, Formatter};
 
-use chrono::{Local, NaiveDate, TimeZone};
+use chrono::{NaiveDate, Utc};
+use chrono_tz::Pacific::Auckland;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -117,7 +118,7 @@ impl TrainUpdate {
 
         // an *actual* update will have a +ve arrival or departure time
         let change = &self.changes[0];
-        let from_midnight_secs = if change.has_departed {
+        let since_midnight_secs = if change.has_departed {
             change.actual_departure_time
         } else if change.has_arrived {
             change.actual_arrival_time
@@ -125,21 +126,20 @@ impl TrainUpdate {
             return Err(Error::NoActualUpdate);
         };
 
-        if from_midnight_secs <= 0 {
+        if since_midnight_secs <= 0 {
             return Err(Error::NoActualUpdate);
         }
 
         // check for outdated message
-        let naive_time = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
-        let Some(local_time) = Local.from_local_datetime(&naive_time).earliest() else {
-            return Err(Error::WrongTime(format!("invalid local time: {naive_time}")));
+        let naive_dt = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
+        let Some(midnight_dt) = naive_dt.and_local_timezone(Auckland).earliest() else {
+            return Err(Error::WrongTime(format!("invalid local time: {naive_dt}")));
         };
-
-        let midnight_ts = local_time.timestamp();
-        println!("midnight_ts: {midnight_ts}");
-
-        let event_ts = midnight_ts + i64::from(from_midnight_secs);
-        let delay_secs = Local::now().timestamp() - event_ts;
+        let midnight_ts = midnight_dt.timestamp();
+        
+        let now_ts = Utc::now().with_timezone(&Auckland).timestamp();
+        let event_ts = midnight_ts + i64::from(since_midnight_secs);
+        let delay_secs = now_ts - event_ts;
 
         // TODO: do we need this metric?;
         tracing::info!(gauge.r9k_delay = delay_secs);

@@ -9,7 +9,8 @@ use std::fs::{self, File};
 
 use anyhow::{Context, Result, anyhow, bail};
 use bytes::Bytes;
-use chrono::{Local, Timelike};
+use chrono::{Timelike, Utc};
+use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use http::{Request, Response};
 use r9k_position::{HttpRequest, Provider, R9kMessage, SmarTrakEvent, StopInfo};
@@ -39,10 +40,30 @@ async fn wiretap() -> Result<()> {
     Ok(())
 }
 
-async fn run_wiretap(wiretap: Wiretap) -> Result<()> {
-    let api = ApiClient::new(wiretap.clone());
-    let request = R9kMessage::try_from(wiretap.input)?;
-    let response = match api.request(request).owner("owner").await {
+async fn compare(wiretap: Wiretap) -> Result<()> {
+    let provider = MockProvider::new(wiretap.clone());
+    let client = Client::new(provider);
+    let mut request = R9kMessage::try_from(wiretap.input)?;
+
+    let Some(change) = request.train_update.changes.get_mut(0) else {
+        bail!("no changes in input message");
+    };
+
+    // correct event time to 'now' (+ originally recorded delay)
+    let now = Utc::now().with_timezone(&Auckland);
+
+    request.train_update.created_date = now.date_naive();
+    #[allow(clippy::cast_possible_wrap)]
+    let from_midnight = now.num_seconds_from_midnight() as i32;
+    let adjusted_secs = wiretap.delay.map_or(from_midnight, |delay| from_midnight - delay);
+
+    if change.has_departed {
+        change.actual_departure_time = adjusted_secs;
+    } else if change.has_arrived {
+        change.actual_arrival_time = adjusted_secs;
+    }
+
+    let response = match client.request(request).owner("owner").await {
         Ok(r) => r,
         Err(e) => {
             assert_eq!(e, wiretap.error.unwrap());

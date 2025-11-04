@@ -3,6 +3,10 @@
 
 mod provider;
 
+use std::ops::Sub;
+
+use chrono::{Duration, Timelike, Utc};
+use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use jiff::Timestamp;
 use r9k_position::r9k_date::R9kDate;
@@ -260,8 +264,10 @@ impl<'a> XmlBuilder<'a> {
         }
 
         // create update message
-        let now_ts = Timestamp::now().as_second();
-        let (created_date, event_secs) = R9kDate::from_timestamp_secs(now_ts - self.delay_secs);
+        let now = Utc::now().with_timezone(&Auckland);
+        let event_dt = now.sub(Duration::seconds(self.delay_secs));
+        let created_date = event_dt.format("%d/%m/%Y");
+        let event_secs = event_dt.num_seconds_from_midnight();
 
         let change_type = if self.arrival { 3 } else { 1 };
         let has_arrived = if self.arrival { "true" } else { "false" };

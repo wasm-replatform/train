@@ -266,10 +266,17 @@ where
     async fn all_allocations_async(&self) -> Result<Vec<VehicleAllocation>> {
         let block_mgt_addr = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
         let url = format!("{block_mgt_addr}/allocations");
-        let builder = http::Request::builder()
+        let mut builder = http::Request::builder()
             .method(Method::GET)
             .uri(url)
             .header("Content-Type", "application/json");
+        
+        if env::var("ENVIRONMENT").unwrap_or_default() == "dev" {
+            let authorization = env::var("BLOCK_MGT_AUTHORIZATION").ok();
+            if let Some(token) = authorization {
+                builder = builder.header("Authorization", token.as_str());
+            }
+        }
 
         let request = builder
             .body(Empty::<Bytes>::new())

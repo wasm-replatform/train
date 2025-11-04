@@ -36,7 +36,7 @@ pub struct Messaging;
 wasi_messaging::export!(Messaging with_types_in wasi_messaging);
 
 impl wasi_messaging::incoming_handler::Guest for Messaging {
-   // #[wasi_otel::instrument(name = "messaging_guest_handle")]
+    #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
         if topic == format!("{}-{R9K_TOPIC}", *ENV) {
@@ -67,7 +67,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 }
 
 // Process incoming R9k messages, consolidating error handling.
-//#[wasi_otel::instrument]
+#[wasi_otel::instrument]
 async fn r9k_message(message: &[u8]) -> Result<()> {
     let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
 

@@ -20,10 +20,13 @@ crate-type = ["lib"]
 [dependencies]
 anyhow.workspace = true
 async-trait = "0.1.83"
+bytes.workspace = true
 chrono.workspace = true
 chrono-tz = "0.8"
 futures.workspace = true
 http.workspace = true
+http-body.workspace = true
+http-body-util.workspace = true
 realtime.workspace = true
 serde.workspace = true
 serde_json.workspace = true

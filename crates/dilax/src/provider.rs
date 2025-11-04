@@ -1,14 +1,19 @@
-//! # Provider
-//!
-//! Provider defines external data interfaces for the crate.
+use std::any::Any;
+use std::error::Error;
 
 use anyhow::Result;
-use async_trait::async_trait;
+use bytes::Bytes;
 use http::{Request, Response};
 
-/// Host-provided HTTP client abstraction used by provider implementations.
-#[async_trait]
+/// Provider entry point implemented by the host application.
+pub trait Provider: HttpRequest {}
+
+/// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {
-    /// Make an outbound HTTP request and return the raw response payload.
-    async fn fetch(&self, request: Request<Vec<u8>>) -> Result<Response<Vec<u8>>>;
+    /// Make outbound HTTP request.
+    fn fetch<T>(&self, request: Request<T>) -> impl Future<Output = Result<Response<Bytes>>> + Send
+    where
+        T: http_body::Body + Any + Send,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>;
 }

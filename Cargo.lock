@@ -797,10 +797,13 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bytes",
  "chrono",
  "chrono-tz",
  "futures",
  "http",
+ "http-body",
+ "http-body-util",
  "pretty_assertions",
  "realtime",
  "serde",

@@ -136,9 +136,9 @@ impl TrainUpdate {
             return Err(Error::WrongTime(format!("invalid local time: {naive_dt}")));
         };
         let midnight_ts = midnight_dt.timestamp();
+        let event_ts = midnight_ts + i64::from(since_midnight_secs);
 
         let now_ts = Utc::now().with_timezone(&Auckland).timestamp();
-        let event_ts = midnight_ts + i64::from(since_midnight_secs);
         let delay_secs = now_ts - event_ts;
 
         // TODO: do we need this metric?;

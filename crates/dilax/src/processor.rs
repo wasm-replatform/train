@@ -43,16 +43,25 @@ impl DilaxProcessor {
         let mut start_time: Option<String> = None;
 
         let vehicle_label = self.vehicle_label(&event);
+        println!("Vehicle label determined: {:?}", vehicle_label);
         if vehicle_label.is_none() {
             warn!("Could not determine vehicle label from Dilax event: {:?}", event.device);
             return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
         }
 
+        println!("Looking up vehicle for label: {:?}", vehicle_label);
+
         let vehicle = self.lookup_vehicle(vehicle_label.as_deref().unwrap()).await?;
+
+        println!("Vehicle lookup result: {:?}", vehicle);
+
         if vehicle.is_none() {
             warn!("Failed to resolve vehicle for label {vehicle_label:?}");
             return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
         }
+
+        println!("Vehicle resolved: {:?}", vehicle);
+
         let vehicle = vehicle.unwrap();
         let vehicle_id = vehicle.id.clone();
 
@@ -66,7 +75,10 @@ impl DilaxProcessor {
             }
         };
 
+        println!("Vehicle capacity determined: {:?}", (vehicle_seating, vehicle_total));
+
         if let Some(allocation) = self.block.allocation_by_vehicle(&vehicle_id).await? {
+            println!("Decoded allocation response: {:?}", allocation);
             trip_id = Some(allocation.trip_id.clone());
             start_date = Some(allocation.service_date.clone());
             start_time = Some(allocation.start_time.clone());
@@ -75,10 +87,17 @@ impl DilaxProcessor {
             warn!(vehicle_id = %vehicle_id, vehicle_label = ?vehicle_label, "Failed to resolve block allocation");
         }
 
+        println!("Block allocation resolved");
+
         stop_id = self.lookup_stop_id(&vehicle_id, &event).await?;
+
+        println!("Stop ID lookup result: {:?}", stop_id);
+
         if stop_id.is_none() {
             warn!(vehicle_id = %vehicle_id, "Unable to resolve stop ID from Dilax event");
         }
+
+        println!("Stop ID resolved: {:?}", stop_id);
 
         self.update_vehicle_state(
             &vehicle_id,
@@ -146,13 +165,17 @@ impl DilaxProcessor {
     }
 
     async fn lookup_stop_id(&self, vehicle_id: &str, event: &DilaxEvent) -> Result<Option<String>> {
+        println!("Looking up stop ID for vehicle ID: {}", vehicle_id);
         let waypoint = match &event.wpt {
             Some(wpt) => wpt,
             None => {
+                println!("Dilax event missing waypoint data");
                 warn!(vehicle_id = %vehicle_id, "Dilax event missing waypoint data");
                 return Ok(None);
             }
         };
+
+        println!("Waypoint resolved: {:?}", waypoint);
 
         info!(vehicle_id = %vehicle_id, lat = %waypoint.lat, lon = %waypoint.lon, "Querying CC Static for stop info");
         let stops = self
@@ -163,7 +186,10 @@ impl DilaxProcessor {
             return Ok(None);
         }
 
+        println!("Found {} stops near vehicle", stops.len());
+        
         let train_stop_types = self.gtfs.train_stop_types().await?;
+        println!("Found {} train stop types", train_stop_types.len());
         if train_stop_types.is_empty() {
             warn!(vehicle_id = %vehicle_id, "GTFS train stop types unavailable");
             return Ok(None);
@@ -171,7 +197,10 @@ impl DilaxProcessor {
 
         for stop in &stops {
             debug!(vehicle_id = %vehicle_id, stop = ?stop);
+            println!("vehicle_id = {}, stop = {:?}", vehicle_id, stop);
             if let Some(code) = stop.stop_code.as_deref() {
+                println!("Found stop code: {}", code);
+
                 if Self::is_train_station(&train_stop_types, code) {
                     info!(vehicle_id = %vehicle_id, stop_id = %stop.stop_id, stop_code = code);
                     return Ok(Some(stop.stop_id.clone()));
@@ -185,7 +214,7 @@ impl DilaxProcessor {
     fn is_train_station(train_stop_types: &[StopTypeEntry], stop_code: &str) -> bool {
         train_stop_types.iter().any(|entry| {
             entry.parent_stop_code.as_deref() == Some(stop_code)
-                && entry.route_type == crate::types::StopType::TrainStop as u32
+                && entry.route_type == Some(crate::types::StopType::TrainStop as u32)
         })
     }
 
@@ -203,6 +232,8 @@ impl DilaxProcessor {
                 new_state
             }
         };
+
+        println!("Current vehicle state: {:?}", state);
 
         let token = match event.clock.utc.parse::<i64>() {
             Ok(value) => value,

@@ -126,8 +126,9 @@ where
                 }
             }
         }
-        let fleet_api_addr = env::var("FLEET_API_URL").context("getting `FLEET_API_URL`")?;
-        let url = format!("{fleet_api_addr}/vehicles?label={label}");
+        let fleet_api_addr = env::var("FLEET_API_ADDR").context("getting `FLEET_API_ADDR`")?;
+        let url = format!("{fleet_api_addr}/vehicles?label={}", urlencoding::encode(&label));
+        println!("Fleet API request URL: {}", url);
         let request = http::Request::builder()
             .method(Method::GET)
             .uri(url)
@@ -135,14 +136,19 @@ where
             .body(Empty::<Bytes>::new())
             .context("building train_by_label request")?;
 
+        println!("Fleet API request: {:?}", request);
+
         let response = match self.http.fetch(request).await {
             Ok(resp) => resp,
             Err(err) => {
+                println!("Fleet API request failed: {}", err);
                 warn!(label = %label, error = %err, "Fleet API request failed");
                 self.cache_miss(&cache_key);
                 return Ok(None);
             }
         };
+
+        println!("Fleet API response: {:?}", response);
 
         let body = response.into_body();
         let records: Vec<FleetVehicleRecord> = match serde_json::from_slice(&body) {
@@ -232,16 +238,31 @@ where
         &self,
         vehicle_id: String,
     ) -> Result<Option<VehicleAllocation>> {
-        let block_mgt_addr = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        println!("Querying block management for vehicle allocation: {}", vehicle_id);
+        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
+        println!("Block management address: {}", block_mgt_addr);
         let url = format!("{block_mgt_addr}/allocations/vehicles/{vehicle_id}?currentTrip=true");
-        let builder = http::Request::builder()
+        println!("Querying block management API at: {}", url);
+        let mut builder = http::Request::builder()
             .method(Method::GET)
             .uri(url)
             .header("Content-Type", "application/json");
 
+        if env::var("ENVIRONMENT").unwrap_or_default() == "dev" {
+            println!("Running in development mode");
+            let authorization = env::var("BLOCK_MGT_AUTHORIZATION").ok();
+            if let Some(token) = authorization {
+                builder = builder.header("Authorization", token.as_str());
+            }
+        }
+
+        println!("Preparing request for vehicle ID: {}", vehicle_id);
+
         let request = builder
             .body(Empty::<Bytes>::new())
             .context("building allocation_by_vehicle request")?;
+
+        println!("Sending request for vehicle ID: {}", vehicle_id);
 
         let response = match self.http.fetch(request).await {
             Ok(resp) => resp,
@@ -250,6 +271,9 @@ where
                 return Ok(None);
             }
         };
+        
+        println!("Received response for vehicle ID: {}", vehicle_id);
+        println!("Response status: {:?}", response.status());
 
         let body = response.into_body();
         let envelope: AllocationEnvelope = match serde_json::from_slice(&body) {
@@ -260,11 +284,13 @@ where
             }
         };
 
+        println!("Decoded allocation");
+
         Ok(envelope.current.into_iter().next())
     }
 
     async fn all_allocations_async(&self) -> Result<Vec<VehicleAllocation>> {
-        let block_mgt_addr = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
         let url = format!("{block_mgt_addr}/allocations");
         let mut builder = http::Request::builder()
             .method(Method::GET)
@@ -332,6 +358,14 @@ struct AllocationEnvelope {
     all: Vec<VehicleAllocation>,
 }
 
+/*#[derive(Default, Deserialize)]
+struct StopTypesResponse {
+    #[serde(default)]
+    data: Vec<StopTypeEntry>,
+}*/
+
+type StopTypesResponse = Vec<StopTypeEntry>;
+
 #[derive(Clone)]
 pub struct GtfsStaticProviderImpl<H>
 where
@@ -372,8 +406,9 @@ where
         if let Some(entries) = self.read_cache(CACHE_KEY) {
             return Ok(entries);
         }
-        let gtfs_static_addr = env::var("GTFS_STATIC_URL").context("getting `GTFS_STATIC_URL`")?;
+        let gtfs_static_addr = env::var("GTFS_STATIC_ADDR").context("getting `GTFS_STATIC_ADDR`")?;
         let url = format!("{gtfs_static_addr}/stopstypes/");
+        println!("GTFS Static request URL: {}", url);
         let request = http::Request::builder()
             .method(Method::GET)
             .uri(url)
@@ -400,13 +435,15 @@ where
             }
         };
 
+        println!("GTFS Static stopstypes response: {:?}", payload.iter().count());
+
         let train_stops: Vec<StopTypeEntry> = payload
-            .data
             .into_iter()
-            .filter(|entry| entry.route_type == StopType::TrainStop as u32)
+            .filter(|entry| entry.route_type == Some(StopType::TrainStop as u32))
             .collect();
 
         self.write_cache(CACHE_KEY, &train_stops, GTFS_SUCCESS_TTL);
+        println!("Cached {} train stop types", train_stops.len());
 
         Ok(train_stops)
     }
@@ -422,12 +459,6 @@ where
         let this = self;
         Box::pin(async move { this.train_stop_types_async().await })
     }
-}
-
-#[derive(Default, Deserialize)]
-struct StopTypesResponse {
-    #[serde(default)]
-    data: Vec<StopTypeEntry>,
 }
 
 #[derive(Clone)]
@@ -453,10 +484,13 @@ where
         lon: String,
         distance: u32,
     ) -> Result<Vec<StopInfo>> {
-        let cc_static_addr = env::var("GTFS_CC_STATIC_URL").context("getting `GTFS_CC_STATIC_URL`")?;
+        println!("Looking up stops by location: lat={}, lon={}, distance={}", lat, lon, distance);
+        let cc_static_addr = env::var("GTFS_API_ADDR").context("getting `GTFS_API_ADDR`")?;
+        println!("CC Static address: {}", cc_static_addr);
         let url = format!(
             "{cc_static_addr}/gtfs/stops/geosearch?lat={lat}&lng={lon}&distance={distance}"
         );
+        println!("CC Static request URL: {}", url);
 
         let request = http::Request::builder()
             .method(Method::GET)
@@ -465,23 +499,30 @@ where
             .header("Content-Type", "application/json")
             .body(Empty::<Bytes>::new())
             .context("building cc stops_by_location request")?;
+        println!("CC Static request body: {:?}", request.body());
 
         let response = match self.http.fetch(request).await {
             Ok(resp) => resp,
             Err(err) => {
+                println!("Failed to fetch CC Static stops by location: {}", err);
                 warn!(lat = %lat, lon = %lon, error = %err, "CC Static request failed");
                 return Ok(Vec::new());
             }
         };
 
+        println!("CC Static response: {:?}", response);
+
         let body = response.into_body();
         let stops: Vec<CcStopResponse> = match serde_json::from_slice(&body) {
             Ok(payload) => payload,
             Err(err) => {
+                println!("Failed to decode CC Static response: {}", err);
                 warn!(lat = %lat, lon = %lon, error = %err, "Failed to decode CC Static response");
                 return Ok(Vec::new());
             }
         };
+
+        println!("Decoded {} stops from CC Static", stops.len());
 
         Ok(stops
             .into_iter()

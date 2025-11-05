@@ -151,7 +151,7 @@ pub struct StopTypeEntry {
     #[serde(rename = "parent_stop_code")]
     pub parent_stop_code: Option<String>,
     #[serde(rename = "route_type")]
-    pub route_type: u32,
+    pub route_type: Option<u32>,
     #[serde(rename = "stop_code")]
     pub stop_code: Option<String>,
 }

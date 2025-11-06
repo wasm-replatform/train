@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct NormalizedF64(pub f64);
 
 impl Serialize for NormalizedF64 {
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -35,42 +36,43 @@ impl<'de> Deserialize<'de> for NormalizedF64 {
     {
         struct NormalizedF64Visitor;
 
-        impl<'de> Visitor<'de> for NormalizedF64Visitor {
+        impl Visitor<'_> for NormalizedF64Visitor {
             type Value = NormalizedF64;
 
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a numeric value")
             }
 
-            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+            fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                Ok(NormalizedF64(value))
+                Ok(NormalizedF64(v))
             }
 
-            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+            #[allow(clippy::cast_precision_loss)]
+            fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                Ok(NormalizedF64(value as f64))
+                Ok(NormalizedF64(v as f64))
             }
 
-            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+            #[allow(clippy::cast_precision_loss)]
+            fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                Ok(NormalizedF64(value as f64))
+                Ok(NormalizedF64(v as f64))
             }
 
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                value
-                    .parse::<f64>()
+                v.parse::<f64>()
                     .map(NormalizedF64)
-                    .map_err(|_| E::invalid_value(Unexpected::Str(value), &self))
+                    .map_err(|_parse_error| E::invalid_value(Unexpected::Str(v), &self))
             }
         }
 

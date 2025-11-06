@@ -19,7 +19,7 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-async-trait = "0.1.83"
+async-trait.workspace = true
 bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
@@ -36,6 +36,6 @@ urlencoding.workspace = true
 wasi-keyvalue.workspace = true
 
 [dev-dependencies]
-pretty_assertions = "1.4.1"
+pretty_assertions.workspace = true
 tokio.workspace = true
 serde_json.workspace = true

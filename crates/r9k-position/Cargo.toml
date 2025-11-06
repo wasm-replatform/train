@@ -37,4 +37,4 @@ wit-bindgen.workspace = true
 [dev-dependencies]
 tokio.workspace = true
 serde_yaml = "0.9"
-pretty_assertions = "1.4.1"
+pretty_assertions.workspace = true

@@ -1,21 +1,28 @@
 #![cfg(target_arch = "wasm32")]
 mod provider;
 
-use std::{ env, thread };
-use std::time::Duration;
 use std::sync::{Arc, LazyLock};
+use std::time::Duration;
+use std::{env, thread};
 
 use anyhow::{anyhow, Context, Result};
+use axum::routing::get;
+use axum::{Json, Router};
 use credibil_api::Client;
 use dilax::api::{
-    BlockMgtClient, BlockMgtProvider, CcStaticProvider, CcStaticProviderImpl, FleetApiProvider,
-    FleetProvider, GtfsStaticProvider, GtfsStaticProviderImpl,
+    BlockMgtClient, BlockMgtProvider, CcStaticProvider, CcStaticProviderImpl,
+    FleetApiProvider, FleetProvider, GtfsStaticProvider, GtfsStaticProviderImpl,
 };
+use dilax::detector::run_lost_connection_job;
 use dilax::processor::DilaxProcessor;
 use dilax::store::KvStore;
 use dilax::types::{DilaxEnrichedEvent, DilaxEvent};
 use r9k_position::R9kMessage ;
-use tracing::{error, info, warn};
+use serde_json::Value;
+use tracing::{error, info, warn, Level};
+use wasi_http::Result as HttpResult;
+use wasip3::exports::http::handler::Guest;
+use wasip3::http::types::{ErrorCode, Request, Response};
 use wasi_messaging::types::{Client as MsgClient, Message};
 use wasi_messaging::{producer, types};
 
@@ -31,15 +38,39 @@ static ENV: LazyLock<String> =
     LazyLock::new(|| env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string()));
 
 
+pub struct Http;
+wasip3::http::proxy::export!(Http);
+
+impl Guest for Http {
+   #[wasi_otel::instrument(name = "http_guest_handle",level = Level::INFO)]
+    async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
+        let router = Router::new().route("/jobs/detector", get(jobs_detector));
+        wasi_http::serve(router, request).await
+    }
+}
+
+#[axum::debug_handler]
+async fn jobs_detector() -> HttpResult<Json<Value>> {
+    let http_client = Arc::new(WasiHttpClient);
+    let detections = run_lost_connection_job(http_client)
+        .await
+        .context("running Dilax lost connection job")?;
+
+    Ok(Json(serde_json::json!({
+        "status": "job detection triggered",
+        "detections": detections.len()
+    })))
+}
+
 pub struct Messaging;
 
 wasi_messaging::export!(Messaging with_types_in wasi_messaging);
 
+#[allow(clippy::future_not_send)]
 impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
-        println!("Received message on topic {}", topic);
         if topic == format!("{}-{R9K_TOPIC}", *ENV) {
             if let Err(e) = r9k_message(&message.data()).await {
                 error!(
@@ -50,9 +81,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                 );
             }
         } else if topic == format!("{}-{DILAX_TOPIC}", *ENV) {
-            println!("Processing Dilax message...");
             if let Err(e) = process_dilax(&message.data()).await {
-                println!("Failed to process Dilax message: {}", e);
                 error!(
                     monotonic_counter.processing_errors = 1,
                     error = %e,
@@ -135,11 +164,7 @@ async fn process_dilax(payload: &[u8]) -> Result<()> {
         Arc::clone(&http_client),
     ));
 
-    println!("Dilax processors initialized");
-
     let processor = DilaxProcessor::with_providers(config, kv_store, fleet, cc_static, gtfs, block);
-
-    println!("Dilax processor created");
 
     let enriched = processor
         .process(event)

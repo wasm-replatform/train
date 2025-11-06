@@ -8,11 +8,9 @@ use std::ops::Sub;
 use chrono::{Duration, Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
-use jiff::Timestamp;
-use r9k_position::r9k_date::R9kDate;
 use r9k_position::{ChangeType, Error, EventType, R9kMessage};
 
-use self::provider::AppContext;
+use self::provider::MockProvider;
 
 // Should deserialize XML into R9K message.
 #[tokio::test]
@@ -30,17 +28,14 @@ async fn deserialize_xml() {
 // Should create an arrival event with a normal stop location.
 #[tokio::test]
 async fn arrival_event() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().xml();
-    println!("XML: {xml}");
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let response = client.request(message).owner("owner").await.expect("should process");
-    let events = &response.smartrak_events;
+    let events = response.smartrak_events.as_ref().expect("should have events");
     assert_eq!(events.len(), 1);
 
     let event = &events[0];
@@ -55,16 +50,14 @@ async fn arrival_event() {
 // Should create a departure event with an stop location updated.
 #[tokio::test]
 async fn departure_event() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().arrival(false).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let response = client.request(message).owner("owner").await.expect("should process");
-    let events = &response.smartrak_events;
+    let events = response.smartrak_events.as_ref().expect("should have events");
     assert_eq!(events.len(), 1);
 
     let event = &events[0];
@@ -78,62 +71,54 @@ async fn departure_event() {
 // Should return no events for an unmapped station.
 #[tokio::test]
 async fn unmapped_station() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().station(5).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let response = client.request(message).owner("owner").await.expect("should process");
-    let events = &response.smartrak_events;
+    let events = response.smartrak_events.as_ref().expect("should have events");
     assert_eq!(events.len(), 0);
 }
 
 // Should return no events when there are no vehicles found for the train id.
 #[tokio::test]
 async fn no_matching_vehicle() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().vehicle("445").xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let response = client.request(message).owner("owner").await.expect("should process");
-    let events = &response.smartrak_events;
-    assert_eq!(events.len(), 0);
+    let events = response.smartrak_events.as_ref().expect("should have events");
+    assert!(events.is_empty());
 }
 
 // Should return no events when there are no stop is found for the station.
 #[tokio::test]
 async fn no_matching_stop() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().station(80).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let response = client.request(message).owner("owner").await.expect("should process");
-    let events = &response.smartrak_events;
+    let events = response.smartrak_events.as_ref().expect("should have events");
     assert_eq!(events.len(), 0);
 }
 
 // Should return no events when there is no train update.
 #[tokio::test]
 async fn no_train_update() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().update(UpdateType::None).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let Err(Error::NoUpdate) = client.request(message).owner("owner").await else {
         panic!("should return no update error");
     };
@@ -143,15 +128,12 @@ async fn no_train_update() {
 // changes.
 #[tokio::test]
 async fn no_changes() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
-    // transform to SmarTrak event
     let Err(Error::NoUpdate) = client.request(message).owner("owner").await else {
         panic!("should return no update error");
     };
@@ -161,14 +143,12 @@ async fn no_changes() {
 // actual changes.
 #[tokio::test]
 async fn no_actual_changes() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
     let Err(Error::NoActualUpdate) = client.request(message).owner("owner").await else {
         panic!("should return no actual update error");
     };
@@ -178,34 +158,33 @@ async fn no_actual_changes() {
 // the current time.
 #[tokio::test]
 async fn too_late() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().delay_secs(61).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
-    let Err(Error::Outdated(_)) = client.request(message).owner("owner").await else {
+    let Err(Error::Outdated(e)) = client.request(message).owner("owner").await else {
         panic!("should return no actual update error");
     };
+    assert!(e.contains("message delayed"));
 }
 
 // Should return no events when train update arrives more than 30 seconds before
 // the current time.
 #[tokio::test]
 async fn too_early() {
-    let provider = AppContext::new();
+    let provider = MockProvider::new();
     let client = Client::new(provider);
 
-    // generate R9K message
     let xml = XmlBuilder::new().delay_secs(-32).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    // transform to SmarTrak event
-    let Err(Error::WrongTime(_)) = client.request(message).owner("owner").await else {
+    let Err(Error::WrongTime(e)) = client.request(message).owner("owner").await else {
         panic!("should return no actual update error");
     };
+    // assert!(e.contains("message is too early"));
+    println!("received error: {e}");
 }
 
 struct XmlBuilder<'a> {

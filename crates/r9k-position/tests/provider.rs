@@ -10,35 +10,34 @@ use http::{Request, Response};
 use r9k_position::{HttpRequest, Provider, StopInfo};
 
 #[derive(Clone, Default)]
-pub struct AppContext {
-    stops: HashMap<&'static str, StopInfo>,
-    vehicles: HashMap<&'static str, String>,
+pub struct MockProvider {
+    stops: Vec<StopInfo>,
+    vehicles: Vec<String>,
 }
 
-impl AppContext {
+impl MockProvider {
+    #[allow(unused)]
     #[must_use]
     pub fn new() -> Self {
-        let stops = HashMap::from([
-            (
-                "133",
-                StopInfo { stop_code: "133".to_string(), stop_lat: -36.12345, stop_lon: 174.12345 },
-            ),
-            (
-                "134",
-                StopInfo { stop_code: "134".to_string(), stop_lat: -36.20299, stop_lon: 174.76915 },
-            ),
-            (
-                "9218",
-                StopInfo { stop_code: "9218".to_string(), stop_lat: -36.567, stop_lon: 174.44444 },
-            ),
-        ]);
-        let vehicles = HashMap::from([("5226", "vehicle 1".to_string())]);
+        // SAFETY:
+        // This is safe in a test context as tests are run sequentially.
+        unsafe {
+            env::set_var("BLOCK_MGT_ADDR", "http://localhost:8080");
+            env::set_var("GTFS_API_ADDR", "http://localhost:8080");
+        };
+
+        let stops = vec![
+            StopInfo { stop_code: "133".to_string(), stop_lat: -36.12345, stop_lon: 174.12345 },
+            StopInfo { stop_code: "134".to_string(), stop_lat: -36.54321, stop_lon: 174.54321 },
+            StopInfo { stop_code: "9218".to_string(), stop_lat: -36.567, stop_lon: 174.44444 },
+        ];
+        let vehicles = vec!["vehicle 1".to_string()];
 
         Self { stops, vehicles }
     }
 }
 
-impl Provider for AppContext {}
+impl Provider for MockProvider {}
 
 impl HttpRequest for MockProvider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>

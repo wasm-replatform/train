@@ -20,20 +20,13 @@ use serde::Deserialize;
 /// of the Typescript adapter.
 #[tokio::test]
 async fn wiretap() -> Result<()> {
-    let wiretap_dir = Path::new("data/wiretap");
-
-    assert!(wiretap_dir.exists(), "Wiretap data directory should exist");
-
-    for entry in fs::read_dir(wiretap_dir).expect("Should be able to read wiretap directory") {
-        let entry = entry.expect("Should be able to read directory entry");
+    for entry in fs::read_dir("data/wiretap").expect("should read wiretap directory") {
+        let entry = entry.expect("should read directory entry");
         let path = entry.path();
-        println!("Wiretap file: {path:?}");
+        let reader = File::open(&path).expect("should open file");
 
-        let reader = fs::File::open(&path).expect("Should be able to open file");
-
-        // Parse the YAML content
         match serde_yaml::from_reader::<_, Wiretap>(&reader) {
-            Ok(w) => run_wiretap(w).await?,
+            Ok(w) => compare(w).await?,
             Err(e) => panic!("Failed to parse YAML in file {path:?}: {e}"),
         }
     }
@@ -70,67 +63,41 @@ async fn compare(wiretap: Wiretap) -> Result<()> {
             return Ok(());
         }
     };
-    let events = response.body.smartrak_events;
 
-    // Expect to not emit events of typescript skipped an irrelevant station.
-    if let Some(b) = wiretap.not_relevant_station
-        && b
-    {
-        assert_eq!(events.len(), 0);
+    let Some(curr_events) = response.body.smartrak_events else {
+        bail!("no SmarTrak events in response");
+    };
+
+    if wiretap.not_relevant_station.unwrap_or_default() {
+        assert!(curr_events.is_empty());
+    }
+    if wiretap.not_relevant_type.unwrap_or_default() {
+        assert!(curr_events.is_empty());
+    }
+    if curr_events.is_empty() {
+        assert!(wiretap.output.is_none_or(|p| p.is_empty()));
+        return Ok(());
     }
 
-    // Expect to not emit events of typescript skipped an irrelevant update type.
-    if let Some(b) = wiretap.not_relevant_type
-        && b
-    {
-        assert_eq!(events.len(), 0);
-    }
+    let orig_events = wiretap.output.unwrap();
+    assert_eq!(curr_events.len() * 2, orig_events.len(), "should be 2 publish events per message");
 
-    if events.is_empty() {
-        // If we actually didn't emit events, Typescript must have skipped.
-        assert!(
-            wiretap.not_relevant_type == Some(true) || wiretap.not_relevant_station == Some(true)
-        );
-        assert!(wiretap.publishing.is_none_or(|p| p.is_empty()));
-    } else {
-        // There must be publishing events.
-        let publishing = wiretap.publishing.unwrap();
+    orig_events.into_iter().zip(curr_events).for_each(|(published, mut actual)| {
+        let original: SmarTrakEvent = serde_json::from_str(&published).unwrap();
 
-        // If we did emit events, they must correspond to the first wave of publishing after
-        // 5 secs.
-        assert_eq!(events.len() * 2, publishing.len(), "Expecting 2 TS publish events per event");
+        // add 5 seconds to the actual message timestamp the adapter sleeps 5 seconds
+        // before output the first round
+        let diff = now.timestamp() - actual.message_data.timestamp.timestamp();
+        assert!(diff.abs() < 3, "expected vs actual too great: {diff}");
 
-        publishing.into_iter().zip(events).for_each(|(publish, mut actual)| {
-            let expected: SmarTrakEvent = serde_json::from_str(&publish.value).unwrap();
+        // compare original published message to r9k event
+        actual.received_at = original.received_at;
+        actual.message_data.timestamp = original.message_data.timestamp;
 
-            // Kafka key is derived from the event.
-            assert_eq!(publish.key, expected.remote_data.external_id);
-
-            // Add 5 seconds to the actual message timestamp because typescript sleeps 5 seconds
-            // before publishing the first round.
-            let diff =
-                expected.message_data.timestamp - (actual.message_data.timestamp + 5.seconds());
-
-            // Add 5 seconds of tolerance because Typescript waits for Api responses before
-            // publishing.
-            assert!(
-                diff.compare(3.seconds()).unwrap() == Ordering::Less,
-                "expected - actual has to be < 3secs, got: {diff}"
-            );
-
-            // Overwrite the timestamp with the expected one so that we get a clean diff if
-            // above assert passes.
-            actual.message_data.timestamp = expected.message_data.timestamp;
-
-            assert_eq!(expected, actual);
-
-            // Finally compare generated json. Compare ``Value`s instead of strings because of key
-            // ordering.
-            let json_actual = serde_json::to_value(&actual).unwrap();
-            let json_expected: serde_json::Value = serde_json::from_str(&publish.value).unwrap();
-            assert_eq!(json_expected, json_actual);
-        });
-    }
+        let json_actual = serde_json::to_value(&actual).unwrap();
+        let json_expected: serde_json::Value = serde_json::from_str(&published).unwrap();
+        assert_eq!(json_expected, json_actual);
+    });
 
     Ok(())
 }

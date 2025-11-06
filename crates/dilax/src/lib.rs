@@ -1,5 +1,6 @@
 //! Dilax domain library
 
+pub mod api;
 pub mod config;
 pub mod detector;
 pub mod error;
@@ -9,4 +10,3 @@ pub mod provider;
 pub mod state;
 pub mod store;
 pub mod types;
-pub mod api;

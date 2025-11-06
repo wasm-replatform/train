@@ -13,7 +13,7 @@
     "serial": "ABCDEFGHIJKLMNOPQRSTUVWX"
   },
   "clock": {
-    "utc": "1762369202",
+    "utc": "1762469343",
     "tz": "UTC"
   },
   "pis": {
@@ -23,48 +23,48 @@
   "doors": [
     {
       "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZA",
-      "in": 0,
-      "out": 0,
+      "in": 10,
+      "out": 20,
       "st": "ABCDEFGHIJKLMN",
-      "art": 0,
+      "art": 10,
       "err": null
     },
     {
       "name": "ABCDEFGHIJKLMNOPQRS",
-      "in": 0,
-      "out": 0,
+      "in": 12,
+      "out": 23,
       "st": "ABCDEFGHIJKL",
       "art": 0,
       "err": "ABCDEFGHIJKLMNO"
     },
     {
       "name": "ABCDEFGHIJKLMNOPQRSTU",
-      "in": 0,
-      "out": 0,
+      "in": 15,
+      "out": 25,
       "st": "ABCDEFGHIJKLMNOPQRSTU",
       "art": 0,
       "err": "ABCDEFGH"
     },
     {
       "name": "ABCDE",
-      "in": 0,
-      "out": 0,
+      "in": 32,
+      "out": 10,
       "st": "ABCDEFGHIJKLMNO",
       "art": 0,
       "err": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     },
     {
       "name": "ABCDEFGHI",
-      "in": 0,
-      "out": 0,
+      "in": 12,
+      "out": 2,
       "st": "ABCDEFGHIJK",
       "art": 0,
       "err": "ABCDEFGHIJKLMNOPQRSTUVW"
     },
     {
       "name": "ABCDEFGHIJKLMNOPQRSTUVWXY",
-      "in": 0,
-      "out": 0,
+      "in": 30,
+      "out": 30,
       "st": "ABCDEFGHIJKLMNOPQRSTU",
       "art": 0,
       "err": "ABCDEFGHIJKLMN"
@@ -80,7 +80,7 @@
     {
       "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZABC",
       "in": 0,
-      "out": 0,
+      "out": 200,
       "st": "ABCDE",
       "art": 0,
       "err": null

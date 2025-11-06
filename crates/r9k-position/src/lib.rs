@@ -1,4 +1,3 @@
-
 //! # R9K  Transformer
 //!
 //! Transforms R9K messages into SmarTrak events.

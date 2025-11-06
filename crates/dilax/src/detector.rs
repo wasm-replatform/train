@@ -7,9 +7,9 @@ use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
+use crate::api::{BlockMgtClient, BlockMgtProvider, Clock};
 use crate::config::Config;
 use crate::error::Error;
-use crate::api::{BlockMgtClient, BlockMgtProvider, Clock};
 use crate::provider::HttpRequest;
 use crate::store::KvStore;
 use crate::types::{VehicleAllocation, VehicleInfo, VehicleTripInfo};
@@ -76,10 +76,7 @@ where
     let config = Config::default();
     let store = KvStore::open("dilax").context("opening dilax store")?;
     let detector = build_default_detector(config, store, http);
-    detector
-        .refresh_allocations()
-        .await
-        .context("refreshing Dilax allocations")?;
+    detector.refresh_allocations().await.context("refreshing Dilax allocations")?;
     let detections = detector.detect().context("detecting Dilax lost connections")?;
     info!(count = detections.len(), "Completed Dilax lost connection job");
     Ok(detections)

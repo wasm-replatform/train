@@ -5,10 +5,10 @@ use std::time::Duration;
 use anyhow::Result;
 use tracing::{debug, error, info, warn};
 
+use crate::api::{BlockMgtProvider, CcStaticProvider, FleetProvider, GtfsStaticProvider};
 use crate::config::Config;
 use crate::error::Error;
 use crate::occupancy::OccupancyStatus;
-use crate::api::{BlockMgtProvider, CcStaticProvider, FleetProvider, GtfsStaticProvider};
 use crate::state::DilaxState;
 use crate::store::KvStore;
 use crate::types::{DilaxEnrichedEvent, DilaxEvent, FleetVehicle, StopTypeEntry, VehicleTripInfo};
@@ -38,34 +38,45 @@ impl DilaxProcessor {
 
     pub async fn process(&self, event: DilaxEvent) -> Result<DilaxEnrichedEvent> {
         let mut trip_id: Option<String> = None;
-        let mut stop_id: Option<String> = None;
         let mut start_date: Option<String> = None;
         let mut start_time: Option<String> = None;
 
         let vehicle_label = self.vehicle_label(&event);
         if vehicle_label.is_none() {
             warn!("Could not determine vehicle label from Dilax event: {:?}", event.device);
-            return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
         }
 
-        let vehicle = self.lookup_vehicle(vehicle_label.as_deref().unwrap()).await?;
-
-        if vehicle.is_none() {
-            warn!("Failed to resolve vehicle for label {vehicle_label:?}");
-            return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
+        let mut vehicle: Option<FleetVehicle> = None;
+        if let Some(label) = vehicle_label.as_deref() {
+            if let Some(found) = self.lookup_vehicle(label).await? {
+                vehicle = Some(found);
+            } else {
+                warn!(vehicle_label = %label, "Failed to resolve vehicle");
+            }
         }
 
-        let vehicle = vehicle.unwrap();
+        let stop_id =
+            self.lookup_stop_id(vehicle.as_ref().map(|fleet| fleet.id.as_str()), &event).await?;
+        if stop_id.is_none() {
+            if let Some(fleet) = vehicle.as_ref() {
+                warn!(vehicle_id = %fleet.id, "Unable to resolve stop ID from Dilax event");
+            } else {
+                warn!("Unable to resolve stop ID from Dilax event without vehicle context");
+            }
+        }
+
+        let Some(vehicle) = vehicle else {
+            warn!("Failed to resolve vehicle for Dilax event; skipping passenger count processing");
+            return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
+        };
         let vehicle_id = vehicle.id.clone();
 
-        let (vehicle_seating, vehicle_total) = match Self::vehicle_capacity(&vehicle) {
-            Some(capacity) => capacity,
-            None => {
-                warn!(
-                    "Vehicle {vehicle_id} lacks capacity information; skipping passenger count processing"
-                );
-                return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
-            }
+        let Some((vehicle_seating, vehicle_total)) = Self::vehicle_capacity(&vehicle) else {
+            warn!(
+                vehicle_id = %vehicle_id,
+                "Vehicle lacks capacity information; skipping passenger count processing"
+            );
+            return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
         };
 
         if let Some(allocation) = self.block.allocation_by_vehicle(&vehicle_id).await? {
@@ -77,61 +88,87 @@ impl DilaxProcessor {
             warn!(vehicle_id = %vehicle_id, vehicle_label = ?vehicle_label, "Failed to resolve block allocation");
         }
 
-        stop_id = self.lookup_stop_id(&vehicle_id, &event).await?;
-
-        if stop_id.is_none() {
-            warn!(vehicle_id = %vehicle_id, "Unable to resolve stop ID from Dilax event");
+        if let Err(error) = self
+            .update_vehicle_state(
+                &vehicle_id,
+                trip_id.as_deref(),
+                vehicle_seating,
+                vehicle_total,
+                &event,
+            )
+            .await
+        {
+            error!(vehicle_id = %vehicle_id, error = ?error, "Failed to update Dilax vehicle state");
         }
-
-        self.update_vehicle_state(
-            &vehicle_id,
-            trip_id.as_deref(),
-            vehicle_seating,
-            vehicle_total,
-            &event,
-        )
-        .await?;
-        self.save_vehicle_trip_info(
-            &vehicle_id,
-            vehicle_label.as_deref(),
-            trip_id.clone(),
-            stop_id.clone(),
-            &event,
-        )
-        .await?;
+        if let Err(error) = self
+            .save_vehicle_trip_info(
+                &vehicle_id,
+                vehicle_label.as_deref(),
+                trip_id.clone(),
+                stop_id.clone(),
+                &event,
+            )
+            .await
+        {
+            error!(vehicle_id = %vehicle_id, error = ?error, "Failed to persist vehicle trip info");
+        }
 
         Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time })
     }
 
     fn vehicle_label(&self, event: &DilaxEvent) -> Option<String> {
-        let site = event.device.site.trim();
+        let site = event.device.site.clone();
         if site.is_empty() {
             return None;
         }
 
-        let mut alpha = String::new();
-        let mut numeric = String::new();
+        let mut segments = Vec::new();
+        let mut current = String::new();
+        let mut current_is_digit: Option<bool> = None;
+
         for ch in site.chars() {
-            if ch.is_ascii_digit() {
-                numeric.push(ch);
-            } else if ch.is_ascii_alphabetic() {
-                alpha.push(ch);
+            let is_digit = ch.is_ascii_digit();
+            match current_is_digit {
+                None => {
+                    current.push(ch);
+                    current_is_digit = Some(is_digit);
+                }
+                Some(previous) if previous == is_digit => current.push(ch),
+                Some(_) => {
+                    segments.push(std::mem::take(&mut current));
+                    current.push(ch);
+                    current_is_digit = Some(is_digit);
+                }
             }
         }
 
-        if alpha.is_empty() || numeric.is_empty() {
+        if !current.is_empty() {
+            segments.push(current);
+        }
+
+        if segments.is_empty() {
             return None;
         }
 
-        let prefix = match alpha.as_str() {
+        let mut iter = segments.into_iter();
+        let alpha = iter.next().unwrap();
+        let numeric: String = iter.collect();
+        if numeric.is_empty() {
+            return None;
+        }
+
+        let mut prefix = match alpha.as_str() {
             "AM" => "AMP".to_string(),
             "AD" => "ADL".to_string(),
-            _ => alpha.clone(),
+            _ => alpha,
         };
-        let padding_width = 14usize.saturating_sub(prefix.len() + numeric.len());
-        let padded_prefix = format!("{prefix}{:padding$}", "", padding = padding_width);
 
-        Some(format!("{padded_prefix}{numeric}"))
+        let alpha_len = prefix.chars().count();
+        let numeric_len = numeric.chars().count();
+        let padding = 14usize.saturating_sub(alpha_len + numeric_len);
+        prefix.extend(std::iter::repeat(' ').take(padding));
+
+        Some(format!("{prefix}{numeric}"))
     }
 
     async fn lookup_vehicle(&self, label: &str) -> Result<Option<FleetVehicle>> {
@@ -148,16 +185,21 @@ impl DilaxProcessor {
         vehicle.capacity.as_ref().map(|capacity| (capacity.seating, capacity.total))
     }
 
-    async fn lookup_stop_id(&self, vehicle_id: &str, event: &DilaxEvent) -> Result<Option<String>> {
-        let waypoint = match &event.wpt {
-            Some(wpt) => wpt,
-            None => {
-                warn!(vehicle_id = %vehicle_id, "Dilax event missing waypoint data");
-                return Ok(None);
-            }
+    async fn lookup_stop_id(
+        &self, vehicle_id: Option<&str>, event: &DilaxEvent,
+    ) -> Result<Option<String>> {
+        let vehicle_for_logs = vehicle_id.unwrap_or("unknown");
+        let Some(waypoint) = event.wpt.as_ref() else {
+            warn!(vehicle_id = %vehicle_for_logs, "Dilax event missing waypoint data");
+            return Ok(None);
         };
 
-        info!(vehicle_id = %vehicle_id, lat = %waypoint.lat, lon = %waypoint.lon, "Querying CC Static for stop info");
+        info!(
+            vehicle_id = %vehicle_for_logs,
+            lat = %waypoint.lat,
+            lon = %waypoint.lon,
+            "Querying CC Static for stop info"
+        );
         let stops = self
             .cc_static
             .stops_by_location(&waypoint.lat, &waypoint.lon, STOP_SEARCH_DISTANCE_METERS)
@@ -168,15 +210,15 @@ impl DilaxProcessor {
 
         let train_stop_types = self.gtfs.train_stop_types().await?;
         if train_stop_types.is_empty() {
-            warn!(vehicle_id = %vehicle_id, "GTFS train stop types unavailable");
+            warn!(vehicle_id = %vehicle_for_logs, "GTFS train stop types unavailable");
             return Ok(None);
         }
 
         for stop in &stops {
-            debug!(vehicle_id = %vehicle_id, stop = ?stop);
+            debug!(vehicle_id = %vehicle_for_logs, stop = ?stop);
             if let Some(code) = stop.stop_code.as_deref() {
                 if Self::is_train_station(&train_stop_types, code) {
-                    info!(vehicle_id = %vehicle_id, stop_id = %stop.stop_id, stop_code = code);
+                    info!(vehicle_id = %vehicle_for_logs, stop_id = %stop.stop_id, stop_code = code);
                     return Ok(Some(stop.stop_id.clone()));
                 }
             }

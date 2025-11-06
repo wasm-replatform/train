@@ -1,4 +1,3 @@
-
 //! # R9K Errors
 
 use quick_xml::DeError;

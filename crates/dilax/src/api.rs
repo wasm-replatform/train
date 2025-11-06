@@ -1,5 +1,4 @@
 use std::env;
-
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -26,18 +25,15 @@ const FLEET_FAILURE_TTL: Duration = Duration::from_secs(3 * 60);
 const GTFS_SUCCESS_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const GTFS_FAILURE_TTL: Duration = Duration::from_secs(60);
 
-
 pub trait FleetProvider: Send + Sync {
     fn train_by_label(
-        &self,
-        label: &str,
+        &self, label: &str,
     ) -> Pin<Box<dyn Future<Output = Result<Option<FleetVehicle>>> + Send + '_>>;
 }
 
 pub trait BlockMgtProvider: Send + Sync {
     fn allocation_by_vehicle(
-        &self,
-        vehicle_id: &str,
+        &self, vehicle_id: &str,
     ) -> Pin<Box<dyn Future<Output = Result<Option<VehicleAllocation>>> + Send + '_>>;
     fn all_allocations(
         &self,
@@ -52,10 +48,7 @@ pub trait GtfsStaticProvider: Send + Sync {
 
 pub trait CcStaticProvider: Send + Sync {
     fn stops_by_location(
-        &self,
-        lat: &str,
-        lon: &str,
-        distance: u32,
+        &self, lat: &str, lon: &str, distance: u32,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<StopInfo>>> + Send + '_>>;
 }
 
@@ -79,7 +72,7 @@ impl<H> FleetApiProvider<H>
 where
     H: HttpRequest + ?Sized,
 {
-    pub fn new(cache: KvStore,  cache_prefix: String, http: Arc<H>) -> Self {
+    pub fn new(cache: KvStore, cache_prefix: String, http: Arc<H>) -> Self {
         Self { cache, cache_prefix, http }
     }
 
@@ -176,8 +169,7 @@ where
     H: HttpRequest + ?Sized,
 {
     fn train_by_label(
-        &self,
-        label: &str,
+        &self, label: &str,
     ) -> Pin<Box<dyn Future<Output = Result<Option<FleetVehicle>>> + Send + '_>> {
         let this = self;
         let owned_label = label.to_owned();
@@ -229,8 +221,7 @@ where
     }
 
     async fn allocation_by_vehicle_async(
-        &self,
-        vehicle_id: String,
+        &self, vehicle_id: String,
     ) -> Result<Option<VehicleAllocation>> {
         let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
         let url = format!("{block_mgt_addr}/allocations/vehicles/{vehicle_id}?currentTrip=true");
@@ -257,7 +248,7 @@ where
                 return Ok(None);
             }
         };
-        
+
         let body = response.into_body();
         let envelope: AllocationEnvelope = match serde_json::from_slice(&body) {
             Ok(payload) => payload,
@@ -277,7 +268,7 @@ where
             .method(Method::GET)
             .uri(url)
             .header("Content-Type", "application/json");
-        
+
         if env::var("ENVIRONMENT").unwrap_or_default() == "dev" {
             let authorization = env::var("BLOCK_MGT_AUTHORIZATION").ok();
             if let Some(token) = authorization {
@@ -285,9 +276,8 @@ where
             }
         }
 
-        let request = builder
-            .body(Empty::<Bytes>::new())
-            .context("building all_allocations request")?;
+        let request =
+            builder.body(Empty::<Bytes>::new()).context("building all_allocations request")?;
 
         let response = match self.http.fetch(request).await {
             Ok(resp) => resp,
@@ -315,8 +305,7 @@ where
     H: HttpRequest + ?Sized,
 {
     fn allocation_by_vehicle(
-        &self,
-        vehicle_id: &str,
+        &self, vehicle_id: &str,
     ) -> Pin<Box<dyn Future<Output = Result<Option<VehicleAllocation>>> + Send + '_>> {
         let this = self;
         let owned_vehicle_id = vehicle_id.to_owned();
@@ -387,7 +376,8 @@ where
         if let Some(entries) = self.read_cache(CACHE_KEY) {
             return Ok(entries);
         }
-        let gtfs_static_addr = env::var("GTFS_STATIC_ADDR").context("getting `GTFS_STATIC_ADDR`")?;
+        let gtfs_static_addr =
+            env::var("GTFS_STATIC_ADDR").context("getting `GTFS_STATIC_ADDR`")?;
         let url = format!("{gtfs_static_addr}/stopstypes/");
         let request = http::Request::builder()
             .method(Method::GET)
@@ -451,15 +441,12 @@ impl<H> CcStaticProviderImpl<H>
 where
     H: HttpRequest + ?Sized,
 {
-    pub fn new( http: Arc<H>) -> Self {
+    pub fn new(http: Arc<H>) -> Self {
         Self { http }
     }
 
     async fn stops_by_location_async(
-        &self,
-        lat: String,
-        lon: String,
-        distance: u32,
+        &self, lat: String, lon: String, distance: u32,
     ) -> Result<Vec<StopInfo>> {
         let cc_static_addr = env::var("GTFS_API_ADDR").context("getting `GTFS_API_ADDR`")?;
         let url = format!(
@@ -503,10 +490,7 @@ where
     H: HttpRequest + ?Sized,
 {
     fn stops_by_location(
-        &self,
-        lat: &str,
-        lon: &str,
-        distance: u32,
+        &self, lat: &str, lon: &str, distance: u32,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<StopInfo>>> + Send + '_>> {
         let this = self;
         let owned_lat = lat.to_owned();

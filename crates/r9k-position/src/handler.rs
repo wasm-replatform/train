@@ -1,4 +1,3 @@
-
 //! R9K Position Adapter
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].

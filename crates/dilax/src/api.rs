@@ -119,8 +119,8 @@ where
                 }
             }
         }
-        let fleet_api_addr = env::var("FLEET_API_ADDR").context("getting `FLEET_API_ADDR`")?;
-        let url = format!("{fleet_api_addr}/vehicles?label={}", urlencoding::encode(&label));
+        let fleet_api_url = env::var("FLEET_API_URL").context("getting `FLEET_API_URL`")?;
+        let url = format!("{fleet_api_url}/vehicles?label={}", urlencoding::encode(&label));
         let request = http::Request::builder()
             .method(Method::GET)
             .uri(url)
@@ -223,8 +223,8 @@ where
     async fn allocation_by_vehicle_async(
         &self, vehicle_id: String,
     ) -> Result<Option<VehicleAllocation>> {
-        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
-        let url = format!("{block_mgt_addr}/allocations/vehicles/{vehicle_id}?currentTrip=true");
+        let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
         let mut builder = http::Request::builder()
             .method(Method::GET)
             .uri(url)
@@ -262,8 +262,8 @@ where
     }
 
     async fn all_allocations_async(&self) -> Result<Vec<VehicleAllocation>> {
-        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
-        let url = format!("{block_mgt_addr}/allocations");
+        let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        let url = format!("{block_mgt_url}/allocations");
         let mut builder = http::Request::builder()
             .method(Method::GET)
             .uri(url)
@@ -376,9 +376,9 @@ where
         if let Some(entries) = self.read_cache(CACHE_KEY) {
             return Ok(entries);
         }
-        let gtfs_static_addr =
-            env::var("GTFS_STATIC_ADDR").context("getting `GTFS_STATIC_ADDR`")?;
-        let url = format!("{gtfs_static_addr}/stopstypes/");
+        let gtfs_static_url =
+            env::var("GTFS_STATIC_URL").context("getting `GTFS_STATIC_URL`")?;
+        let url = format!("{gtfs_static_url}/stopstypes/");
         let request = http::Request::builder()
             .method(Method::GET)
             .uri(url)
@@ -448,7 +448,7 @@ where
     async fn stops_by_location_async(
         &self, lat: String, lon: String, distance: u32,
     ) -> Result<Vec<StopInfo>> {
-        let cc_static_addr = env::var("GTFS_API_ADDR").context("getting `GTFS_API_ADDR`")?;
+        let cc_static_addr = env::var("CC_STATIC_API_URL").context("getting `CC_STATIC_API_URL`")?;
         let url = format!(
             "{cc_static_addr}/gtfs/stops/geosearch?lat={lat}&lng={lon}&distance={distance}"
         );

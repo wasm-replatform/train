@@ -15,7 +15,7 @@ use crate::types::{DilaxEnrichedEvent, DilaxEvent, FleetVehicle, StopTypeEntry, 
 
 const VEHICLE_TRIP_INFO_TTL: Duration = Duration::from_secs(2 * 24 * 60 * 60);
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
-const VEHICLE_LABEL_WIDTH : usize = 14;
+const VEHICLE_LABEL_WIDTH: usize = 14;
 #[derive(Clone)]
 pub struct DilaxProcessor {
     config: Config,

@@ -2276,6 +2276,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "runtime"
+version = "0.13.0"
+dependencies = [
+ "anyhow",
+ "cfg-if",
+ "clap",
+ "credibil-otel",
+ "tracing",
+ "wasmtime",
+ "wasmtime-wasi",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3150,6 +3163,7 @@ dependencies = [
  "serde_json",
  "tracing",
  "wasi-http",
+ "wasi-identity",
  "wasi-messaging",
  "wasi-otel",
  "wit-bindgen",
@@ -3295,7 +3309,7 @@ dependencies = [
  "hyper",
  "percent-encoding",
  "reqwest",
- "runtime",
+ "runtime 0.12.0",
  "serde",
  "serde_json",
  "serde_urlencoded",
@@ -3311,6 +3325,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasi-identity"
+version = "0.13.0"
+dependencies = [
+ "anyhow",
+ "futures",
+ "runtime 0.13.0",
+ "tracing",
+ "wasmtime",
+ "wasmtime-wasi",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "wasi-keyvalue"
 version = "0.12.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
@@ -3320,7 +3347,7 @@ dependencies = [
  "async-nats",
  "base64ct",
  "futures",
- "runtime",
+ "runtime 0.12.0",
  "serde",
  "serde_json",
  "tracing",
@@ -3339,7 +3366,7 @@ dependencies = [
  "async-nats",
  "futures",
  "http",
- "runtime",
+ "runtime 0.12.0",
  "serde",
  "time",
  "tokio",
@@ -3367,7 +3394,7 @@ dependencies = [
  "opentelemetry_sdk",
  "prost",
  "reqwest",
- "runtime",
+ "runtime 0.12.0",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",

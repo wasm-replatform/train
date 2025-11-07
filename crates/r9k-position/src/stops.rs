@@ -30,9 +30,9 @@ pub async fn stop_info(
         return Ok(None);
     };
 
-    let gtfs_api_addr = env::var("GTFS_API_ADDR").context("getting `GTFS_API_ADDR`")?;
+    let url = env::var("GTFS_API_URL").context("getting `GTFS_API_URL`")?;
     let request = http::Request::builder()
-        .uri(format!("{gtfs_api_addr}/gtfs/stops?fields=stop_code,stop_lon,stop_lat"))
+        .uri(format!("{url}/gtfs/stops?fields=stop_code,stop_lon,stop_lat"))
         .body(Empty::<Bytes>::new())
         .context("building block management request")?;
     let response = HttpRequest::fetch(provider, request).await.context("fetching stops")?;

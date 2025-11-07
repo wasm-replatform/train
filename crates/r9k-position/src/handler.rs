@@ -70,9 +70,9 @@ impl TrainUpdate {
         };
 
         // get train allocations for this trip
-        let block_mgt_addr = env::var("BLOCK_MGT_ADDR").context("getting `BLOCK_MGT_ADDR`")?;
+        let url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
         let request = http::Request::builder()
-            .uri(format!("{block_mgt_addr}/allocations/trips?externalRefId={}", self.train_id()))
+            .uri(format!("{url}/allocations/trips?externalRefId={}", self.train_id()))
             .body(Empty::<Bytes>::new())
             .context("building block management request")?;
         let response =

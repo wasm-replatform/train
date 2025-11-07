@@ -113,8 +113,8 @@ impl MockProvider {
         // SAFETY:
         // This is safe in a test context as tests are run sequentially.
         unsafe {
-            std::env::set_var("BLOCK_MGT_ADDR", "http://localhost:8080");
-            std::env::set_var("GTFS_API_ADDR", "http://localhost:8080");
+            std::env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
+            std::env::set_var("GTFS_API_URL", "http://localhost:8080");
         };
 
         Self { wiretap }

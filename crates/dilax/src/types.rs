@@ -5,6 +5,12 @@ use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
 
 #[allow(clippy::module_name_repetitions)]
+/// A wrapper for `f64` that normalizes serialization:
+/// - If the value is a whole number, it is serialized as an integer.
+/// - Otherwise, it is serialized as a float.
+///
+/// This produces more compact and human-friendly output in formats like JSON.
+/// Deserialization accepts both integer and float representations.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NormalizedF64(pub f64);
 

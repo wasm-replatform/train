@@ -41,7 +41,7 @@ pub struct Http;
 wasip3::http::proxy::export!(Http);
 
 impl Guest for Http {
-    #[wasi_otel::instrument(name = "http_guest_handle",level = Level::INFO)]
+    #[wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
         let router = Router::new().route("/jobs/detector", get(jobs_detector));
         wasi_http::serve(router, request).await

@@ -376,8 +376,7 @@ where
         if let Some(entries) = self.read_cache(CACHE_KEY) {
             return Ok(entries);
         }
-        let gtfs_static_url =
-            env::var("GTFS_STATIC_URL").context("getting `GTFS_STATIC_URL`")?;
+        let gtfs_static_url = env::var("GTFS_STATIC_URL").context("getting `GTFS_STATIC_URL`")?;
         let url = format!("{gtfs_static_url}/stopstypes/");
         let request = http::Request::builder()
             .method(Method::GET)
@@ -448,7 +447,8 @@ where
     async fn stops_by_location_async(
         &self, lat: String, lon: String, distance: u32,
     ) -> Result<Vec<StopInfo>> {
-        let cc_static_addr = env::var("CC_STATIC_API_URL").context("getting `CC_STATIC_API_URL`")?;
+        let cc_static_addr =
+            env::var("CC_STATIC_API_URL").context("getting `CC_STATIC_API_URL`")?;
         let url = format!(
             "{cc_static_addr}/gtfs/stops/geosearch?lat={lat}&lng={lon}&distance={distance}"
         );

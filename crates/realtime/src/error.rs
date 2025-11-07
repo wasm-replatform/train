@@ -1,6 +1,4 @@
-//! # Cars adapter errors
-
-// use serde::{Deserialize, Serialize};
+//! # Realtime adapter errors
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use thiserror::Error;

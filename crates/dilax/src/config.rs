@@ -18,7 +18,7 @@ impl Default for RedisConfig {
     fn default() -> Self {
         Self {
             key_occupancy: Cow::Borrowed("trip:occupancy"),
-            apc_vehicle_id_migrated_key: Cow::Borrowed("apc:vehicleIdMigratred"),
+            apc_vehicle_id_migrated_key: Cow::Borrowed("apc:vehicleIdMigrated"),
             apc_vehicle_id_key: Cow::Borrowed("apc:vehicleId"),
             apc_vehicle_trip_key: Cow::Borrowed("apc:trips"),
             apc_vehicle_id_state_key: Cow::Borrowed("apc:vehicleIdState"),

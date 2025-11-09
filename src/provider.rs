@@ -4,10 +4,9 @@ use std::error::Error;
 
 use anyhow::Result;
 use bytes::Bytes;
-use http::HeaderValue;
 use http::{Request, Response};
 use http_body::Body;
-use r9k_position::HttpRequest;
+use r9k_position::{HttpRequest, Identity};
 use wasi_identity::credentials::get_identity;
 use wit_bindgen::block_on;
 
@@ -23,21 +22,15 @@ impl HttpRequest for Provider {
         T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
     {
         tracing::debug!("request: {:?}", request.uri());
+        wasi_http::handle(request).await
+    }
+}
 
-        // ------------------------------------------------
-        // TODO: move this trait
-
-        // get ManagedIdentity access token
+impl Identity for Provider {
+    async fn access_token(&self) -> Result<String> {
         let identity = env::var("AZURE_IDENTITY")?;
         let identity = block_on(get_identity(identity))?;
         let access_token = block_on(async move { identity.get_token(vec![]).await })?;
-
-        // inject authorization header
-        let mut request = request;
-        let auth_header = HeaderValue::from_str(&format!("Bearer {}", access_token.token)).unwrap();
-        request.headers_mut().insert("Authorization", auth_header);
-        // ------------------------------------------------
-
-        wasi_http::handle(request).await
+        Ok(access_token.token)
     }
 }

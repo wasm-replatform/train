@@ -112,24 +112,6 @@ pub async fn update_vehicle(
     Ok(())
 }
 
-/// Update the vehicle trip info with the latest Dilax APC event.
-///
-/// # Errors
-///
-/// This function will return an error if there is an issue reading or writing
-/// to the state store, or if the event data is malformed.
-pub async fn update_trip(
-    vehicle_trip: VehicleTripInfo, state_store: &impl StateStore,
-) -> Result<()> {
-    let key = format!("{KEY_TRIP_INFO}:{}", vehicle_trip.vehicle_info.vehicle_id);
-
-    let bytes =
-        serde_json::to_vec(&vehicle_trip).map_err(|err| Error::Internal(err.to_string()))?;
-    state_store.set(&key, &bytes, Some(TTL_VEHICLE_TRIP_INFO)).await?;
-
-    Ok(())
-}
-
 /// Retrieve the vehicle trip info for a given vehicle ID.
 ///
 /// # Errors
@@ -145,6 +127,22 @@ pub async fn get_trip(
     };
     let info = serde_json::from_slice(&bytes).context("deserializing vehicle trip info")?;
     Ok(Some(info))
+}
+
+/// Update the vehicle trip info with the latest Dilax APC event.
+///
+/// # Errors
+///
+/// This function will return an error if there is an issue reading or writing
+/// to the state store, or if the event data is malformed.
+pub async fn set_trip(vehicle_trip: VehicleTripInfo, state_store: &impl StateStore) -> Result<()> {
+    let key = format!("{KEY_TRIP_INFO}:{}", vehicle_trip.vehicle_info.vehicle_id);
+
+    let bytes =
+        serde_json::to_vec(&vehicle_trip).map_err(|err| Error::Internal(err.to_string()))?;
+    state_store.set(&key, &bytes, Some(TTL_VEHICLE_TRIP_INFO)).await?;
+
+    Ok(())
 }
 
 async fn migrate_legacy_keys(

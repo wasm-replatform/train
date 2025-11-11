@@ -111,7 +111,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<Di
         last_received_timestamp: Some(event.clock.utc.clone()),
         dilax_message: Some(event.clone()),
     };
-    trip_state::update_trip(vt, provider)
+    trip_state::set_trip(vt, provider)
         .await
         .map_err(|e| Error::Internal(format!("Failed to persist vehicle trip info: {e}")))?;
 

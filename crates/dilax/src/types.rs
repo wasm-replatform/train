@@ -82,26 +82,6 @@ pub struct Waypoint {
     pub speed: u32,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VehicleTripInfo {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_received_timestamp: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dilax_message: Option<DilaxMessage>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trip_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stop_id: Option<String>,
-    pub vehicle_info: VehicleInfo,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VehicleInfo {
-    pub label: Option<String>,
-    #[serde(rename = "vehicleId")]
-    pub vehicle_id: String,
-}
-
 // fn serialize_f64<S>(value: &f64, serializer: S) -> Result<S::Ok, S::Error>
 // where
 //     S: serde::Serializer,

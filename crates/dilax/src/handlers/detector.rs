@@ -1,4 +1,4 @@
-use anyhow::{Context, anyhow};
+use anyhow::Context;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use credibil_api::{Body, Handler, Request, Response};
@@ -9,8 +9,7 @@ use crate::Result;
 use crate::block_mgt::{self, VehicleAllocation};
 use crate::error::Error;
 use crate::provider::{HttpRequest, Provider, StateStore};
-use crate::state::KEY_TRIP_INFO;
-use crate::types::{VehicleInfo, VehicleTripInfo};
+use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
 const LOST_THRESHOLD: Duration = Duration::hours(1);
@@ -173,17 +172,15 @@ async fn detect_candidates(
 
     let mut detections = Vec::new();
     for alloc in active {
-        let key = &format!("{KEY_TRIP_INFO}:{}", alloc.vehicle_id);
-
-        let Some(bytes) = StateStore::get(provider, key).await? else {
+        let Some(info) = trip_state::get_trip(&alloc.vehicle_id, provider).await? else {
             if let Some(detection) = detect_allocation(&alloc, None) {
                 detections.push(detection);
             }
             continue;
         };
 
-        let info: VehicleTripInfo = serde_json::from_slice(&bytes)
-            .map_err(|err| anyhow!("deserializing vehicle trip info: {err}"))?;
+        // let info: VehicleTripInfo = serde_json::from_slice(&bytes)
+        //     .map_err(|err| anyhow!("deserializing vehicle trip info: {err}"))?;
 
         if info.trip_id.as_deref() == Some(&alloc.trip_id) {
             let last_ts =

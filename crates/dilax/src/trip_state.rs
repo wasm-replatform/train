@@ -7,7 +7,7 @@ use tracing::warn;
 
 use crate::error::Error;
 use crate::provider::StateStore;
-use crate::types::{DilaxMessage, Door, VehicleTripInfo};
+use crate::types::{DilaxMessage, Door};
 
 const KEY_OCCUPANCY: &str = "trip:occupancy";
 const KEY_VEHICLE_STATE: &str = "apc:vehicleIdState";
@@ -35,9 +35,9 @@ pub async fn update_vehicle(
     // fetch existing state or create
     let state_prev = state_store.get(&state_key).await?;
     let mut state = if let Some(raw) = &state_prev {
-        serde_json::from_slice::<DilaxState>(raw).unwrap_or_default()
+        serde_json::from_slice::<TripState>(raw).unwrap_or_default()
     } else {
-        let mut new_state = DilaxState::default();
+        let mut new_state = TripState::default();
         migrate_legacy_keys(vehicle_id, &mut new_state, state_store).await?;
         new_state
     };
@@ -130,8 +130,25 @@ pub async fn update_trip(
     Ok(())
 }
 
+/// Retrieve the vehicle trip info for a given vehicle ID.
+///
+/// # Errors
+///
+/// This function will return an error if there is an issue reading from
+/// the state store, or if the stored data is malformed.
+pub async fn get_trip(
+    vehicle_id: &str, state_store: &impl StateStore,
+) -> Result<Option<VehicleTripInfo>> {
+    let key = &format!("{KEY_TRIP_INFO}:{vehicle_id}");
+    let Some(bytes) = StateStore::get(state_store, key).await? else {
+        return Ok(None);
+    };
+    let info = serde_json::from_slice(&bytes).context("deserializing vehicle trip info")?;
+    Ok(Some(info))
+}
+
 async fn migrate_legacy_keys(
-    vehicle_id: &str, state: &mut DilaxState, state_store: &impl StateStore,
+    vehicle_id: &str, state: &mut TripState, state_store: &impl StateStore,
 ) -> Result<()> {
     let migration_key = format!("{KEY_VECHICLE_ID_MIGRATED}:{vehicle_id}");
     if state_store.get(&migration_key).await?.is_some() {
@@ -215,7 +232,7 @@ fn occupancy_count(previous: i64, doors: &[Door], vehicle_id: &str, skip_out: bo
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-struct DilaxState {
+struct TripState {
     pub count: i64,
     pub token: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -240,4 +257,24 @@ impl Display for OccupancyStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&(*self as u8).to_string())
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VehicleTripInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_received_timestamp: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dilax_message: Option<DilaxMessage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub trip_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop_id: Option<String>,
+    pub vehicle_info: VehicleInfo,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct VehicleInfo {
+    pub label: Option<String>,
+    #[serde(rename = "vehicleId")]
+    pub vehicle_id: String,
 }

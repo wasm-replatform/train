@@ -5,14 +5,14 @@ mod error;
 mod gtfs;
 mod handlers;
 mod provider;
-mod state;
+mod trip_state;
 mod types;
 
 pub use self::error::Error;
 pub use self::handlers::detector::*;
 pub use self::handlers::processor::*;
 pub use self::provider::*;
-pub use self::state::*;
+pub use self::trip_state::*;
 pub use self::types::*;
 
 /// Result type for handlers.

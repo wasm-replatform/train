@@ -5,8 +5,9 @@ use crate::block_mgt::{self, FleetVehicle};
 use crate::error::Error;
 use crate::gtfs::{self, StopType, StopTypeEntry};
 use crate::provider::{HttpRequest, Provider};
-use crate::types::{DilaxEnrichedEvent, DilaxMessage, VehicleTripInfo};
-use crate::{Result, state};
+use crate::trip_state::{VehicleInfo, VehicleTripInfo};
+use crate::types::{DilaxEnrichedEvent, DilaxMessage};
+use crate::{Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const VEHICLE_LABEL_WIDTH: usize = 14;
@@ -92,7 +93,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<Di
         warn!(vehicle_id = %vehicle_id, vehicle_label = ?vehicle_label, "Failed to resolve block allocation");
     }
 
-    state::update_vehicle(
+    trip_state::update_vehicle(
         &vehicle_id,
         trip_id.as_deref(),
         vehicle_seating,
@@ -104,13 +105,13 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<Di
     .map_err(|e| Error::Internal(format!("Failed to update Dilax vehicle state: {e}")))?;
 
     let vt = VehicleTripInfo {
-        vehicle_info: crate::types::VehicleInfo { vehicle_id, label: vehicle_label },
+        vehicle_info: VehicleInfo { vehicle_id, label: vehicle_label },
         trip_id: trip_id.clone(),
         stop_id: stop_id.clone(),
         last_received_timestamp: Some(event.clock.utc.clone()),
         dilax_message: Some(event.clone()),
     };
-    state::update_trip(vt, provider)
+    trip_state::update_trip(vt, provider)
         .await
         .map_err(|e| Error::Internal(format!("Failed to persist vehicle trip info: {e}")))?;
 

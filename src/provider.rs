@@ -1,45 +1,60 @@
 use std::any::Any;
 use std::error::Error;
-use std::future::Future;
 
 use anyhow::Result;
 use bytes::Bytes;
-use dilax::provider::HttpRequest as DilaxHttpRequest;
+use dilax::{HttpRequest as DilaxHttpRequest, StateStore};
 use http::{Request, Response};
-use r9k_position::HttpRequest;
+use r9k_position::HttpRequest as R9kHttpRequest;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Default)]
 pub struct Provider;
 
 impl r9k_position::Provider for Provider {}
 
-impl HttpRequest for Provider {
-    fn fetch<T>(&self, request: Request<T>) -> impl Future<Output = Result<Response<Bytes>>> + Send
+impl R9kHttpRequest for Provider {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
         T::Data: Into<Vec<u8>>,
         T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
     {
-        async move {
-            tracing::debug!("request: {:?}", request.uri());
-            wasi_http::handle(request).await
-        }
+        tracing::debug!("request: {:?}", request.uri());
+        wasi_http::handle(request).await
     }
 }
 
-#[derive(Clone, Copy, Default)]
-pub struct WasiHttpClient;
+impl dilax::Provider for Provider {}
 
-impl DilaxHttpRequest for WasiHttpClient {
-    fn fetch<T>(&self, request: Request<T>) -> impl Future<Output = Result<Response<Bytes>>> + Send
+impl DilaxHttpRequest for Provider {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
         T::Data: Into<Vec<u8>>,
         T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
     {
-        async move {
-            tracing::debug!("request: {:?}", request.uri());
-            wasi_http::handle(request).await
-        }
+        tracing::debug!("request: {:?}", request.uri());
+        wasi_http::handle(request).await
+    }
+}
+
+// TODO: implement state store using wasi-keyvalue
+
+impl StateStore for Provider {
+    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
+        // wasi_state_store::get(key)
+        todo!()
+    }
+
+    async fn set(
+        &self, key: &str, value: &[u8], expires: Option<chrono::Duration>,
+    ) -> Result<Option<Vec<u8>>> {
+        // wasi_state_store::set(key, value, expires)
+        todo!()
+    }
+
+    async fn delete(&self, key: &str) -> Result<()> {
+        // wasi_state_store::delete(key)
+        todo!()
     }
 }

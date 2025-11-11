@@ -784,10 +784,10 @@ name = "dilax"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "bytes",
  "chrono",
  "chrono-tz",
+ "credibil-api",
  "futures",
  "http",
  "http-body",
@@ -3211,9 +3211,9 @@ name = "train"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "axum",
  "bytes",
+ "chrono",
  "credibil-api",
  "dilax",
  "http",

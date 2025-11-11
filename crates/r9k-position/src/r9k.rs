@@ -3,7 +3,7 @@
 use std::fmt::{Display, Formatter};
 
 use chrono::{NaiveDate, Utc};
-use chrono_tz::Pacific::Auckland;
+use chrono_tz::Pacific;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -132,14 +132,14 @@ impl TrainUpdate {
 
         // rebuild the event timestamp from the creation date + seconds from midnight
         let naive_dt = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
-        let Some(midnight_dt) = naive_dt.and_local_timezone(Auckland).earliest() else {
+        let Some(midnight_dt) = naive_dt.and_local_timezone(Pacific::Auckland).earliest() else {
             return Err(Error::WrongTime(format!("invalid local time: {naive_dt}")));
         };
         let midnight_ts = midnight_dt.timestamp();
         let event_ts = midnight_ts + i64::from(since_midnight_secs);
 
         // calculate delay from 'now'
-        let now_ts = Utc::now().with_timezone(&Auckland).timestamp();
+        let now_ts = Utc::now().with_timezone(&Pacific::Auckland).timestamp();
         let delay_secs = now_ts - event_ts;
 
         // TODO: do we need this metric?;

@@ -1,7 +1,7 @@
 #![cfg(target_arch = "wasm32")]
 mod provider;
 
-use std::sync::{Arc, LazyLock};
+use std::sync::LazyLock;
 use std::time::Duration;
 use std::{env, thread};
 
@@ -9,14 +9,7 @@ use anyhow::{Context, Result, anyhow};
 use axum::routing::get;
 use axum::{Json, Router};
 use credibil_api::Client;
-use dilax::api::{
-    BlockMgtClient, BlockMgtProvider, CcStaticProvider, CcStaticProviderImpl, FleetApiProvider,
-    FleetProvider, GtfsStaticProvider, GtfsStaticProviderImpl,
-};
-use dilax::detector::run_lost_connection_job;
-use dilax::processor::DilaxProcessor;
-use dilax::store::KvStore;
-use dilax::types::{DilaxEnrichedEvent, DilaxEvent};
+use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
 use r9k_position::R9kMessage;
 use serde_json::Value;
 use tracing::{Level, error, info, warn};
@@ -25,8 +18,6 @@ use wasi_messaging::types::{Client as MsgClient, Message};
 use wasi_messaging::{producer, types};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
-
-use crate::provider::WasiHttpClient;
 
 const SERVICE: &str = "r9k-position-adapter";
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
@@ -50,13 +41,14 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn jobs_detector() -> HttpResult<Json<Value>> {
-    let http_client = Arc::new(WasiHttpClient);
-    let detections =
-        run_lost_connection_job(http_client).await.context("running Dilax lost connection job")?;
+    let api = Client::new(provider::Provider);
+    let builder = api.request(DetectionRequest).owner("owner");
+
+    let response = builder.await.unwrap();
 
     Ok(Json(serde_json::json!({
         "status": "job detection triggered",
-        "detections": detections.len()
+        "detections": response.detections.len()
     })))
 }
 
@@ -69,6 +61,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
+
         if topic == format!("{}-{R9K_TOPIC}", *ENV) {
             if let Err(e) = r9k_message(&message.data()).await {
                 error!(
@@ -138,32 +131,16 @@ async fn r9k_message(message: &[u8]) -> Result<()> {
 
 #[allow(clippy::future_not_send)]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
-    let event: DilaxEvent = serde_json::from_slice(payload).context("deserializing Dilax event")?;
+    let event: DilaxMessage =
+        serde_json::from_slice(payload).context("deserializing Dilax event")?;
 
-    let config = dilax::config::Config::default();
-    let vehicle_label_key = config.redis.vehicle_label_key.clone().into_owned();
-    let kv_store = KvStore::open("dilax").context("opening dilax store")?;
-    let http_client = Arc::new(WasiHttpClient);
+    let api = Client::new(provider::Provider);
+    let response = api.request(event).owner("owner").await?;
 
-    let fleet: Arc<dyn FleetProvider> = Arc::new(FleetApiProvider::new(
-        kv_store.clone(),
-        vehicle_label_key,
-        Arc::clone(&http_client),
-    ));
-    let cc_static: Arc<dyn CcStaticProvider> =
-        Arc::new(CcStaticProviderImpl::new(Arc::clone(&http_client)));
-    let gtfs: Arc<dyn GtfsStaticProvider> =
-        Arc::new(GtfsStaticProviderImpl::new(kv_store.clone(), Arc::clone(&http_client)));
-    let block: Arc<dyn BlockMgtProvider> = Arc::new(BlockMgtClient::new(Arc::clone(&http_client)));
-
-    let processor = DilaxProcessor::with_providers(config, kv_store, fleet, cc_static, gtfs, block);
-
-    let enriched = processor.process(event).await.context("processing Dilax event")?;
-
-    publish_dilax(&enriched).await?;
-
-    Ok(())
+    let enriched = response.body;
+    publish_dilax(&enriched).await
 }
+
 #[allow(clippy::future_not_send)]
 async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
     let client = MsgClient::connect("<not used>").context("connecting to message broker")?;

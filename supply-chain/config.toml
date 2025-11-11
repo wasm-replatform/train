@@ -27,7 +27,7 @@ version = "0.17.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.async-nats]]
-version = "0.44.2"
+version = "0.45.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.axum]]
@@ -55,7 +55,7 @@ version = "2.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.cc]]
-version = "1.2.44"
+version = "1.2.45"
 criteria = "safe-to-deploy"
 
 [[exemptions.chrono]]
@@ -155,7 +155,7 @@ version = "2.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.iri-string]]
-version = "0.7.8"
+version = "0.7.9"
 criteria = "safe-to-deploy"
 
 [[exemptions.itertools]]
@@ -199,11 +199,11 @@ version = "1.21.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.openssl]]
-version = "0.10.74"
+version = "0.10.75"
 criteria = "safe-to-deploy"
 
 [[exemptions.openssl-sys]]
-version = "0.9.110"
+version = "0.9.111"
 criteria = "safe-to-deploy"
 
 [[exemptions.opentelemetry]]
@@ -299,7 +299,7 @@ version = "0.22.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls]]
-version = "0.23.34"
+version = "0.23.35"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-native-certs]]

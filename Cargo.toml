@@ -36,6 +36,7 @@ tracing.workspace = true
 urlencoding.workspace = true
 wasi-http.workspace = true
 wasi-keyvalue.workspace = true
+wasi-identity.workspace = true
 wasi-messaging.workspace = true
 wasi-otel.workspace = true
 wasip3.workspace = true
@@ -55,7 +56,7 @@ keywords = ["realtime", "train"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/AucklandTransportCode/train"
-rust-version = "1.90"
+rust-version = "1.91"
 version = "0.3.0"
 
 [workspace.lints.rust]
@@ -121,16 +122,15 @@ wit-bindgen = "0.46.0"
 
 # credibil registry
 credibil-api = { version = "0.4.0", registry = "credibil" }
-wasi-http = { version = "0.12.0", registry = "credibil" }
+wasi-http = { version = "0.13.0", registry = "credibil" }
 wasi-keyvalue = { version = "0.12.0", registry = "credibil" }
-wasi-messaging = { version = "0.12.0", registry = "credibil" }
-wasi-otel = { version = "0.12.0", registry = "credibil" }
+wasi-identity = { version = "0.13.0", registry = "credibil" }
+wasi-messaging = { version = "0.13.0", registry = "credibil" }
+wasi-otel = { version = "0.13.0", registry = "credibil" }
 
-# [patch."https://github.com/credibil/wrt"]
-# wasi-http = { path = "../../credibil/wrt/crates/wasi-http" }
-# wasi-messaging = { path = "../../credibil/wrt/crates/wasi-messaging" }
+# [patch.credibil]
 # wasi-keyvalue = { path = "../../credibil/wrt/crates/wasi-keyvalue" }
-# wasi-otel = { path = "../../credibil/wrt/crates/wasi-otel" }
+# wasi-identity = { path = "../../credibil/wrt/crates/wasi-identity" }
 # sdk-otel = { path = "../../credibil/wrt/crates/sdk-otel" }
 
 # Internally reference crates

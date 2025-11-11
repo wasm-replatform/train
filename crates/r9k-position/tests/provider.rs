@@ -7,7 +7,7 @@ use std::error::Error;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Provider, StopInfo};
+use r9k_position::{HttpRequest, Identity, Provider, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
@@ -65,5 +65,11 @@ impl HttpRequest for MockProvider {
 
         let body = Bytes::from(data);
         Response::builder().status(200).body(body).context("failed to build response")
+    }
+}
+
+impl Identity for MockProvider {
+    async fn access_token(&self) -> Result<String> {
+        Ok("mock_access_token".to_string())
     }
 }

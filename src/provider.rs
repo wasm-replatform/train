@@ -1,11 +1,15 @@
 use std::any::Any;
+use std::env;
 use std::error::Error;
 
 use anyhow::Result;
 use bytes::Bytes;
 use dilax::{HttpRequest as DilaxHttpRequest, StateStore};
 use http::{Request, Response};
-use r9k_position::HttpRequest as R9kHttpRequest;
+use http_body::Body;
+use r9k_position::{HttpRequest as R9kHttpRequest, Identity};
+use wasi_identity::credentials::get_identity;
+use wit_bindgen::block_on;
 
 #[derive(Clone, Default)]
 pub struct Provider;
@@ -56,5 +60,14 @@ impl StateStore for Provider {
     async fn delete(&self, key: &str) -> Result<()> {
         // wasi_state_store::delete(key)
         todo!()
+    }
+}
+
+impl Identity for Provider {
+    async fn access_token(&self) -> Result<String> {
+        let identity = env::var("AZURE_IDENTITY")?;
+        let identity = block_on(get_identity(identity))?;
+        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
+        Ok(access_token.token)
     }
 }

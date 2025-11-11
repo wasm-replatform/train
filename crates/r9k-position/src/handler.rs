@@ -8,11 +8,12 @@ use anyhow::Context;
 use bytes::Bytes;
 use chrono::Utc;
 use credibil_api::{Body, Handler, Request, Response};
+use http::header::AUTHORIZATION;
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::provider::{HttpRequest, Provider};
+use crate::provider::{HttpRequest, Identity, Provider};
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
 use crate::{Result, stops};
@@ -70,9 +71,12 @@ impl TrainUpdate {
         };
 
         // get train allocations for this trip
-        let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        let url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        let token = Identity::access_token(provider).await?;
+
         let request = http::Request::builder()
-            .uri(format!("{block_mgt_url}/allocations/trips?externalRefId={}", self.train_id()))
+            .uri(format!("{url}/allocations/trips?externalRefId={}", self.train_id()))
+            .header(AUTHORIZATION, format!("Bearer {token}"))
             .body(Empty::<Bytes>::new())
             .context("building block management request")?;
         let response =

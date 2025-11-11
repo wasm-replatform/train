@@ -11,7 +11,7 @@ mod stops;
 
 pub use self::error::Error;
 pub use self::handler::R9kResponse;
-pub use self::provider::{HttpRequest, Provider};
+pub use self::provider::*;
 pub use self::r9k::*;
 pub use self::smartrak::*;
 pub use self::stops::StopInfo;

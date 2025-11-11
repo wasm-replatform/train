@@ -13,7 +13,7 @@ use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Provider, R9kMessage, SmarTrakEvent, StopInfo};
+use r9k_position::{HttpRequest, Identity, Provider, R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
 
 /// This test runs through a folder of files that recorded the input and output
@@ -113,8 +113,8 @@ impl MockProvider {
         // SAFETY:
         // This is safe in a test context as tests are run sequentially.
         unsafe {
-            std::env::set_var("BLOCK_MGT_ADDR", "http://localhost:8080");
-            std::env::set_var("GTFS_API_ADDR", "http://localhost:8080");
+            std::env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
+            std::env::set_var("GTFS_API_URL", "http://localhost:8080");
         };
 
         Self { wiretap }
@@ -167,15 +167,8 @@ impl HttpRequest for MockProvider {
     }
 }
 
-// impl Time for Wiretap {
-//     #[allow(clippy::option_if_let_else)]
-//     fn now(&self) -> Zoned {
-//         match self.now {
-//             Some(s) => Zoned::new(
-//                 Timestamp::from_millisecond(s).unwrap(),
-//                 TimeZone::get("Pacific/Auckland").unwrap(),
-//             ),
-//             None => panic!("Wiretap data is missing now field"),
-//         }
-//     }
-// }
+impl Identity for MockProvider {
+    async fn access_token(&self) -> Result<String> {
+        Ok("mock_access_token".to_string())
+    }
+}

@@ -7,7 +7,7 @@ use std::error::Error;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Provider, StopInfo};
+use r9k_position::{HttpRequest, Identity, Provider, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
@@ -22,8 +22,8 @@ impl MockProvider {
         // SAFETY:
         // This is safe in a test context as tests are run sequentially.
         unsafe {
-            env::set_var("BLOCK_MGT_ADDR", "http://localhost:8080");
-            env::set_var("GTFS_API_ADDR", "http://localhost:8080");
+            env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
+            env::set_var("GTFS_API_URL", "http://localhost:8080");
         };
 
         let stops = vec![
@@ -65,5 +65,11 @@ impl HttpRequest for MockProvider {
 
         let body = Bytes::from(data);
         Response::builder().status(200).body(body).context("failed to build response")
+    }
+}
+
+impl Identity for MockProvider {
+    async fn access_token(&self) -> Result<String> {
+        Ok("mock_access_token".to_string())
     }
 }

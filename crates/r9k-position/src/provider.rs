@@ -11,7 +11,7 @@ use http::{Request, Response};
 use http_body::Body;
 
 /// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest {}
+pub trait Provider: HttpRequest + Identity {}
 
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {
@@ -21,4 +21,9 @@ pub trait HttpRequest: Send + Sync {
         T: Body + Any + Send,
         T::Data: Into<Vec<u8>>,
         T::Error: Into<Box<dyn Error + Send + Sync + 'static>>;
+}
+
+pub trait Identity: Send + Sync {
+    /// Get the unique identifier for the entity.
+    fn access_token(&self) -> impl Future<Output = Result<String>> + Send;
 }

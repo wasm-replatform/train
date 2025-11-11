@@ -14,7 +14,7 @@ const KEY_VEHICLE_STATE: &str = "apc:vehicleIdState";
 const KEY_VEHICLE_ID: &str = "apc:vehicleId";
 const KEY_VECHICLE_ID_MIGRATED: &str = "apc:vehicleIdMigrated";
 const KEY_TRIPS: &str = "apc:trips";
-pub const KEY_TRIP_INFO: &str = "apc:vehicleTripInfo";
+const KEY_TRIP_INFO: &str = "apc:vehicleTripInfo";
 
 const TTL_APC: Duration = Duration::hours(1);
 const TTL_OCCUPANCY_STATE: Duration = Duration::minutes(90);

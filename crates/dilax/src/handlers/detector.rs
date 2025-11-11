@@ -12,7 +12,7 @@ use crate::provider::{HttpRequest, Provider, StateStore};
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
-const LOST_THRESHOLD: Duration = Duration::hours(1);
+const THRESHOLD: Duration = Duration::hours(1);
 const KEY_LOST_CONNECTION: &str = "apc:lostConnections";
 
 const TTL_RETENTION: Duration = Duration::days(7);
@@ -230,7 +230,7 @@ fn detect_allocation(
 
 fn connection_lost(timestamp: i64) -> bool {
     let now_ts = Utc::now().with_timezone(&Pacific::Auckland).timestamp();
-    (timestamp + LOST_THRESHOLD.num_seconds()) <= now_ts
+    (timestamp + THRESHOLD.num_seconds()) <= now_ts
 }
 
 fn log_detection(detection: &Detection) {

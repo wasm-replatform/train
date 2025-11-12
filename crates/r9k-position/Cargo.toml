@@ -26,7 +26,7 @@ credibil-api.workspace = true
 http.workspace = true
 http-body.workspace = true
 http-body-util.workspace = true
-quick-xml = { version = "0.38.3", features = ["serde", "serialize"] }
+quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
 serde.workspace = true
 serde_json.workspace = true
 serde_repr = "0.1"

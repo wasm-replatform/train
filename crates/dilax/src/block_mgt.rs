@@ -6,6 +6,7 @@ use http::Method;
 use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
+
 use crate::provider::{HttpRequest, Identity, Provider};
 
 // const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
@@ -38,8 +39,7 @@ pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<Flee
     Ok(vehicle)
 }
 
-async fn builder_helper(url: String, provider: &impl Provider) -> Result<http::request::Builder>
-{
+async fn builder_helper(url: String, provider: &impl Provider) -> Result<http::request::Builder> {
     let mut builder = http::Request::builder()
         .method(Method::GET)
         .uri(url)
@@ -50,7 +50,7 @@ async fn builder_helper(url: String, provider: &impl Provider) -> Result<http::r
         if let Some(token) = authorization {
             builder = builder.header(AUTHORIZATION, token.as_str());
         }
-    }else{
+    } else {
         let token = Identity::access_token(provider).await?;
         builder = builder.header(AUTHORIZATION, format!("Bearer {token}"));
     }
@@ -69,8 +69,9 @@ pub async fn vehicle_allocation(
     let request =
         builder.body(Empty::<Bytes>::new()).context("building allocation_by_vehicle request")?;
 
-    let response =
-        HttpRequest::fetch(provider, request).await.context("Block management allocation request failed")?;
+    let response = HttpRequest::fetch(provider, request)
+        .await
+        .context("Block management allocation request failed")?;
 
     let body = response.into_body();
     let envelope: AllocationEnvelope =
@@ -87,7 +88,9 @@ pub async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocati
 
     let request =
         builder.body(Empty::<Bytes>::new()).context("building all_allocations request")?;
-    let response = HttpRequest::fetch(provider, request).await.context("Block management list request failed")?;
+    let response = HttpRequest::fetch(provider, request)
+        .await
+        .context("Block management list request failed")?;
 
     let body = response.into_body();
     let envelope: AllocationEnvelope =

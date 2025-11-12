@@ -8,7 +8,7 @@ use chrono::Duration;
 use http::{Request, Response};
 
 /// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + StateStore + Identity{}
+pub trait Provider: HttpRequest + StateStore + Identity {}
 
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {

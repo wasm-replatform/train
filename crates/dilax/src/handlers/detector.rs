@@ -49,7 +49,7 @@ impl Body for DetectionRequest {}
 async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detection>> {
     info!("Starting Dilax lost connection job");
 
-        let allocs = allocations(provider).await.context("refreshing Dilax allocations")?;
+    let allocs = allocations(provider).await.context("refreshing Dilax allocations")?;
     let detections = detect(allocs, provider)
         .await
         .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;

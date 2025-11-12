@@ -5,9 +5,9 @@ use std::sync::OnceLock;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
-use dilax::{HttpRequest as DilaxHttpRequest, StateStore};
+use dilax::{HttpRequest as DilaxHttpRequest, Identity as DilaxIdentity, StateStore};
 use http::{Request, Response};
-use r9k_position::{HttpRequest as R9kHttpRequest, Identity};
+use r9k_position::{HttpRequest as R9kHttpRequest, Identity as R9kIdentity};
 use tracing::warn;
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::{self, TtlValue, store};
@@ -72,12 +72,18 @@ impl StateStore for Provider {
     }
 }
 
-impl Identity for Provider {
+impl R9kIdentity for Provider {
     async fn access_token(&self) -> Result<String> {
         let identity = env::var("AZURE_IDENTITY")?;
         let identity = block_on(get_identity(identity))?;
         let access_token = block_on(async move { identity.get_token(vec![]).await })?;
         Ok(access_token.token)
+    }
+}
+
+impl DilaxIdentity for Provider {
+    async fn access_token(&self) -> Result<String> {
+        R9kIdentity::access_token(self).await
     }
 }
 

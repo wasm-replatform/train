@@ -8,7 +8,7 @@ use chrono::Duration;
 use http::{Request, Response};
 
 /// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + StateStore {}
+pub trait Provider: HttpRequest + StateStore + Identity{}
 
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {
@@ -29,4 +29,9 @@ pub trait StateStore: Send + Sync {
     ) -> impl Future<Output = Result<Option<Vec<u8>>>> + Send;
 
     fn delete(&self, key: &str) -> impl Future<Output = Result<()>> + Send;
+}
+
+pub trait Identity: Send + Sync {
+    /// Get the unique identifier for the entity.
+    fn access_token(&self) -> impl Future<Output = Result<String>> + Send;
 }

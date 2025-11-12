@@ -3,11 +3,10 @@ use std::env;
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use http::Method;
-use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
+use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
-
-use crate::provider::HttpRequest;
+use crate::provider::{HttpRequest, Identity, Provider};
 
 // const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
 // const TTL_FLEET_FAILURE: Duration = Duration::from_secs(3 * 60);
@@ -39,12 +38,8 @@ pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<Flee
     Ok(vehicle)
 }
 
-pub async fn vehicle_allocation(
-    vehicle_id: &str, http: &impl HttpRequest,
-) -> Result<Option<VehicleAllocation>> {
-    let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
-    let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
-
+async fn builder_helper(url: String, provider: &impl Provider) -> Result<http::request::Builder>
+{
     let mut builder = http::Request::builder()
         .method(Method::GET)
         .uri(url)
@@ -53,15 +48,29 @@ pub async fn vehicle_allocation(
     if env::var("ENVIRONMENT").unwrap_or_default() == "dev" {
         let authorization = env::var("BLOCK_MGT_AUTHORIZATION").ok();
         if let Some(token) = authorization {
-            builder = builder.header("Authorization", token.as_str());
+            builder = builder.header(AUTHORIZATION, token.as_str());
         }
+    }else{
+        let token = Identity::access_token(provider).await?;
+        builder = builder.header(AUTHORIZATION, format!("Bearer {token}"));
     }
+
+    Ok(builder)
+}
+
+pub async fn vehicle_allocation(
+    vehicle_id: &str, provider: &impl Provider,
+) -> Result<Option<VehicleAllocation>> {
+    let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+    let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
+
+    let builder = builder_helper(url, provider).await?;
 
     let request =
         builder.body(Empty::<Bytes>::new()).context("building allocation_by_vehicle request")?;
 
     let response =
-        http.fetch(request).await.context("Block management allocation request failed")?;
+        HttpRequest::fetch(provider, request).await.context("Block management allocation request failed")?;
 
     let body = response.into_body();
     let envelope: AllocationEnvelope =
@@ -70,25 +79,15 @@ pub async fn vehicle_allocation(
     Ok(envelope.current.into_iter().next())
 }
 
-pub async fn allocations(http: &impl HttpRequest) -> Result<Vec<VehicleAllocation>> {
+pub async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
     let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
     let url = format!("{block_mgt_url}/allocations");
 
-    let mut builder = http::Request::builder()
-        .method(Method::GET)
-        .uri(url)
-        .header("Content-Type", "application/json");
-
-    if env::var("ENVIRONMENT").unwrap_or_default() == "dev" {
-        let authorization = env::var("BLOCK_MGT_AUTHORIZATION").ok();
-        if let Some(token) = authorization {
-            builder = builder.header("Authorization", token.as_str());
-        }
-    }
+    let builder = builder_helper(url, provider).await?;
 
     let request =
         builder.body(Empty::<Bytes>::new()).context("building all_allocations request")?;
-    let response = http.fetch(request).await.context("Block management list request failed")?;
+    let response = HttpRequest::fetch(provider, request).await.context("Block management list request failed")?;
 
     let body = response.into_body();
     let envelope: AllocationEnvelope =

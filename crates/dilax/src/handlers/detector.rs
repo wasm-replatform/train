@@ -8,7 +8,7 @@ use tracing::{debug, info, warn};
 use crate::Result;
 use crate::block_mgt::{self, VehicleAllocation};
 use crate::error::Error;
-use crate::provider::{HttpRequest, Provider, StateStore};
+use crate::provider::{Provider, StateStore};
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
@@ -49,7 +49,7 @@ impl Body for DetectionRequest {}
 async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detection>> {
     info!("Starting Dilax lost connection job");
 
-    let allocs = allocations(provider).await.context("refreshing Dilax allocations")?;
+        let allocs = allocations(provider).await.context("refreshing Dilax allocations")?;
     let detections = detect(allocs, provider)
         .await
         .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;
@@ -71,9 +71,9 @@ pub struct Detection {
 /// # Errors
 ///
 /// Returns an error if the block management provider or backing store cannot be queried.
-async fn allocations(http: &impl HttpRequest) -> Result<Vec<VehicleAllocation>> {
+async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
     let allocations =
-        block_mgt::allocations(http).await.map_err(|e| Error::ServerError(e.to_string()))?;
+        block_mgt::allocations(provider).await.map_err(|e| Error::ServerError(e.to_string()))?;
 
     let now_tz = Utc::now().with_timezone(&Pacific::Auckland);
     let service_date = now_tz.format("%Y%m%d").to_string();

@@ -30,7 +30,7 @@ async fn handle(
 ) -> Result<Response<DetectionResponse>> {
     let detections = lost_connections(provider)
         .await
-        .map_err(|e| Error::Internal(format!("detecting lost connections: {e}")))?;
+        .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;
 
     Ok(DetectionResponse { detections }.into())
 }
@@ -52,7 +52,7 @@ async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detect
     let allocs = allocations(provider).await.context("refreshing Dilax allocations")?;
     let detections = detect(allocs, provider)
         .await
-        .map_err(|e| Error::Internal(format!("detecting lost connections: {e}")))?;
+        .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;
 
     info!(count = detections.len(), "Completed Dilax lost connection job");
 
@@ -73,7 +73,7 @@ pub struct Detection {
 /// Returns an error if the block management provider or backing store cannot be queried.
 async fn allocations(http: &impl HttpRequest) -> Result<Vec<VehicleAllocation>> {
     let allocations =
-        block_mgt::allocations(http).await.map_err(|e| Error::Internal(e.to_string()))?;
+        block_mgt::allocations(http).await.map_err(|e| Error::ServerError(e.to_string()))?;
 
     let now_tz = Utc::now().with_timezone(&Pacific::Auckland);
     let service_date = now_tz.format("%Y%m%d").to_string();

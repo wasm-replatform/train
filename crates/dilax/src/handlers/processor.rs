@@ -1,5 +1,5 @@
 use credibil_api::{Body, Handler, Request, Response};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 use crate::block_mgt::{self, FleetVehicle};
 use crate::error::Error;
@@ -30,92 +30,88 @@ impl<P: Provider> Handler<DilaxEnrichedEvent, P> for Request<DilaxMessage> {
 
 impl Body for DilaxMessage {}
 
-// Enriches a Dilax event with vehicle, stop, trip, and occupancy information.
+/// Enriches a Dilax event with vehicle, stop, trip, and occupancy information.
 ///
 /// # Errors
 ///
 /// Returns an error when one of the providers or the key-value store reports a failure
 /// while augmenting the incoming Dilax event.
 pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<DilaxEnrichedEvent> {
-    let mut trip_id: Option<String> = None;
-    let mut start_date: Option<String> = None;
-    let mut start_time: Option<String> = None;
+    let vehicle_label = vehicle_label(&event).ok_or_else(|| {
+        Error::ProcessingError(format!("vehicle label missing for device {:?}", event.device))
+    })?;
 
-    // TODO: replace all warning and error tracing with strongly typed errors
-    //  that can be handled at a higher level
-    let vehicle_label = vehicle_label(&event);
-    if vehicle_label.is_none() {
-        warn!("Could not determine vehicle label from Dilax event: {:?}", event.device);
-    }
+    let vehicle = block_mgt::vehicle(&vehicle_label, provider)
+        .await
+        .map_err(|err| {
+            Error::ProcessingError(format!(
+                "failed to resolve vehicle for label {vehicle_label}: {err}"
+            ))
+        })?
+        .ok_or_else(|| {
+            Error::ProcessingError(format!("vehicle not found for label {vehicle_label}"))
+        })?;
 
-    let vehicle = if let Some(label) = &vehicle_label {
-        block_mgt::vehicle(label, provider).await.unwrap_or_else(|_| {
-            warn!(vehicle_label = %label, "Failed to resolve vehicle");
-            None
-        })
-    } else {
-        None
-    };
-
-    let stop_id =
-        stop_id(vehicle.as_ref().map(|fleet| fleet.id.as_str()), &event, provider).await?;
-    if stop_id.is_none() {
-        if let Some(fleet) = vehicle.as_ref() {
-            warn!(vehicle_id = %fleet.id, "Unable to resolve stop ID from Dilax event");
-        } else {
-            warn!("Unable to resolve stop ID from Dilax event without vehicle context");
-        }
-    }
-
-    let Some(vehicle) = &vehicle else {
-        warn!("Failed to resolve vehicle for Dilax event; skipping passenger count processing");
-        return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
-    };
+    let (vehicle_seating, vehicle_total) = vehicle_capacity(&vehicle).ok_or_else(|| {
+        Error::ProcessingError(format!("vehicle {} lacks capacity information", vehicle.id))
+    })?;
     let vehicle_id = vehicle.id.clone();
 
-    let Some((vehicle_seating, vehicle_total)) = vehicle_capacity(vehicle) else {
-        warn!(
-            vehicle_id = %vehicle_id,
-            "Vehicle lacks capacity information; skipping passenger count processing"
-        );
-        return Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time });
-    };
-
-    if let Some(allocation) = block_mgt::vehicle_allocation(&vehicle_id, provider)
+    let allocation = block_mgt::vehicle_allocation(&vehicle_id, provider)
         .await
-        .map_err(|e| Error::Internal(e.to_string()))?
-    {
-        trip_id = Some(allocation.trip_id.clone());
-        start_date = Some(allocation.service_date.clone());
-        start_time = Some(allocation.start_time.clone());
-        debug!(vehicle_id = %vehicle_id, allocation = ?allocation, trip_id = ?trip_id);
-    } else {
-        warn!(vehicle_id = %vehicle_id, vehicle_label = ?vehicle_label, "Failed to resolve block allocation");
-    }
+        .map_err(|err| {
+            Error::ProcessingError(format!(
+                "failed to fetch block allocation for vehicle {vehicle_id}: {err}"
+            ))
+        })?
+        .ok_or_else(|| {
+            Error::ProcessingError(format!("block allocation unavailable for vehicle {vehicle_id}"))
+        })?;
+    let trip_id_value = allocation.trip_id.clone();
+    let start_date_value = allocation.service_date.clone();
+    let start_time_value = allocation.start_time.clone();
+    debug!(vehicle_id = %vehicle_id, allocation = ?allocation, trip_id = %trip_id_value);
+
+    let stop_id_value = stop_id(&vehicle_id, &event, provider).await?;
 
     trip_state::update_vehicle(
         &vehicle_id,
-        trip_id.as_deref(),
+        Some(trip_id_value.as_str()),
         vehicle_seating,
         vehicle_total,
         &event,
         provider,
     )
     .await
-    .map_err(|e| Error::Internal(format!("Failed to update Dilax vehicle state: {e}")))?;
+    .map_err(|err| {
+        Error::ProcessingError(format!(
+            "failed to update trip state for vehicle {vehicle_id}: {err}"
+        ))
+    })?;
 
     let vt = VehicleTripInfo {
-        vehicle_info: VehicleInfo { vehicle_id, label: vehicle_label },
-        trip_id: trip_id.clone(),
-        stop_id: stop_id.clone(),
+        vehicle_info: VehicleInfo {
+            vehicle_id: vehicle_id.clone(),
+            label: Some(vehicle_label.clone()),
+        },
+        trip_id: Some(trip_id_value.clone()),
+        stop_id: Some(stop_id_value.clone()),
         last_received_timestamp: Some(event.clock.utc.clone()),
         dilax_message: Some(event.clone()),
     };
-    trip_state::set_trip(vt, provider)
-        .await
-        .map_err(|e| Error::Internal(format!("Failed to persist vehicle trip info: {e}")))?;
+    trip_state::set_trip(vt, provider).await.map_err(|err| {
+        Error::ProcessingError(format!(
+            "failed to persist trip info for vehicle {vehicle_id}: {err}"
+        ))
+    })?;
 
-    Ok(DilaxEnrichedEvent { event, stop_id, trip_id, start_date, start_time })
+    Ok(DilaxEnrichedEvent {
+        event,
+        stop_id: Some(stop_id_value),
+        trip_id: Some(trip_id_value),
+        start_date: Some(start_date_value),
+        start_time: Some(start_time_value),
+    })
 }
 
 fn vehicle_label(event: &DilaxMessage) -> Option<String> {
@@ -177,41 +173,60 @@ fn vehicle_capacity(vehicle: &FleetVehicle) -> Option<(i64, i64)> {
     vehicle.capacity.as_ref().map(|capacity| (capacity.seating, capacity.total))
 }
 
+/// Resolve the GTFS stop identifier for the Dilax event waypoint.
+///
+/// # Errors
+///
+/// Returns an error when the waypoint is missing, provider requests fail, or no stop
+/// matching the Dilax waypoint can be determined.
 async fn stop_id(
-    vehicle_id: Option<&str>, event: &DilaxMessage, http: &impl HttpRequest,
-) -> Result<Option<String>> {
-    let vehicle_for_logs = vehicle_id.unwrap_or("unknown");
+    vehicle_id: &str, event: &DilaxMessage, http: &impl HttpRequest,
+) -> Result<String> {
+    let vehicle_id_owned = vehicle_id.to_string();
+
     let Some(waypoint) = event.wpt.as_ref() else {
-        warn!(vehicle_id = %vehicle_for_logs, "Dilax event missing waypoint data");
-        return Ok(None);
+        return Err(Error::ProcessingError(format!(
+            "dilax event missing waypoint data for vehicle {vehicle_id_owned}"
+        )));
     };
 
     let stops =
         gtfs::location_stops(&waypoint.lat, &waypoint.lon, STOP_SEARCH_DISTANCE_METERS, http)
             .await
-            .map_err(|e| Error::Internal(e.to_string()))?;
+            .map_err(|err| {
+                Error::ProcessingError(format!(
+                    "failed to look up stops for vehicle {vehicle_id_owned}: {err}"
+                ))
+            })?;
     if stops.is_empty() {
-        return Ok(None);
+        return Err(Error::ProcessingError(format!(
+            "stop id unavailable for vehicle {vehicle_id_owned}"
+        )));
     }
 
-    let stop_types = gtfs::stop_types(http).await.map_err(|e| Error::Internal(e.to_string()))?;
+    let stop_types = gtfs::stop_types(http).await.map_err(|err| {
+        Error::ProcessingError(format!(
+            "failed to look up stop types for vehicle {vehicle_id_owned}: {err}"
+        ))
+    })?;
     if stop_types.is_empty() {
-        warn!(vehicle_id = %vehicle_for_logs, "GTFS train stop types unavailable");
-        return Ok(None);
+        return Err(Error::ProcessingError(format!(
+            "train stop types unavailable for vehicle {vehicle_id_owned}"
+        )));
     }
 
     for stop in &stops {
-        debug!(vehicle_id = %vehicle_for_logs, stop = ?stop);
+        debug!(vehicle_id = %vehicle_id, stop = ?stop);
 
         if let Some(code) = stop.stop_code.as_deref()
             && is_station(&stop_types, code)
         {
-            info!(vehicle_id = %vehicle_for_logs, stop_id = %stop.stop_id, stop_code = code);
-            return Ok(Some(stop.stop_id.clone()));
+            info!(vehicle_id = %vehicle_id, stop_id = %stop.stop_id, stop_code = code);
+            return Ok(stop.stop_id.clone());
         }
     }
 
-    Ok(None)
+    Err(Error::ProcessingError(format!("stop id unavailable for vehicle {vehicle_id_owned}")))
 }
 
 fn is_station(stop_types: &[StopTypeEntry], stop_code: &str) -> bool {

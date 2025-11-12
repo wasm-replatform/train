@@ -3225,6 +3225,7 @@ dependencies = [
  "tracing",
  "urlencoding",
  "wasi-http",
+ "wasi-identity",
  "wasi-keyvalue",
  "wasi-messaging",
  "wasi-otel",

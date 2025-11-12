@@ -12,8 +12,6 @@ use wit_bindgen::block_on;
 
 pub struct Provider;
 
-impl r9k_position::Provider for Provider {}
-
 impl HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where

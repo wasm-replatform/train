@@ -31,6 +31,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
+
         if topic != format!("{}-{R9K_TOPIC}", *ENV) {
             warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
         }
@@ -38,6 +39,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
         if let Err(e) = r9k_message(&message.data()).await {
             error!(monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE);
         }
+
         Ok(())
     }
 }

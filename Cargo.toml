@@ -17,7 +17,7 @@ version.workspace = true
 workspace = true
 
 [lib]
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 anyhow.workspace = true
@@ -108,14 +108,15 @@ tracing = "0.1.41"
 wit-bindgen = "0.46.0"
 
 # credibil registry
-credibil-api = { version = "0.4.0", registry = "credibil" }
-wasi-http = { version = "0.13.0", registry = "credibil" }
-wasi-identity = { version = "0.13.0", registry = "credibil" }
-wasi-messaging = { version = "0.13.0", registry = "credibil" }
-wasi-otel = { version = "0.13.0", registry = "credibil" }
+# credibil-api = { version = "0.4.0", registry = "credibil" }
+wasi-http = { version = "0.14.0", registry = "credibil" }
+wasi-identity = { version = "0.14.0", registry = "credibil" }
+wasi-messaging = { version = "0.14.0", registry = "credibil" }
+wasi-otel = { version = "0.14.0", registry = "credibil" }
 
 # [patch.credibil]
 # wasi-identity = { path = "../../credibil/wrt/crates/wasi-identity" }
+credibil-api = { git = "https://github.com/credibil/core" }
 
 [profile.release]
 lto = "thin"

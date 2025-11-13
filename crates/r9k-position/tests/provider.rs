@@ -23,7 +23,7 @@ impl MockProvider {
         // This is safe in a test context as tests are run sequentially.
         unsafe {
             env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
-            env::set_var("GTFS_API_URL", "http://localhost:8080");
+            env::set_var("CC_STATIC_API_URL", "http://localhost:8080");
         };
 
         let stops = vec![

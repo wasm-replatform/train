@@ -1,0 +1,103 @@
+{
+  "dlx_vers": "ABCDEFGHIJKLMN",
+  "dlx_type": "ABCDEFGHIJKLMNOPQRSTUV",
+  "driving": false,
+  "atstop": false,
+  "operational": false,
+  "distance_start": 0,
+  "trigger": "ABCDEFGHIJKLMNOPQRSTUVWXY",
+  "device": {
+    "operator": "ABCDEFGHIJKLMNOPQRSTUVWXYZAB",
+    "site": "AM1005",
+    "model": "train",
+    "serial": "ABCDEFGHIJKLMNOPQRSTUVWX"
+  },
+  "clock": {
+    "utc": "1762459343",
+    "tz": "UTC"
+  },
+  "pis": {
+    "line": "ABCD",
+    "stop": "ABCDEFG"
+  },
+  "doors": [
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZA",
+      "in": 10,
+      "out": 20,
+      "st": "ABCDEFGHIJKLMN",
+      "art": 10,
+      "err": null
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRS",
+      "in": 12,
+      "out": 23,
+      "st": "ABCDEFGHIJKL",
+      "art": 0,
+      "err": "ABCDEFGHIJKLMNO"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTU",
+      "in": 15,
+      "out": 25,
+      "st": "ABCDEFGHIJKLMNOPQRSTU",
+      "art": 0,
+      "err": "ABCDEFGH"
+    },
+    {
+      "name": "ABCDE",
+      "in": 32,
+      "out": 10,
+      "st": "ABCDEFGHIJKLMNO",
+      "art": 0,
+      "err": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    },
+    {
+      "name": "ABCDEFGHI",
+      "in": 12,
+      "out": 2,
+      "st": "ABCDEFGHIJK",
+      "art": 0,
+      "err": "ABCDEFGHIJKLMNOPQRSTUVW"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXY",
+      "in": 30,
+      "out": 30,
+      "st": "ABCDEFGHIJKLMNOPQRSTU",
+      "art": 0,
+      "err": "ABCDEFGHIJKLMN"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZABC",
+      "in": 0,
+      "out": 0,
+      "st": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      "art": 0,
+      "err": "ABCDEFGHIJKLMNOPQRST"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZABC",
+      "in": 0,
+      "out": 200,
+      "st": "ABCDE",
+      "art": 0,
+      "err": null
+    }
+  ],
+  "arrival_utc": "ABCDEFGHIJKLMNOPQRSTUVWXY",
+  "departure_utc": "ABCDEFGHIJKLMNOPQRS",
+  "distance_laststop": 0,
+  "speed": 0,
+  "wpt": {
+    "sat": "ABCDEFGHIJKL",
+    "lat": "-36.862813838151354",
+    "lon": "174.81012224180958",
+    "speed": 0
+  },
+  "stop_id": "116-214837ca",
+  "trip_id": null,
+  "start_date": null,
+  "start_time": null
+}

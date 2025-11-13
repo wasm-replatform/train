@@ -30,7 +30,7 @@ export class Config implements Partial<IAppConfig> {
 
     public static redis = {
         keyOccupancy: "trip:occupancy", // backward-compatibilty, to be removed when dependent repo (CC UI) has migrated to read from state key
-        apcVehicleIdMigratedKey: "apc:vehicleIdMigratred", // to keep track of migration, to be removed in next prod version
+        apcVehicleIdMigratedKey: "apc:vehicleIdMigrated", // to keep track of migration, to be removed in next prod version
         apcVehicleIdKey: "apc:vehicleId", // backward-compatibilty, to be removed when dependent repo (smartrak_gtfs_adapter) has migrated to read from state key
         apcVehicleTripKey: "apc:trips", // backward-compatibilty, to be removed in next prod version
         apcVehicleIdStateKey: "apc:vehicleIdState",

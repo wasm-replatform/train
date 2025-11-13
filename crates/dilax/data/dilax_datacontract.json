@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": true,
+  "description": "JSON Schema for Realtime Dilax APC.",
+  "properties": {
+    "arrival_utc": {
+      "type": "string"
+    },
+    "atstop": {
+      "type": "boolean"
+    },
+    "clock": {
+      "additionalProperties": false,
+      "properties": {
+        "tz": {
+          "type": "string"
+        },
+        "utc": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "utc",
+        "tz"
+      ],
+      "type": "object"
+    },
+    "departure_utc": {
+      "type": "string"
+    },
+    "device": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "serial": {
+          "type": "string"
+        },
+        "site": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "operator",
+        "site",
+        "model",
+        "serial"
+      ],
+      "type": "object"
+    },
+    "distance_laststop": {
+      "type": "integer"
+    },
+    "distance_start": {
+      "type": "integer"
+    },
+    "dlx_type": {
+      "type": "string"
+    },
+    "dlx_vers": {
+      "type": "string"
+    },
+    "doors": {
+      "items": {
+        "additionalProperties": true,
+        "properties": {
+          "art": {
+            "type": "integer"
+          },
+          "err": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "in": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "out": {
+            "type": "integer"
+          },
+          "st": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "in",
+          "out",
+          "st"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "driving": {
+      "type": "boolean"
+    },
+    "operational": {
+      "type": "boolean"
+    },
+    "pis": {
+      "additionalProperties": false,
+      "properties": {
+        "line": {
+          "type": "string"
+        },
+        "stop": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "line",
+        "stop"
+      ],
+      "type": "object"
+    },
+    "speed": {
+      "type": "number"
+    },
+    "trigger": {
+      "type": "string"
+    },
+    "wpt": {
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "type": "string"
+        },
+        "lon": {
+          "type": "string"
+        },
+        "sat": {
+          "type": "string"
+        },
+        "speed": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "sat",
+        "lat",
+        "lon",
+        "speed"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "dlx_vers",
+    "dlx_type",
+    "driving",
+    "atstop",
+    "operational",
+    "distance_start",
+    "trigger",
+    "device",
+    "clock",
+    "pis",
+    "doors"
+  ],
+  "title": "Realtime Dilax APC",
+  "type": "object"
+}

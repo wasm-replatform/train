@@ -13,6 +13,8 @@ use http_body::Body;
 /// Provider entry point implemented by the host application.
 pub trait Provider: HttpRequest + Identity {}
 
+impl<T> Provider for T where T: HttpRequest + Identity {}
+
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {
     /// Make outbound HTTP request.

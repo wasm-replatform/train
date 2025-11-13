@@ -17,6 +17,9 @@ pub enum Error {
     #[error("code: wrong_time, description: {0}")]
     WrongTime(String),
 
+    #[error("code: caching_error, description: {0}")]
+    CachingError(String),
+
     #[error("code: server_error, description: {0}")]
     ServerError(String),
 
@@ -36,6 +39,7 @@ impl Error {
             Self::InvalidFormat(_) => "invalid_format",
             Self::Outdated(_) => "outdated",
             Self::WrongTime(_) => "wrong_time",
+            Self::CachingError(_) => "caching_error",
             Self::ServerError(_) => "server_error",
             Self::NoUpdate => "no_update",
             Self::NoActualUpdate => "no_actual_update",
@@ -57,7 +61,7 @@ impl From<anyhow::Error> for Error {
             Some(Self::Outdated(e)) => Self::Outdated(format!("{err}: {e}")),
             Some(Self::WrongTime(e)) => Self::WrongTime(format!("{err}: {e}")),
             Some(Self::ServerError(e)) => Self::ServerError(format!("{err}: {e}")),
-
+            Some(Self::CachingError(e)) => Self::CachingError(format!("{err}: {e}")),
             // Handle the specific cases for NoUpdate and NoActualUpdate
             Some(Self::NoUpdate) => Self::NoUpdate,
             Some(Self::NoActualUpdate) => Self::NoActualUpdate,

@@ -44,7 +44,9 @@ async fn jobs_detector() -> HttpResult<Json<Value>> {
     let api = Client::new(provider::Provider);
     let builder = api.request(DetectionRequest).owner("owner");
 
-    let response = builder.await.unwrap();
+    let response = builder
+        .await
+        .map_err(|err| anyhow!("failed to run Dilax lost connection detector event: {err}"))?;
 
     Ok(Json(serde_json::json!({
         "status": "job detection triggered",

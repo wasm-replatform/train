@@ -113,26 +113,26 @@ pub struct Pis {
 pub struct Door {
     /// Door name or label as reported by the hardware.
     pub name: String,
-    #[serde(rename = "in")]
     /// Number of passengers boarding through the door within the interval.
+    #[serde(rename = "in")]
     pub passengers_in: u32,
-    #[serde(rename = "out")]
     /// Number of passengers alighting through the door within the interval.
+    #[serde(rename = "out")]
     pub passengers_out: u32,
     /// Door status flag indicating open/closed state transitions.
     pub st: String,
     /// Automatic reset timer counter (as reported by the hardware).
     pub art: u32,
-    #[serde(default)]
     /// Optional error code emitted by the door sensor.
+    #[serde(default)]
     pub err: Option<String>,
 }
 
 /// Geo-spatial waypoint describing where the Dilax measurement occurred.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Waypoint {
-    #[serde(skip_serializing_if = "Option::is_none")]
     /// Satellite lock quality reported by the GPS receiver.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sat: Option<String>,
     /// Latitude of the waypoint.
     pub lat: String,

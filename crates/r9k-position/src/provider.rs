@@ -1,40 +1,29 @@
 //! # Provider
 //!
-//! The `Provider` module defines the traits required to integrate
-//! external (infrastructural) services into the application.
+//! Provider defines external data interfaces for the crate.
+
+use std::any::Any;
+use std::error::Error;
 
 use anyhow::Result;
-use async_trait::async_trait;
+use bytes::Bytes;
+use http::{Request, Response};
+use http_body::Body;
 
-use crate::gtfs::StopInfo;
-// pub use http::{Request as HttpRequest, Response as HttpResponse};
+/// Provider entry point implemented by the host application.
+pub trait Provider: HttpRequest + Identity {}
 
-/// The `Provider` trait is implemented by library users in order to provide
-/// source data and caching services required by the application.
-pub trait Provider: Source + Clone + Send + Sync {}
-
-/// The `Source` trait defines the behavior for fetching data from a source.
-#[async_trait]
-pub trait Source: Send + Sync {
-    async fn fetch(&self, owner: &str, key: &Key) -> Result<SourceData>;
+/// The `HttpRequest` trait defines the behavior for fetching data from a source.
+pub trait HttpRequest: Send + Sync {
+    /// Make outbound HTTP request.
+    fn fetch<T>(&self, request: Request<T>) -> impl Future<Output = Result<Response<Bytes>>> + Send
+    where
+        T: Body + Any + Send,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>;
 }
 
-/// Key for caching and fetching data.
-#[derive(Debug, Clone)]
-pub enum Key {
-    /// Key to use for stop information.
-    StopInfo(String),
-
-    /// Key to use for Block Management data.
-    BlockMgt(String),
-}
-
-/// Source data types.
-#[derive(Debug, Clone)]
-pub enum SourceData {
-    /// GTFS stop information.
-    StopInfo(StopInfo),
-
-    /// Block management API data.
-    BlockMgt(Vec<String>),
+pub trait Identity: Send + Sync {
+    /// Get the unique identifier for the entity.
+    fn access_token(&self) -> impl Future<Output = Result<String>> + Send;
 }

@@ -1,13 +1,24 @@
 use std::collections::HashMap;
+use std::env;
 use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow};
+use bytes::Bytes;
+use http_body_util::Empty;
+use serde::{Deserialize, Serialize};
 
-use crate::gtfs::StopInfo;
-use crate::provider::{Key, Provider, Source, SourceData};
+use crate::provider::{HttpRequest, Provider};
+
+/// Stop information from GTFS
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StopInfo {
+    pub stop_code: String,
+    pub stop_lat: f64,
+    pub stop_lon: f64,
+}
 
 pub async fn stop_info(
-    owner: &str, provider: &impl Provider, station: u32, is_arrival: bool,
+    _owner: &str, provider: &impl Provider, station: u32, is_arrival: bool,
 ) -> Result<Option<StopInfo>> {
     if !ACTIVE_STATIONS.contains(&station) {
         return Ok(None);
@@ -19,11 +30,18 @@ pub async fn stop_info(
         return Ok(None);
     };
 
-    // get stop info
-    let key = Key::StopInfo((*stop_code).to_string());
-    let SourceData::StopInfo(mut stop_info) =
-        Source::fetch(provider, owner, &key).await.context("fetching stop info")?
-    else {
+    let url = env::var("GTFS_API_URL").context("getting `GTFS_API_URL`")?;
+    let request = http::Request::builder()
+        .uri(format!("{url}/gtfs/stops?fields=stop_code,stop_lon,stop_lat"))
+        .body(Empty::<Bytes>::new())
+        .context("building block management request")?;
+    let response = HttpRequest::fetch(provider, request).await.context("fetching stops")?;
+
+    let bytes = response.into_body();
+    let stops: Vec<StopInfo> =
+        serde_json::from_slice(&bytes).context("deserializing block management response")?;
+
+    let Some(mut stop_info) = stops.into_iter().find(|stop| stop.stop_code == *stop_code) else {
         return Err(anyhow!("stop info not found for stop code {stop_code}"));
     };
 

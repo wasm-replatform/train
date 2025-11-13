@@ -1,27 +1,27 @@
 //! SmarTrak event types for handling SmarTrak data.
 
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use serde_repr::Serialize_repr;
+use chrono::{DateTime, SecondsFormat, Utc};
+use serde::{Deserialize, Serialize, Serializer};
 
-use crate::gtfs::StopInfo;
+use crate::stops::StopInfo;
 
 /// SmarTrak event.
-//  N.B. that @JsonProperty descriptors are used for deserialisation only,
-//while the property name will be used when the data is serialised before being
-// published.
+/// N.B. that `@JsonProperty` descriptors are used for deserialisation only,
+/// while the property name will be used when the data is serialised before
+/// being published.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct SmarTrakEvent {
     /// The time the event was received.
+    #[serde(serialize_with = "with_nanos")]
     pub received_at: DateTime<Utc>,
 
     /// The type of the event.
-    #[serde(rename(deserialize = "event"))]
+    // #[serde(rename(deserialize = "event"))]
     pub event_type: EventType,
 
-    /// The identifier of the company associated with the event.
-    pub company_id: u64,
+    /// Event data containing specific details about the event.
+    pub event_data: EventData,
 
     /// Message data for the event.
     pub message_data: MessageData,
@@ -29,34 +29,43 @@ pub struct SmarTrakEvent {
     /// Remote data associated with the event.
     pub remote_data: RemoteData,
 
-    /// Event data containing specific details about the event.
-    pub event_data: EventData,
-
     /// Location data for the event.
     pub location_data: LocationData,
 
+    /// The identifier of the company associated with the event.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub company_id: Option<u64>,
+
     /// Serial data associated with the event.
-    pub serial_data: SerialData,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub serial_data: Option<SerialData>,
+}
+
+fn with_nanos<S>(dt: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let trunc = dt.to_rfc3339_opts(SecondsFormat::Millis, true);
+    serializer.serialize_str(&trunc)
 }
 
 /// Smartrak event type.
-#[derive(Debug, Clone, Default, Serialize_repr, Deserialize, PartialEq, Eq)]
-#[serde(rename_all(deserialize = "lowercase"))]
-#[repr(u8)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum EventType {
     /// Location event.
     #[default]
-    Location = 0,
+    Location,
 
     /// Serial data event.
-    SerialData = 1,
+    SerialData,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct MessageData {
     /// Message identifier.
-    pub message_id: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<u64>,
 
     /// Message timestamp.
     pub timestamp: DateTime<Utc>,
@@ -64,19 +73,21 @@ pub struct MessageData {
 
 impl Default for MessageData {
     fn default() -> Self {
-        Self { message_id: 0, timestamp: Utc::now() }
+        Self { message_id: None, timestamp: Utc::now() }
     }
 }
 
 /// Remote data associated with the event.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct RemoteData {
     /// Remote identifier.
-    pub remote_id: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remote_id: Option<u64>,
 
     /// Remote name.
-    pub remote_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remote_name: Option<String>,
 
     /// External identifier.
     pub external_id: String,
@@ -84,24 +95,28 @@ pub struct RemoteData {
 
 /// Event data with specific details about the event.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct EventData {
     /// Event code.
-    pub event_code: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub event_code: Option<u64>,
 
     /// Odometer reading at the time of the event.
-    pub odometer: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub odometer: Option<u64>,
 
     /// Nearest address to the event location.
-    pub nearest_address: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nearest_address: Option<String>,
 
     /// Additional information about the event.
-    pub extra_info: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_info: Option<String>,
 }
 
 /// Location data for the event.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct LocationData {
     /// Latitude of the event location.
     pub latitude: f64,
@@ -109,16 +124,18 @@ pub struct LocationData {
     /// Longitude of the event location.
     pub longitude: f64,
 
-    /// Heading of the event location.
-    pub heading: f64,
-
     /// Speed of the event location.
-    pub speed: f64,
+    pub speed: i64,
 
     /// GPS accuracy of the event location.
-    pub gps_accuracy: f64,
+    pub gps_accuracy: i64,
+
+    /// Heading of the event location.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub heading: Option<f64>,
 
     /// Kilometric point of the event location, if available.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kilometric_point: Option<f64>,
 }
 
@@ -136,7 +153,7 @@ impl From<&StopInfo> for LocationData {
 
 /// Serial data associated with the event.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct SerialData {
     /// Source of the serial data.
     pub source: u64,
@@ -152,7 +169,7 @@ pub struct SerialData {
 // ex: MjQ1MDU0NDgzMTJjMzEyYzMxMzUzYTMwMzgyYzMwMmMzMjMwMzIzMTM5MzgzNTMzMmMyYzJjMzQzMzMxMzUzMDJjMzEyYzMxMzUzYTMyMzAyYzMxMmMzNDMzMzIzMzJjMzMzMzM2MzkyYzMxMzUyYzM2MmMzMjJhMzYzNg==
 // ex: $PTH1,1,00:02,0,22101670,,7380,124046,2,23:45,1,2035,2037,0,0,0*6b
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "lowercase"), rename_all(serialize = "camelCase"))]
+#[serde(rename_all = "camelCase")]
 pub struct DecodedSerialData {
     pub line_id: String,
     pub trip_number: String,

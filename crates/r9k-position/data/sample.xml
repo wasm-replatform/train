@@ -2,7 +2,7 @@
     <ActualizarDatosTren>
         <trenPar>1234</trenPar>
         <trenImpar>5678</trenImpar>
-        <fechaCreacion>2025-08-02T12:34:56Z</fechaCreacion>
+        <fechaCreacion>02/08/2025</fechaCreacion>
         <numeroRegistro>REG-001</numeroRegistro>
         <operadorComercial>METRO</operadorComercial>
         <codigoOperadorComercial>MT</codigoOperadorComercial>

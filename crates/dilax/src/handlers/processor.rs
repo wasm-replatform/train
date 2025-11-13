@@ -1,4 +1,4 @@
-use credibil_api::{Body, Handler, Request, Response};
+use credibil_api::{Handler, Request, Response};
 use tracing::{debug, info};
 
 use crate::block_mgt::{self, FleetVehicle};
@@ -27,8 +27,6 @@ impl<P: Provider> Handler<DilaxEnrichedEvent, P> for Request<DilaxMessage> {
         handle(owner, self.body, provider).await
     }
 }
-
-impl Body for DilaxMessage {}
 
 /// Enriches a Dilax event with vehicle, stop, trip, and occupancy information.
 ///

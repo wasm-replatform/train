@@ -1,4 +1,6 @@
 #![cfg(target_arch = "wasm32")]
+#![allow(clippy::future_not_send)]
+
 mod provider;
 
 use std::sync::LazyLock;
@@ -134,7 +136,6 @@ async fn r9k_message(message: &[u8]) -> Result<()> {
     Ok(())
 }
 
-#[allow(clippy::future_not_send)]
 #[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
     let event: DilaxMessage =
@@ -147,7 +148,6 @@ async fn process_dilax(payload: &[u8]) -> Result<()> {
     publish_dilax(&enriched).await
 }
 
-#[allow(clippy::future_not_send)]
 #[wasi_otel::instrument]
 async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
     let client = MsgClient::connect("<not used>").context("connecting to message broker")?;

@@ -12,7 +12,7 @@ use crate::types::{DilaxMessage, Door};
 const KEY_OCCUPANCY: &str = "trip:occupancy";
 const KEY_VEHICLE_STATE: &str = "apc:vehicleIdState";
 const KEY_VEHICLE_ID: &str = "apc:vehicleId";
-const KEY_VECHICLE_ID_MIGRATED: &str = "apc:vehicleIdMigrated";
+const KEY_VEHICLE_ID_MIGRATED: &str = "apc:vehicleIdMigrated";
 const KEY_TRIPS: &str = "apc:trips";
 const KEY_TRIP_INFO: &str = "apc:vehicleTripInfo";
 
@@ -148,7 +148,7 @@ pub async fn set_trip(vehicle_trip: VehicleTripInfo, state_store: &impl StateSto
 async fn migrate_legacy_keys(
     vehicle_id: &str, state: &mut TripState, state_store: &impl StateStore,
 ) -> Result<()> {
-    let migration_key = format!("{KEY_VECHICLE_ID_MIGRATED}:{vehicle_id}");
+    let migration_key = format!("{KEY_VEHICLE_ID_MIGRATED}:{vehicle_id}");
     if state_store.get(&migration_key).await?.is_some() {
         return Ok(());
     }

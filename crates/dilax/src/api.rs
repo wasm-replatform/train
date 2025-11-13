@@ -225,7 +225,7 @@ where
     }
 
     fn write_cache(&self, key: &str, entries: &[StopTypeEntry], ttl: Duration) {
-        if let Err(err) = self.cache.set_json_with_ttl(key, &entries.to_vec(), ttl) {
+        if let Err(err) = self.cache.set_json_with_ttl(key, entries, ttl) {
             warn!(cache_key = key, error = %err, "Failed to persist GTFS cache entry");
         }
     }

@@ -130,6 +130,7 @@ async fn r9k_message(message: &[u8]) -> Result<()> {
 }
 
 #[allow(clippy::future_not_send)]
+#[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
     let event: DilaxMessage =
         serde_json::from_slice(payload).context("deserializing Dilax event")?;
@@ -142,6 +143,7 @@ async fn process_dilax(payload: &[u8]) -> Result<()> {
 }
 
 #[allow(clippy::future_not_send)]
+#[wasi_otel::instrument]
 async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
     let client = MsgClient::connect("<not used>").context("connecting to message broker")?;
     let payload = serde_json::to_vec(event).context("serializing Dilax enriched event")?;

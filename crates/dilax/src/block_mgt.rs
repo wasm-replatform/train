@@ -7,6 +7,7 @@ use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
 use crate::provider::{HttpRequest, Identity, Provider};
 
 // const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
@@ -69,9 +70,11 @@ pub async fn vehicle_allocation(
     let request =
         builder.body(Empty::<Bytes>::new()).context("building allocation_by_vehicle request")?;
 
-    let response = HttpRequest::fetch(provider, request)
-        .await
-        .context("Block management allocation request failed")?;
+    let response = HttpRequest::fetch(provider, request).await.map_err(|err| {
+        Error::ServerError(format!(
+            "failed to fetch block allocation for vehicle {vehicle_id}: {err}"
+        ))
+    })?;
 
     let body = response.into_body();
     let envelope: AllocationEnvelope =

@@ -7,7 +7,7 @@ use std::env;
 use anyhow::Context;
 use bytes::Bytes;
 use chrono::Utc;
-use credibil_api::{Body, Handler, Request, Response};
+use credibil_api::{Handler, Request, Response};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
@@ -44,7 +44,7 @@ impl<P: Provider> Handler<R9kResponse, P> for Request<R9kMessage> {
     }
 }
 
-impl Body for R9kMessage {}
+// impl Body for R9kMessage {}
 
 impl TrainUpdate {
     /// Transform the R9K message to SmarTrak events

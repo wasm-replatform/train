@@ -7,7 +7,7 @@ use std::error::Error;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Identity, Provider, StopInfo};
+use r9k_position::{HttpRequest, Identity, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
@@ -36,8 +36,6 @@ impl MockProvider {
         Self { stops, vehicles }
     }
 }
-
-impl Provider for MockProvider {}
 
 impl HttpRequest for MockProvider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>

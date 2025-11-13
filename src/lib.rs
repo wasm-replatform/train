@@ -19,6 +19,8 @@ use wasi_messaging::{producer, types};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
 
+use crate::provider::Provider;
+
 const SERVICE: &str = "r9k-position-adapter";
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 const R9K_TOPIC: &str = "realtime-r9k.v1";
@@ -93,15 +95,16 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 // Process incoming R9k messages, consolidating error handling.
 #[wasi_otel::instrument]
 async fn r9k_message(message: &[u8]) -> Result<()> {
-    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
-
-    let api = Client::new(provider::Provider);
+    let api_client = Client::new(Provider);
     let request = R9kMessage::try_from(message).context("parsing message")?;
-    let response = api.request(request).owner("owner").await?;
+    let response = api_client.request(request).owner("owner").await?;
+
     let Some(events) = response.body.smartrak_events.as_ref() else { return Ok(()) };
 
     // publish events 2x in order to properly signal departure from the station
     // (for schedule adherence)
+    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
+
     for _ in 0..2 {
         thread::sleep(Duration::from_secs(5));
 

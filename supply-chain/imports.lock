@@ -163,80 +163,80 @@ user-login = "jrmuizel"
 user-name = "Jeff Muizelaar"
 
 [[publisher.cranelift-assembler-x64]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-assembler-x64-meta]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-bforest]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-bitset]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-codegen]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-codegen-meta]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-codegen-shared]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-control]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-entity]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-frontend]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-isle]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-native]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.cranelift-srcgen]]
-version = "0.125.3"
-when = "2025-10-24"
+version = "0.125.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
@@ -309,8 +309,8 @@ user-login = "seanmonstar"
 user-name = "Sean McArthur"
 
 [[publisher.hyper]]
-version = "1.7.0"
-when = "2025-08-18"
+version = "1.8.0"
+when = "2025-11-11"
 user-id = 359
 user-login = "seanmonstar"
 user-name = "Sean McArthur"
@@ -517,14 +517,14 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.pulley-interpreter]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.pulley-macros]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
@@ -669,8 +669,8 @@ user-login = "Thomasdezeeuw"
 user-name = "Thomas de Zeeuw"
 
 [[publisher.syn]]
-version = "2.0.109"
-when = "2025-11-05"
+version = "2.0.110"
+when = "2025-11-10"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -854,122 +854,122 @@ user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-environ]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-component-macro]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-component-util]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-cranelift]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-fiber]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-jit-debug]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-jit-icache-coherence]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-math]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-slab]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-unwinder]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-versioned-export-macros]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-winch]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-internal-wit-bindgen]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-wasi]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-wasi-http]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wasmtime-wasi-io]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wiggle]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wiggle-generate]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
 [[publisher.wiggle-macro]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
@@ -981,8 +981,8 @@ user-login = "BurntSushi"
 user-name = "Andrew Gallant"
 
 [[publisher.winch-codegen]]
-version = "38.0.3"
-when = "2025-10-24"
+version = "38.0.4"
+when = "2025-11-11"
 user-id = 73222
 user-login = "wasmtime-publish"
 
@@ -1859,11 +1859,6 @@ who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 delta = "0.2.3 -> 0.3.0"
 notes = "Nothing out of the ordinary, virtually no unsafe code."
-
-[[audits.bytecode-alliance.audits.crypto-common]]
-who = "Benjamin Bouvier <public@benj.me>"
-criteria = "safe-to-deploy"
-version = "0.1.3"
 
 [[audits.bytecode-alliance.audits.digest]]
 who = "Benjamin Bouvier <public@benj.me>"
@@ -3137,12 +3132,6 @@ delta = "0.9.3 -> 0.9.4"
 notes = "I've reviewed every source contribution that was neither authored nor reviewed by Mozilla."
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
-[[audits.mozilla.audits.crypto-common]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.1.3 -> 0.1.6"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
 [[audits.mozilla.audits.digest]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -3765,13 +3754,6 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.14.6 -> 0.14.7"
 aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.generic-array]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.14.7 -> 0.14.9"
-notes = "Change to build script is to add a deprecation warning behind a Rust version check."
-aggregated-from = "https://raw.githubusercontent.com/zcash/wallet/main/supply-chain/audits.toml"
 
 [[audits.zcash.audits.getrandom]]
 who = "Jack Grigg <jack@electriccoin.co>"

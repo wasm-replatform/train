@@ -78,6 +78,10 @@ criteria = "safe-to-deploy"
 version = "1.5.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.crypto-common]]
+version = "0.1.7"
+criteria = "safe-to-deploy"
+
 [[exemptions.curve25519-dalek]]
 version = "4.1.0"
 criteria = "safe-to-deploy"
@@ -259,7 +263,7 @@ version = "0.13.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.quick-xml]]
-version = "0.38.3"
+version = "0.38.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.quinn]]

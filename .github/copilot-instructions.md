@@ -1,13 +1,9 @@
-# Copilot Instructions for R9K Position Adapter
+# Copilot Instructions for Train Workspace
 
-## Architecture Overview
-
-This is a **WebAssembly Component Model (WASM)** microservice that transforms R9K train tracking data (XML from KiwiRail) into SmarTrak events via Kafka messaging. The codebase uses a **dual-target architecture**:
-
-- **WASM guest** (`src/lib.rs`): Compiles to `wasm32-wasip2` with `cdylib` output, runs in a WASM runtime with WIT bindings
-- **Business logic library** (`crates/r9k-position-adapter`): Pure Rust library consumed by the WASM guest, testable on native targets
-
-The boundary is critical: `src/lib.rs` handles messaging/infrastructure via WIT bindings and delegates domain logic to `r9k-position-adapter` crate.
+## Architecture
+- Root crate `train` compiles to a WASI guest; `src/lib.rs` wires WIT messaging, splits incoming Kafka topics (R9K vs Dilax), and publishes with `wit_bindgen::spawn`.
+- Domain logic lives under `crates/`: `dilax` holds the APC rewrite (processor, detectors, providers, store), `r9k-position` contains the legacy R9K transformer, and `realtime` exposes shared HTTP error helpers.
+- Persistent state goes through `KvStore` (`crates/dilax/src/store.rs`); it wraps `wit_bindings::keyvalue` to preserve TTL envelopes and set semantics—avoid calling the raw bucket APIs.
 
 ## Build & Test Workflow
 
@@ -72,7 +68,7 @@ Workspace enables aggressive linting: `all`, `nursery`, `pedantic`, `cargo` + ch
 
 ## Environment & Deployment
 
-- `.env.example` shows required environment variables (GTFS_API_URL, BLOCK_MGT_URL, OTEL endpoints, etc.)
+- `.env.example` shows required environment variables (CC_STATIC_API_URL, BLOCK_MGT_URL, OTEL endpoints, etc.)
 - **Docker Compose stack**: Kafka, Kafka UI (port 8081), Jaeger (16686), Prometheus (9090), OpenTelemetry Collector
 - WASM runtime expects `/r9k.wasm` mounted from `target/wasm32-wasip2/release/`
 

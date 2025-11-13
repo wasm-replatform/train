@@ -13,7 +13,7 @@ use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Identity, Provider, R9kMessage, SmarTrakEvent, StopInfo};
+use r9k_position::{HttpRequest, Identity, R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
 
 /// This test runs through a folder of files that recorded the input and output
@@ -114,7 +114,7 @@ impl MockProvider {
         // This is safe in a test context as tests are run sequentially.
         unsafe {
             std::env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
-            std::env::set_var("GTFS_API_URL", "http://localhost:8080");
+            std::env::set_var("CC_STATIC_API_URL", "http://localhost:8080");
         };
 
         Self { wiretap }
@@ -126,9 +126,6 @@ impl MockProvider {
 // #[allow(dead_code)]
 struct Wiretap {
     input: String,
-    // now: Option<i64>,
-    // event_seconds: Option<i32>,
-    // event_date: Option<i32>,
     delay: Option<i32>,
     stop_info: Option<StopInfo>,
     allocated_vehicles: Option<Vec<String>>,
@@ -137,8 +134,6 @@ struct Wiretap {
     not_relevant_station: Option<bool>,
     output: Option<Vec<String>>,
 }
-
-impl Provider for MockProvider {}
 
 impl HttpRequest for MockProvider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>

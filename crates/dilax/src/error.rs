@@ -81,7 +81,7 @@ mod test {
 
     use super::*;
 
-    // Test that error details are retuned as json.
+    // Test that error details are returned as json.
     #[test]
     fn r9k_context() {
         let result = Err::<(), Error>(Error::ServerError("server error".to_string()))

@@ -8,12 +8,8 @@ use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::provider::HttpRequest;
-// use crate::types::{StopInfo, StopType, StopTypeEntry};
 
 const KEY_TRAIN_STOPS: &str = "gtfs:trainStops";
-
-// const TTL_GTFS_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
-// const TTL_GTFS_FAILURE: Duration = Duration::from_secs(60);
 
 type StopTypesResponse = Vec<StopTypeEntry>;
 

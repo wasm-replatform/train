@@ -200,31 +200,18 @@ const fn occupancy_threshold(base: i64, percent: i64) -> i64 {
 fn occupancy_count(previous: i64, doors: &[Door], vehicle_id: &str, skip_out: bool) -> i64 {
     let mut total_in = 0_i64;
     let mut total_out = 0_i64;
-    // let mut total_out_no_skip = 0_i64;
 
     for door in doors {
         total_in += i64::from(door.passengers_in);
-        // total_out_no_skip += i64::from(door.passengers_out);
         if !skip_out {
             total_out += i64::from(door.passengers_out);
         }
     }
 
-    // info!(
-    //     vehicle_id = %vehicle_id,
-    //     total_in,
-    //     total_out,
-    //     total_out_no_skip,
-    //     skip_out,
-    //     "Accumulated door counts"
-    // );
-
     let current = (previous - total_out).max(0) + total_in;
     if current < 0 {
         warn!(vehicle_id = %vehicle_id, count = current, "Calculated negative passenger count");
     }
-
-    // info!(vehicle_id = %vehicle_id, passenger_count = state.count, "Updated running passenger count");
 
     current.max(0)
 }

@@ -179,9 +179,6 @@ async fn detect_candidates(
             continue;
         };
 
-        // let info: VehicleTripInfo = serde_json::from_slice(&bytes)
-        //     .map_err(|err| anyhow!("deserializing vehicle trip info: {err}"))?;
-
         if info.trip_id.as_deref() == Some(&alloc.trip_id) {
             let last_ts =
                 info.last_received_timestamp.as_deref().and_then(|v| v.parse::<i64>().ok());

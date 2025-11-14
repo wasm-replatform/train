@@ -1,22 +1,18 @@
 use std::any::Any;
 use std::env;
 use std::error::Error;
-use std::sync::OnceLock;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use dilax::{HttpRequest as DilaxHttpRequest, Identity as DilaxIdentity, StateStore};
 use http::{Request, Response};
 use r9k_position::{HttpRequest as R9kHttpRequest, Identity as R9kIdentity};
-use tracing::warn;
 use wasi_identity::credentials::get_identity;
-use wasi_keyvalue::{self, TtlValue, store};
+use wasi_keyvalue::cache;
 use wit_bindgen::block_on;
 
 #[derive(Clone, Default)]
 pub struct Provider;
-
-impl r9k_position::Provider for Provider {}
 
 impl R9kHttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
@@ -29,8 +25,6 @@ impl R9kHttpRequest for Provider {
         wasi_http::handle(request).await
     }
 }
-
-impl dilax::Provider for Provider {}
 
 impl DilaxHttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
@@ -46,29 +40,18 @@ impl DilaxHttpRequest for Provider {
 
 impl StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
-        let bucket = state_bucket()?;
-        load_value(bucket, key)
+        let bucket = cache::open("train_cache").context("opening cache")?;
+        bucket.get(key).context("reading state from cache")
     }
 
-    async fn set(
-        &self, key: &str, value: &[u8], expires: Option<chrono::Duration>,
-    ) -> Result<Option<Vec<u8>>> {
-        let bucket = state_bucket()?;
-        let previous = load_value(bucket, key)?;
-        let ttl_seconds = ttl_seconds(expires)?;
-        let payload = encode_value(value, ttl_seconds)?;
-
-        bucket
-            .set(key, &payload)
-            .map_err(|err| anyhow::anyhow!("setting state entry `{key}`: {err}"))?;
-
-        Ok(previous)
+    async fn set(&self, key: &str, value: &[u8], ttl_secs: Option<u64>) -> Result<Option<Vec<u8>>> {
+        let bucket = cache::open("train_cache").context("opening cache")?;
+        bucket.set(key, value, ttl_secs).context("reading state from cache")
     }
 
     async fn delete(&self, key: &str) -> Result<()> {
-        let bucket = state_bucket()?;
-        bucket.delete(key).map_err(|err| anyhow::anyhow!("deleting state entry `{key}`: {err}"))?;
-        Ok(())
+        let bucket = cache::open("train_cache").context("opening cache")?;
+        bucket.delete(key).context("deleting state from cache")
     }
 }
 
@@ -84,110 +67,5 @@ impl R9kIdentity for Provider {
 impl DilaxIdentity for Provider {
     async fn access_token(&self) -> Result<String> {
         R9kIdentity::access_token(self).await
-    }
-}
-
-fn state_bucket() -> Result<&'static wasi_keyvalue::store::Bucket> {
-    static BUCKET: OnceLock<wasi_keyvalue::store::Bucket> = OnceLock::new();
-    if let Some(bucket) = BUCKET.get() {
-        return Ok(bucket);
-    }
-
-    let bucket = store::open("train_bucket").context("opening bucket")?;
-    Ok(BUCKET.get_or_init(move || bucket))
-}
-
-fn load_value(bucket: &wasi_keyvalue::store::Bucket, key: &str) -> Result<Option<Vec<u8>>> {
-    let maybe =
-        bucket.get(key).map_err(|err| anyhow::anyhow!("reading state entry `{key}`: {err}"))?;
-
-    let Some(bytes) = maybe else {
-        return Ok(None);
-    };
-
-    match serde_json::from_slice::<TtlValue>(&bytes) {
-        Ok(envelope) => {
-            if let (Some(ttl), Some(timestamp)) = (envelope.ttl_seconds, envelope.timestamp_seconds)
-                && ttl > 0
-            {
-                let now = current_timestamp_seconds()?;
-                if now >= timestamp.saturating_add(ttl) {
-                    if let Err(err) = bucket.delete(key) {
-                        warn!(key = %key, error = %err, "failed to delete expired state entry");
-                    }
-                    return Ok(None);
-                }
-            }
-
-            Ok(Some(envelope.value))
-        }
-        Err(_) => Ok(Some(bytes)),
-    }
-}
-
-fn ttl_seconds(expires: Option<chrono::Duration>) -> Result<Option<u64>> {
-    let Some(duration) = expires else {
-        return Ok(None);
-    };
-
-    let seconds = duration.num_seconds();
-    if seconds <= 0 {
-        return Ok(None);
-    }
-
-    let ttl = u64::try_from(seconds).context("ttl exceeds u64 range")?;
-    Ok(Some(ttl))
-}
-
-fn encode_value(value: &[u8], ttl_seconds: Option<u64>) -> Result<Vec<u8>> {
-    let Some(ttl) = ttl_seconds else {
-        return Ok(value.to_vec());
-    };
-
-    let envelope = TtlValue {
-        value: value.to_vec(),
-        ttl_seconds: Some(ttl),
-        timestamp_seconds: Some(current_timestamp_seconds()?),
-    };
-
-    serde_json::to_vec(&envelope).context("serializing state entry envelope")
-}
-
-fn current_timestamp_seconds() -> Result<u64> {
-    let timestamp = chrono::Utc::now().timestamp();
-    u64::try_from(timestamp).context("timestamp precedes unix epoch")
-}
-
-#[async_trait]
-impl AdapterProvider for AppContext {
-  
-    async fn fetch_vehicle_by_label(&self, label: &str) -> Result<Option<VehicleInfo>> {
-        Ok(self.vehicle_info_by_label.get(label).cloned())
-    }
-
-    async fn fetch_vehicle_by_id(&self, id: &str) -> Result<Option<VehicleInfo>> {
-        Ok(self.vehicle_info_by_id.get(id).cloned())
-    }
-
-    async fn fetch_vehicle_capacity(
-        &self, vehicle_id: &str, _route_id: &str,
-    ) -> Result<Option<VehicleCapacity>> {
-        Ok(self.vehicle_info_by_id.get(vehicle_id).map(|info| info.capacity.clone()))
-    }
-
-    async fn fetch_trip_instances(
-        &self, _trip_id: &str, _service_date: &str,
-    ) -> Result<Vec<TripInstance>> {
-        Ok(vec![])
-    }
-
-    async fn fetch_block_allocation(
-        &self, vehicle_id: &str, _timestamp: i64,
-    ) -> Result<Option<BlockInstance>> {
-        let allocation = self
-            .vehicles
-            .get(vehicle_id)
-            .map(|id| BlockInstance { vehicle_ids: vec![id.clone()], ..BlockInstance::default() });
-        Ok(allocation)
     }
 }

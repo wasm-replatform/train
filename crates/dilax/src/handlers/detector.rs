@@ -1,7 +1,7 @@
 use anyhow::Context;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
-use credibil_api::{Body, Handler, Request, Response};
+use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
@@ -15,7 +15,8 @@ const DIESEL_TRAIN_PREFIX: &str = "ADL";
 const THRESHOLD: Duration = Duration::hours(1);
 const KEY_LOST_CONNECTION: &str = "apc:lostConnections";
 
-const TTL_RETENTION: Duration = Duration::days(7);
+#[allow(clippy::cast_sign_loss)]
+const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
@@ -43,8 +44,6 @@ impl<P: Provider> Handler<DetectionResponse, P> for Request<DetectionRequest> {
         handle(owner, self.body, provider).await
     }
 }
-
-impl Body for DetectionRequest {}
 
 async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detection>> {
     info!("Starting Dilax lost connection job");
@@ -147,13 +146,11 @@ async fn detect(
     }
 
     // save vehicle/trip mappings
-    let mapping_set = SetEnvelope {
-        expires_at: Some(now_ts + TTL_RETENTION.num_seconds()),
-        members: trip_vehicles,
-    };
+    #[allow(clippy::cast_possible_wrap)]
+    let mapping_set =
+        SetEnvelope { expires_at: Some(now_ts + TTL_RETENTION as i64), members: trip_vehicles };
     let bytes = serde_json::to_vec(&mapping_set)?;
     StateStore::set(provider, &set_key, &bytes, Some(TTL_RETENTION)).await?;
-
     info!("{} Dilax lost connection detections recorded", new_detections.len());
     Ok(new_detections)
 }

@@ -1,7 +1,6 @@
 use std::fmt::{self, Display};
 
 use anyhow::{Context, Result};
-use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
@@ -16,9 +15,9 @@ const KEY_VEHICLE_ID_MIGRATED: &str = "apc:vehicleIdMigrated";
 const KEY_TRIPS: &str = "apc:trips";
 const KEY_TRIP_INFO: &str = "apc:vehicleTripInfo";
 
-const TTL_APC: Duration = Duration::hours(1);
-const TTL_OCCUPANCY_STATE: Duration = Duration::minutes(90);
-const TTL_VEHICLE_TRIP_INFO: Duration = Duration::hours(48);
+const TTL_APC: u64 = 60 * 60; // 1 hour
+const TTL_OCCUPANCY_STATE: u64 = 90 * 60; // 90 minutes
+const TTL_VEHICLE_TRIP_INFO: u64 = 48 * 60 * 60; // 48 hours
 
 /// Update the vehicle state with the latest Dilax APC event.
 ///

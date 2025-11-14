@@ -35,8 +35,8 @@ serde_json.workspace = true
 tracing.workspace = true
 urlencoding.workspace = true
 wasi-http.workspace = true
-wasi-keyvalue.workspace = true
 wasi-identity.workspace = true
+wasi-keyvalue.workspace = true
 wasi-messaging.workspace = true
 wasi-otel.workspace = true
 wasip3.workspace = true
@@ -121,18 +121,18 @@ wasip3 = { version = "0.2.1", features = ["http-compat"] }
 wit-bindgen = "0.46.0"
 
 # credibil registry
-# credibil-api = { version = "0.4.0", registry = "credibil" }
-wasi-http = { version = "0.14.0", registry = "credibil" }
-wasi-identity = { version = "0.14.0", registry = "credibil" }
-wasi-messaging = { version = "0.14.0", registry = "credibil" }
-wasi-otel = { version = "0.14.0", registry = "credibil" }
+credibil-api = { version = "0.5.0", registry = "credibil" }
+wasi-http = { version = "0.15.0", registry = "credibil" }
+wasi-identity = { version = "0.15.0", registry = "credibil" }
+wasi-keyvalue = { version = "0.15.0", registry = "credibil" }
+wasi-messaging = { version = "0.15.0", registry = "credibil" }
+wasi-otel = { version = "0.15.0", registry = "credibil" }
 
 # [patch.credibil]
-# wasi-keyvalue = { path = "../../credibil/wrt/crates/wasi-keyvalue" }
-# wasi-identity = { path = "../../credibil/wrt/crates/wasi-identity" }
+# wasi-keyvalue = { git = "https://github.com/credibil/wrt" }
+
 # Internally reference crates
 realtime = { path = "crates/realtime" }
-credibil-api = { git = "https://github.com/credibil/core" }
 
 [profile.release]
 lto = "thin"

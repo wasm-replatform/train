@@ -659,7 +659,8 @@ dependencies = [
 [[package]]
 name = "credibil-api"
 version = "0.5.0"
-source = "git+https://github.com/credibil/core#6129f5dae55de9f1e50dde6fb81f63f6251f1d23"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "c558cd27a0db90de12b461589cb7b318a7849cf6787c55ad571b9bc954c8c1c9"
 dependencies = [
  "bytes",
  "http",
@@ -671,9 +672,9 @@ dependencies = [
 
 [[package]]
 name = "credibil-encoding"
-version = "0.4.0"
+version = "0.5.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "84341dcc5affae54f0da0bd9921b18db9eac99942fcb0f969f89b4629658e570"
+checksum = "407f3c65b3611f92d93157cb8975850aaf4f5c2734d286a59fba540cfb9f1c29"
 dependencies = [
  "anyhow",
  "percent-encoding",
@@ -683,9 +684,9 @@ dependencies = [
 
 [[package]]
 name = "credibil-otel"
-version = "0.4.0"
+version = "0.5.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "0534e05ef3f22126e87cd4f1eebeaf64ba16827079b0773c7323100d24548f6a"
+checksum = "79242ef947b08cea47eefebdbce83c70223dab563eca3ae88a0f6652e8c53458"
 dependencies = [
  "anyhow",
  "http",
@@ -799,7 +800,7 @@ dependencies = [
  "tokio",
  "tracing",
  "urlencoding",
- "wasi-keyvalue 0.15.0",
+ "wasi-keyvalue",
 ]
 
 [[package]]
@@ -2330,23 +2331,9 @@ dependencies = [
 
 [[package]]
 name = "runtime"
-version = "0.14.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "da5b539b6a7b383cecb77c8c2ebee3f8155aac744fe86ce7ab637a8b9aec4460"
-dependencies = [
- "anyhow",
- "cfg-if",
- "clap",
- "credibil-otel",
- "tracing",
- "wasmtime",
- "wasmtime-wasi",
-]
-
-[[package]]
-name = "runtime"
 version = "0.15.0"
-source = "git+https://github.com/credibil/wrt#4f8850a7acaccba05aa90c26f79069f27d99d5f0"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "2cfda271975403d5a228749f196cc7a130680fcf31e5a92f4f399ef03e20a9fd"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -3239,7 +3226,7 @@ dependencies = [
  "urlencoding",
  "wasi-http",
  "wasi-identity",
- "wasi-keyvalue 0.15.0",
+ "wasi-keyvalue",
  "wasi-messaging",
  "wasi-otel",
  "wasip3",
@@ -3375,9 +3362,9 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasi-http"
-version = "0.14.0"
+version = "0.15.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "05975f5c75f78194a93b257470dfe2351f76626e0733f629f3dcc26c14e614cf"
+checksum = "2e257e4bd66e42b9969849c4f5baa742a263b141a3196c83fbb7c06f8416ac4d"
 dependencies = [
  "anyhow",
  "axum",
@@ -3392,14 +3379,14 @@ dependencies = [
  "hyper",
  "percent-encoding",
  "reqwest",
- "runtime 0.14.0",
+ "runtime",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
  "tower",
  "tracing",
- "wasi-keyvalue 0.14.0",
+ "wasi-keyvalue",
  "wasip3",
  "wasmtime",
  "wasmtime-wasi",
@@ -3409,32 +3396,13 @@ dependencies = [
 
 [[package]]
 name = "wasi-identity"
-version = "0.14.0"
+version = "0.15.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "b70c8d6bb7fb9922915174a668a5d797ee1aac46e438389146a5a057c519daa6"
+checksum = "c4b4c373956e3e684a5cb24c1a33083354054c6e5049d4d20b24bd48b3081e5d"
 dependencies = [
  "anyhow",
  "futures",
- "runtime 0.14.0",
- "tracing",
- "wasmtime",
- "wasmtime-wasi",
- "wit-bindgen",
-]
-
-[[package]]
-name = "wasi-keyvalue"
-version = "0.14.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "a819046ca8bae92f12f211e82d0801b862fbd9a12a3034654c3f1b383d19ed4c"
-dependencies = [
- "anyhow",
- "async-nats",
- "base64ct",
- "futures",
- "runtime 0.14.0",
- "serde",
- "serde_json",
+ "runtime",
  "tracing",
  "wasmtime",
  "wasmtime-wasi",
@@ -3444,14 +3412,15 @@ dependencies = [
 [[package]]
 name = "wasi-keyvalue"
 version = "0.15.0"
-source = "git+https://github.com/credibil/wrt#4f8850a7acaccba05aa90c26f79069f27d99d5f0"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "34baef66876dabf37b75ada489560064835674fb6938348239d1207459036d21"
 dependencies = [
  "anyhow",
  "async-nats",
  "base64ct",
  "chrono",
  "futures",
- "runtime 0.15.0",
+ "runtime",
  "serde",
  "serde_json",
  "tracing",
@@ -3462,15 +3431,15 @@ dependencies = [
 
 [[package]]
 name = "wasi-messaging"
-version = "0.14.0"
+version = "0.15.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "c26417254fbedeee8c26c2e417dc76fb892974b97512124a99da5a04ef9b72f7"
+checksum = "904ed54e60cb9688daf42c7256fcad1b8a9f7026fc862f69e5e4dcb27647d09e"
 dependencies = [
  "anyhow",
  "async-nats",
  "futures",
  "http",
- "runtime 0.14.0",
+ "runtime",
  "serde",
  "time",
  "tokio",
@@ -3482,9 +3451,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel"
-version = "0.14.0"
+version = "0.15.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "0929a3e7f9c2037d13c28265580e3b1cd0f78563797c2fbdaede05f29d38fa39"
+checksum = "58a8ebc00b70988846406367ca4d588bfdde1b88e44e5d2a1250845db4ab58ff"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -3498,7 +3467,7 @@ dependencies = [
  "opentelemetry_sdk",
  "prost",
  "reqwest",
- "runtime 0.14.0",
+ "runtime",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
@@ -3509,9 +3478,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel-attr"
-version = "0.14.0"
+version = "0.15.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "f80fe322adcb3b41c253164de49ad007c1617a1e8b7cf725c331b8b8423ce431"
+checksum = "57d7b88812799af942a03a067f6b0eb60cc4f5b1de44653a71dcaed262a8643f"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -3,6 +3,7 @@
 
 mod provider;
 
+use serde_json::json;
 use std::sync::LazyLock;
 use std::time::Duration;
 use std::{env, thread};
@@ -14,6 +15,7 @@ use credibil_api::Client;
 use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
 use r9k_position::R9kMessage;
 use serde_json::Value;
+use soap_service::service;
 use tracing::{Level, error, info, warn};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types::{Client as MsgClient, Message};
@@ -38,7 +40,7 @@ wasip3::http::proxy::export!(Http);
 impl Guest for Http {
     #[wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
-        let router = Router::new().route("/jobs/detector", get(jobs_detector));
+        let router = Router::new().route("/jobs/detector", get(jobs_detector)).merge(r9k::router());
         wasi_http::serve(router, request).await
     }
 }
@@ -46,16 +48,42 @@ impl Guest for Http {
 #[axum::debug_handler]
 async fn jobs_detector() -> HttpResult<Json<Value>> {
     let api = Client::new(provider::Provider);
-    let builder = api.request(DetectionRequest).owner("owner");
+    let router = api.request(DetectionRequest).owner("owner");
 
-    let response = builder
-        .await
-        .map_err(|err| anyhow!("failed to run Dilax lost connection detector event: {err}"))?;
+    let response = router.await.context("Issue running lost connection detector")?;
 
-    Ok(Json(serde_json::json!({
+    Ok(Json(json!({
         "status": "job detection triggered",
         "detections": response.detections.len()
     })))
+}
+
+#[allow(clippy::manual_strip)]
+#[service(
+    namespace = "http://localhost:8080/r9k",
+    service_name = "IwsCompassR9Kservice",
+    port_name = "IwsCompassR9KPort",
+    bind_path = "/inbound/xml"
+)]
+mod r9k {
+    use anyhow::{Error, Result};
+
+    pub async fn receiveMessage(req: String) -> Result<String, Error> {
+        // nr.incrementMetric(`${Config.newRelicPrefix}/message_counter`, 1);
+
+        // if (Config.replication.endpoint) {
+        //     this.eventStore.put(req.body);
+        // }
+
+        // if (!receivedMessage) {
+        //     nr.noticeError(new Error("AXMLMessage is empty: "));
+        //     Config.logger.error("AXMLMessage is empty: " + receivedMessage);
+        //     throw ERROR_RESPONSE;
+        // }
+
+        
+        todo!()
+    }
 }
 
 pub struct Messaging;

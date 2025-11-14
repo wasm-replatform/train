@@ -10,21 +10,12 @@ use chrono::Utc;
 use credibil_api::{Handler, Request, Response};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
-use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
 use crate::provider::{HttpRequest, Identity, Provider};
 use crate::r9k::{R9kMessage, TrainUpdate};
-use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
+use crate::smartrak::{EventType, MessageData, R9kResponse, RemoteData, SmarTrakEvent};
 use crate::{Result, stops};
-
-/// R9K response for SmarTrak consumption.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct R9kResponse {
-    /// Train update, converted to SmarTrak events.
-    pub smartrak_events: Option<Vec<SmarTrakEvent>>,
-}
 
 async fn handle(
     owner: &str, request: R9kMessage, provider: &impl Provider,

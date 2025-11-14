@@ -39,6 +39,7 @@ impl TryFrom<&[u8]> for R9kMessage {
     }
 }
 
+
 /// R9000 (R9K) train update as received from KiwiRail.
 /// Defines the XML mappings as defined by the R9K provider - in Spanish.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

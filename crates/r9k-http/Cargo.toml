@@ -1,0 +1,40 @@
+[package]
+name = "r9k-http"
+description = " R9K HTTP connector"
+readme = "README.md"
+publish = false
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+anyhow.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+credibil-api.workspace = true
+http.workspace = true
+http-body.workspace = true
+http-body-util.workspace = true
+quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
+serde.workspace = true
+serde_json.workspace = true
+serde_repr = "0.1"
+thiserror.workspace = true
+tracing.workspace = true
+wit-bindgen.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+serde_yaml = "0.9"
+tokio.workspace = true

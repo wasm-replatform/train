@@ -42,6 +42,9 @@ wasi-otel.workspace = true
 wasip3.workspace = true
 wit-bindgen.workspace = true
 
+serde-xml-rs = "0.6"
+soap-service = "0.2.1"
+
 [workspace]
 members = ["crates/*"]
 resolver = "3"

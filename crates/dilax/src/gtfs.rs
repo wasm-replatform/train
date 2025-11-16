@@ -24,7 +24,7 @@ struct CcStopResponse {
 pub async fn location_stops(
     lat: &str, lon: &str, distance: u32, http: &impl HttpRequest,
 ) -> Result<Vec<StopInfo>> {
-    let cc_static_addr = env::var("CC_STATIC_API_URL").context("getting `CC_STATIC_API_URL`")?;
+    let cc_static_addr = env::var("CC_STATIC_URL").context("getting `CC_STATIC_URL`")?;
     let url =
         format!("{cc_static_addr}/gtfs/stops/geosearch?lat={lat}&lng={lon}&distance={distance}");
 

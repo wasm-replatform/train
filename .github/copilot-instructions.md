@@ -68,7 +68,7 @@ Workspace enables aggressive linting: `all`, `nursery`, `pedantic`, `cargo` + ch
 
 ## Environment & Deployment
 
-- `.env.example` shows required environment variables (CC_STATIC_API_URL, BLOCK_MGT_URL, OTEL endpoints, etc.)
+- `.env.example` shows required environment variables (CC_STATIC_URL, BLOCK_MGT_URL, OTEL endpoints, etc.)
 - **Docker Compose stack**: Kafka, Kafka UI (port 8081), Jaeger (16686), Prometheus (9090), OpenTelemetry Collector
 - WASM runtime expects `/r9k.wasm` mounted from `target/wasm32-wasip2/release/`
 

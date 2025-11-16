@@ -31,7 +31,7 @@ version = "0.45.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.axum]]
-version = "0.8.6"
+version = "0.8.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.axum-core]]
@@ -55,7 +55,7 @@ version = "2.0.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.cc]]
-version = "1.2.45"
+version = "1.2.46"
 criteria = "safe-to-deploy"
 
 [[exemptions.chrono]]
@@ -124,6 +124,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.fallible-iterator]]
 version = "0.2.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.find-msvc-tools]]
+version = "0.1.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.futures-task]]

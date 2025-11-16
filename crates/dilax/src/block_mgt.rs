@@ -14,7 +14,7 @@ use crate::provider::{HttpRequest, Identity, Provider};
 // const TTL_FLEET_FAILURE: Duration = Duration::from_secs(3 * 60);
 
 pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<FleetVehicle>> {
-    let fleet_api_url = env::var("FLEET_API_URL").context("getting `FLEET_API_URL`")?;
+    let fleet_api_url = env::var("FLEET_URL").context("getting `FLEET_URL`")?;
     let url = format!("{fleet_api_url}/vehicles?label={}", urlencoding::encode(label));
 
     let request = http::Request::builder()

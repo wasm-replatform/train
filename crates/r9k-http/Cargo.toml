@@ -19,22 +19,17 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 credibil-api.workspace = true
-http.workspace = true
-http-body.workspace = true
-http-body-util.workspace = true
-quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
+quick-xml.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_repr = "0.1"
+serde_repr.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
-wit-bindgen.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
-serde_yaml = "0.9"
+serde_yaml.workspace = true
 tokio.workspace = true

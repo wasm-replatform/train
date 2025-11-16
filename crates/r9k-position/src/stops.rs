@@ -30,7 +30,7 @@ pub async fn stop_info(
         return Ok(None);
     };
 
-    let cc_static_api_url = env::var("CC_STATIC_API_URL").context("getting `CC_STATIC_API_URL`")?;
+    let cc_static_api_url = env::var("CC_STATIC_URL").context("getting `CC_STATIC_URL`")?;
     let request = http::Request::builder()
         .uri(format!("{cc_static_api_url}/gtfs/stops?fields=stop_code,stop_lon,stop_lat"))
         .body(Empty::<Bytes>::new())

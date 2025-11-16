@@ -1,9 +1,11 @@
 //! R9K data types
 
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 use chrono::{NaiveDate, Utc};
 use chrono_tz::Pacific;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -13,31 +15,72 @@ use crate::error::Error;
 const MAX_DELAY_SECS: i64 = 60;
 const MIN_DELAY_SECS: i64 = -30;
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct Envelope<T> {
+    #[serde(rename = "Body")]
+    pub body: Body<T>,
+}
+
+impl<T: DeserializeOwned> FromStr for Envelope<T> {
+    type Err = Error;
+
+    fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
+        quick_xml::de::from_str(xml).map_err(Into::into)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Body<T> {
+    #[serde(rename = "$value")]
+    pub inner: T,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ReceiveMessage {
+    #[serde(rename = "AXMLMessage")]
+    #[serde(deserialize_with = "R9kMessage::deserialize")]
+    pub message: R9kMessage,
+}
+
 /// R9K train update message as deserialized from the XML received from
 /// KiwiRail.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct R9kMessage {
+    /// Live message indicator.
+    #[serde(rename(deserialize = "MensajeVidaSIE"))]
+    pub live_message: bool,
+
     /// The train update.
     #[serde(rename(deserialize = "ActualizarDatosTren"))]
     pub train_update: TrainUpdate,
 }
 
-impl TryFrom<String> for R9kMessage {
-    type Error = Error;
-
-    fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_str(&xml).map_err(Into::into)
+impl R9kMessage {
+    fn deserialize<'de, D>(deserializer: D) -> anyhow::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(deserializer)?;
+        Self::from_str(&s).map_err(serde::de::Error::custom)
     }
 }
 
-impl TryFrom<&[u8]> for R9kMessage {
-    type Error = Error;
+impl FromStr for R9kMessage {
+    type Err = Error;
 
-    fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_reader(xml).map_err(Into::into)
+    fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
+        quick_xml::de::from_str(xml).map_err(Into::into)
     }
 }
+
+// impl TryFrom<&[u8]> for R9kMessage {
+//     type Error = Error;
+
+//     fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
+//         quick_xml::de::from_reader(xml).map_err(Into::into)
+//     }
+// }
 
 /// R9000 (R9K) train update as received from KiwiRail.
 /// Defines the XML mappings as defined by the R9K provider - in Spanish.
@@ -366,14 +409,21 @@ pub enum StopType {
 
 #[cfg(test)]
 mod tests {
-    use super::R9kMessage;
+    use std::str::FromStr;
+
+    use super::{Envelope, ReceiveMessage};
 
     #[test]
-    fn deserialization() {
-        let xml = include_str!("../data/sample.xml");
-        let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
+    fn deserialize_soap() {
+        let xml = include_str!("../data/soap.xml");
 
+        let envelope: Envelope<ReceiveMessage> =
+            Envelope::from_str(xml).expect("should deserialize");
+
+        let receive_message: ReceiveMessage = envelope.body.inner;
+        let message = receive_message.message;
         let update = message.train_update;
+
         assert_eq!(update.even_train_id, Some("1234".to_string()));
         assert!(!update.changes.is_empty(), "should have changes");
     }

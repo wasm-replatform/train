@@ -40,35 +40,20 @@ pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<Flee
     Ok(vehicle)
 }
 
-async fn builder_helper(url: String, provider: &impl Provider) -> Result<http::request::Builder> {
-    let mut builder = http::Request::builder()
-        .method(Method::GET)
-        .uri(url)
-        .header("Content-Type", "application/json");
-
-    if env::var("ENVIRONMENT").unwrap_or_default() == "dev" {
-        let authorization = env::var("BLOCK_MGT_AUTHORIZATION").ok();
-        if let Some(token) = authorization {
-            builder = builder.header(AUTHORIZATION, token.as_str());
-        }
-    } else {
-        let token = Identity::access_token(provider).await?;
-        builder = builder.header(AUTHORIZATION, format!("Bearer {token}"));
-    }
-
-    Ok(builder)
-}
-
 pub async fn vehicle_allocation(
     vehicle_id: &str, provider: &impl Provider,
 ) -> Result<Option<VehicleAllocation>> {
     let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
     let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
+    let token = Identity::access_token(provider).await?;
 
-    let builder = builder_helper(url, provider).await?;
-
-    let request =
-        builder.body(Empty::<Bytes>::new()).context("building allocation_by_vehicle request")?;
+    let request = http::Request::builder()
+        .method(Method::GET)
+        .uri(url)
+        .header(AUTHORIZATION, format!("Bearer {token}"))
+        .header("Content-Type", "application/json")
+        .body(Empty::<Bytes>::new())
+        .context("building allocation_by_vehicle request")?;
 
     let response = HttpRequest::fetch(provider, request).await.map_err(|err| {
         Error::ServerError(format!(
@@ -86,11 +71,16 @@ pub async fn vehicle_allocation(
 pub async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
     let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
     let url = format!("{block_mgt_url}/allocations");
+    let token = Identity::access_token(provider).await?;
 
-    let builder = builder_helper(url, provider).await?;
+    let request = http::Request::builder()
+        .method(Method::GET)
+        .uri(url)
+        .header(AUTHORIZATION, format!("Bearer {token}"))
+        .header("Content-Type", "application/json")
+        .body(Empty::<Bytes>::new())
+        .context("building all_allocations request")?;
 
-    let request =
-        builder.body(Empty::<Bytes>::new()).context("building all_allocations request")?;
     let response = HttpRequest::fetch(provider, request)
         .await
         .context("Block management list request failed")?;

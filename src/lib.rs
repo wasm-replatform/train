@@ -32,7 +32,7 @@ const DILAX_TOPIC: &str = "realtime-dilax-apc.v1";
 const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v1";
 
 static ENV: LazyLock<String> =
-    LazyLock::new(|| env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string()));
+    LazyLock::new(|| env::var("ENV").unwrap_or_else(|_| "dev".to_string()));
 
 pub struct Http;
 wasip3::http::proxy::export!(Http);

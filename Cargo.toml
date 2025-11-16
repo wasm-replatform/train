@@ -27,8 +27,8 @@ credibil-api.workspace = true
 dilax = { path = "crates/dilax" }
 http.workspace = true
 http-body.workspace = true
-r9k-http = { path = "crates/r9k-http" }
-r9k-position = { path = "crates/r9k-position" }
+r9k-adapter = { path = "crates/r9k-adapter" }
+r9k-connector = { path = "crates/r9k-connector" }
 serde_json.workspace = true
 tracing.workspace = true
 wasi-http.workspace = true
@@ -111,8 +111,8 @@ pretty_assertions = "1.4.1"
 quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.144"
-serde_yaml = "0.9"
 serde_repr = "0.1"
+serde_yaml = "0.9"
 thiserror = "2.0"
 tokio = { version = "1.47.1", default-features = false, features = ["io-util", "macros", "rt", "time"] }
 tracing = "0.1.41"

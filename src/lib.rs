@@ -13,8 +13,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use credibil_api::Client;
 use dilax::{DetectionRequest, DilaxMessage};
-use r9k_http::{Envelope, ReceiveMessage};
-use r9k_position::R9kMessage;
+use r9k_adapter::R9kMessage;
+use r9k_connector::R9kRequest;
 use serde_json::{Value, json};
 use tracing::{Level, error, info, warn};
 use wasi_http::Result as HttpResult;
@@ -69,14 +69,12 @@ async fn r9k_message(req: String) -> HttpResult<String> {
     //     this.eventStore.put(req.body);
     // }
 
-    let envelope: Envelope<ReceiveMessage> =
-        Envelope::from_str(&req).context("parsing envelope")?;
-
+    let request = R9kRequest::from_str(&req).context("parsing envelope")?;
     let api_client = Client::new(Provider);
-    let receive_message: ReceiveMessage = envelope.body.inner;
-    let request = receive_message.message;
-
     let result = api_client.request(request).owner("owner").await;
+
+    // let receive_message = envelope.body.receive_message;
+    // let request = receive_message.message;
 
     let response = match result {
         Ok(ok) => ok,

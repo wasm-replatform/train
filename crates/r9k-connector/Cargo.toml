@@ -1,6 +1,6 @@
 [package]
-name = "r9k-position"
-description = " R9K position adapter"
+name = "r9k-connector"
+description = " R9K HTTP connector"
 readme = "README.md"
 publish = false
 authors.workspace = true
@@ -19,13 +19,9 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 credibil-api.workspace = true
-http.workspace = true
-http-body.workspace = true
-http-body-util.workspace = true
 quick-xml.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -7,7 +7,7 @@ use std::error::Error;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Identity, StopInfo};
+use r9k_adapter::{HttpRequest, Identity, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {

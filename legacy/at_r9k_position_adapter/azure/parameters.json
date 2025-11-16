@@ -43,10 +43,10 @@
         "all": "~18"
     },
     "site_name": {
-        "dev": "dev-at-r9k-position-adapter-01",
-        "vnet-test": "test-at-r9k-position-adapter-02",
-        "vnet-preprod": "pp-at-r9k-position-adapter-02",
-        "vnet-prod": "prod-at-r9k-position-adapter-02"
+        "dev": "dev-at-r9k-adapter-adapter-01",
+        "vnet-test": "test-at-r9k-adapter-adapter-02",
+        "vnet-preprod": "pp-at-r9k-adapter-adapter-02",
+        "vnet-prod": "prod-at-r9k-adapter-adapter-02"
     },
     "slot_name": {
         "all": "staging"
@@ -134,7 +134,7 @@
         "all": "realtime-confluent-key"
     },
     "kafka_consumer_group": {
-        "all": "at-r9k-position-adapter-v2"
+        "all": "at-r9k-adapter-adapter-v2"
     },
     "kafka_environment_prefix": {
         "dev": "dev-",

@@ -2119,13 +2119,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
-name = "r9k-http"
+name = "r9k-adapter"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "bytes",
  "chrono",
  "chrono-tz",
  "credibil-api",
+ "http",
+ "http-body",
+ "http-body-util",
  "pretty_assertions",
  "quick-xml",
  "serde",
@@ -2138,17 +2142,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "r9k-position"
+name = "r9k-connector"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "bytes",
  "chrono",
  "chrono-tz",
  "credibil-api",
- "http",
- "http-body",
- "http-body-util",
  "pretty_assertions",
  "quick-xml",
  "serde",
@@ -3232,8 +3232,8 @@ dependencies = [
  "dilax",
  "http",
  "http-body",
- "r9k-http",
- "r9k-position",
+ "r9k-adapter",
+ "r9k-connector",
  "serde_json",
  "tracing",
  "wasi-http",

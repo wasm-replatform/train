@@ -13,7 +13,7 @@ use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use http::{Request, Response};
-use r9k_position::{HttpRequest, Identity, R9kMessage, SmarTrakEvent, StopInfo};
+use r9k_adapter::{HttpRequest, Identity, R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
 
 /// This test runs through a folder of files that recorded the input and output
@@ -129,7 +129,7 @@ struct Wiretap {
     delay: Option<i32>,
     stop_info: Option<StopInfo>,
     allocated_vehicles: Option<Vec<String>>,
-    error: Option<r9k_position::Error>,
+    error: Option<r9k_adapter::Error>,
     not_relevant_type: Option<bool>,
     not_relevant_station: Option<bool>,
     output: Option<Vec<String>>,

@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use bytes::Bytes;
 use dilax::{HttpRequest as DilaxHttpRequest, Identity as DilaxIdentity, StateStore};
 use http::{Request, Response};
-use r9k_position::{HttpRequest as R9kHttpRequest, Identity as R9kIdentity};
+use r9k_adapter::{HttpRequest as R9kHttpRequest, Identity as R9kIdentity};
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::cache;
 use wit_bindgen::block_on;

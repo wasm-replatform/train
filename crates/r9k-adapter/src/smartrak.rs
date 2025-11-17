@@ -5,13 +5,7 @@ use serde::{Deserialize, Serialize, Serializer};
 
 use crate::stops::StopInfo;
 
-/// R9K response for SmarTrak consumption.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct R9kResponse {
-    /// Train update, converted to SmarTrak events.
-    pub smartrak_events: Option<Vec<SmarTrakEvent>>,
-}
+
 
 /// SmarTrak event.
 /// N.B. that `@JsonProperty` descriptors are used for deserialisation only,

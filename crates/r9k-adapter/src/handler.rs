@@ -2,7 +2,8 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use std::env;
+use std::time::Duration;
+use std::{env, thread};
 
 use anyhow::Context;
 use bytes::Bytes;
@@ -10,20 +11,50 @@ use chrono::Utc;
 use credibil_api::{Handler, Request, Response};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
+use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::provider::{HttpRequest, Identity, Provider};
+use crate::provider::{HttpRequest, Identity, Message, Provider, Publisher};
 use crate::r9k::{R9kMessage, TrainUpdate};
-use crate::smartrak::{EventType, MessageData, R9kResponse, RemoteData, SmarTrakEvent};
+use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
 use crate::{Result, stops};
+
+const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
+
+/// R9K response for SmarTrak consumption.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct R9kResponse;
 
 async fn handle(
     owner: &str, request: R9kMessage, provider: &impl Provider,
 ) -> Result<Response<R9kResponse>> {
-    let train_update = request.train_update;
-    train_update.validate()?;
-    let events = train_update.into_events(owner, provider).await?;
-    Ok(R9kResponse { smartrak_events: Some(events) }.into())
+    // validate message
+    let update = request.train_update;
+    update.validate()?;
+
+    // convert to SmarTrak events
+    let events = update.into_events(owner, provider).await?;
+
+    // publish events to SmarTrak topic
+    // publish 2x in order to properly signal departure from the station
+    // (for schedule adherence)
+    for _ in 0..2 {
+        thread::sleep(Duration::from_secs(5));
+        for event in &events {
+            tracing::info!(monotonic_counter.smartrak_events_published = 1);
+
+            let payload = serde_json::to_vec(&event).context("serializing event")?;
+            let external_id = &event.remote_data.external_id;
+
+            let mut message = Message::new(&payload);
+            message.headers.insert("key".to_string(), external_id.clone());
+
+            Publisher::send(provider, SMARTRAK_TOPIC, &message).await?;
+        }
+    }
+
+    Ok(R9kResponse.into())
 }
 
 impl<P: Provider> Handler<R9kResponse, P> for Request<R9kMessage> {
@@ -75,8 +106,8 @@ impl TrainUpdate {
         let allocated: Vec<String> =
             serde_json::from_slice(&bytes).context("deserializing block management response")?;
 
-        // convert to SmarTrak events
-        let mut events = vec![];
+        // publish `SmarTrak` events
+        let mut events = Vec::new();
         for train in allocated {
             events.push(SmarTrakEvent {
                 received_at: Utc::now(),

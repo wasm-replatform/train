@@ -9,8 +9,8 @@ use std::str::FromStr;
 use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 
-use crate::provider::{Publisher, Provider};
-use crate::{Error, Result};
+use crate::provider::{Provider, Publisher};
+use crate::{Error, Message, Result};
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
@@ -33,7 +33,8 @@ async fn handle(
     // }
 
     // forward to r9k-adapter topic
-    Publisher::send(provider, R9K_TOPIC, message.as_bytes()).await?;
+    let msg = Message::new(message.as_bytes());
+    Publisher::send(provider, R9K_TOPIC, &msg).await?;
 
     Ok(R9kResponse("OK").into())
 }

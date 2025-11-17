@@ -7,7 +7,7 @@ use std::error::Error;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_adapter::{HttpRequest, Identity, StopInfo};
+use r9k_adapter::{HttpRequest, Identity, Publisher, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
@@ -63,6 +63,12 @@ impl HttpRequest for MockProvider {
 
         let body = Bytes::from(data);
         Response::builder().status(200).body(body).context("failed to build response")
+    }
+}
+
+impl Publisher for MockProvider {
+    async fn send(&self, topic: &str, message: &r9k_adapter::Message) -> Result<()> {
+        Ok(())
     }
 }
 

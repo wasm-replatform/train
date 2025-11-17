@@ -4,10 +4,7 @@ use std::error::Error;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
-use dilax::{HttpRequest as DilaxHttpRequest, Identity as DilaxIdentity, StateStore};
 use http::{Request, Response};
-use r9k_adapter::{HttpRequest as R9kHttpRequest, Identity as R9kIdentity};
-use r9k_connector::Publisher;
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::cache;
 use wasi_messaging::producer;
@@ -16,11 +13,35 @@ use wit_bindgen::block_on;
 
 use crate::ENV;
 
-
 #[derive(Clone, Default)]
 pub struct Provider;
 
-impl R9kHttpRequest for Provider {
+impl r9k_connector::Publisher for Provider {
+    async fn send(&self, topic: &str, message: &r9k_connector::Message) -> Result<()> {
+        tracing::debug!("sending to topic: {}-{topic}", ENV.as_str());
+
+        let client = Client::connect("").context("connecting to broker")?;
+        let topic = format!("{}-{topic}", ENV.as_str());
+        let msg = Message::new(&message.payload);
+
+        wit_bindgen::block_on(async move {
+            let _ = producer::send(&client, topic, msg).await.context("sending message");
+            // if let Err(e) = producer::send(&client, topic, message).await {
+            //     error!(
+            //         monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
+            //     );
+            // }
+        });
+
+        // tracing::info!(
+        //     monotonic_counter.messages_sent = 1, service = %SERVICE
+        // );
+
+        Ok(())
+    }
+}
+
+impl r9k_adapter::HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
@@ -32,21 +53,34 @@ impl R9kHttpRequest for Provider {
     }
 }
 
-impl Publisher for Provider {
-    async fn send(&self, topic: &str, payload: &[u8]) -> Result<()> {
-        tracing::debug!("sending to topic: {}-{topic}",ENV.as_str());
+impl r9k_adapter::Publisher for Provider {
+    async fn send(&self, topic: &str, message: &r9k_adapter::Message) -> Result<()> {
+        tracing::debug!("sending to topic: {}-{topic}", ENV.as_str());
 
         let client = Client::connect("").context("connecting to broker")?;
         let topic = format!("{}-{topic}", ENV.as_str());
-        let message = Message::new(payload);
+        let msg = Message::new(&message.payload);
+
+        for (key, value) in &message.headers {
+            msg.add_metadata(key, value);
+        }
 
         wit_bindgen::block_on(async move {
-            producer::send(&client, topic, message).await.context("sending message")
+            producer::send(&client, topic, msg).await.context("sending message")
         })
     }
 }
 
-impl DilaxHttpRequest for Provider {
+impl r9k_adapter::Identity for Provider {
+    async fn access_token(&self) -> Result<String> {
+        let identity = env::var("AZURE_IDENTITY")?;
+        let identity = block_on(get_identity(identity))?;
+        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
+        Ok(access_token.token)
+    }
+}
+
+impl dilax::HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
@@ -58,7 +92,7 @@ impl DilaxHttpRequest for Provider {
     }
 }
 
-impl StateStore for Provider {
+impl dilax::StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
         let bucket = cache::open("train_cache").context("opening cache")?;
         bucket.get(key).context("reading state from cache")
@@ -75,17 +109,8 @@ impl StateStore for Provider {
     }
 }
 
-impl R9kIdentity for Provider {
+impl dilax::Identity for Provider {
     async fn access_token(&self) -> Result<String> {
-        let identity = env::var("AZURE_IDENTITY")?;
-        let identity = block_on(get_identity(identity))?;
-        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
-        Ok(access_token.token)
-    }
-}
-
-impl DilaxIdentity for Provider {
-    async fn access_token(&self) -> Result<String> {
-        R9kIdentity::access_token(self).await
+        r9k_adapter::Identity::access_token(self).await
     }
 }

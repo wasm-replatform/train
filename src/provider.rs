@@ -62,19 +62,7 @@ impl realtime::Identity for Provider {
     }
 }
 
-impl dilax::HttpRequest for Provider {
-    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
-    where
-        T: http_body::Body + Any + Send,
-        T::Data: Into<Vec<u8>>,
-        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
-    {
-        tracing::debug!("request: {:?}", request.uri());
-        wasi_http::handle(request).await
-    }
-}
-
-impl dilax::StateStore for Provider {
+impl realtime::StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
         let bucket = cache::open("train_cache").context("opening cache")?;
         bucket.get(key).context("reading state from cache")
@@ -88,11 +76,5 @@ impl dilax::StateStore for Provider {
     async fn delete(&self, key: &str) -> Result<()> {
         let bucket = cache::open("train_cache").context("opening cache")?;
         bucket.delete(key).context("deleting state from cache")
-    }
-}
-
-impl dilax::Identity for Provider {
-    async fn access_token(&self) -> Result<String> {
-        realtime::Identity::access_token(self).await
     }
 }

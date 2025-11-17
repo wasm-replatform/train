@@ -7,7 +7,7 @@ use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
-use crate::provider::HttpRequest;
+use crate::HttpRequest;
 
 const KEY_TRAIN_STOPS: &str = "gtfs:trainStops";
 

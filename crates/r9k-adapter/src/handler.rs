@@ -13,7 +13,7 @@ use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::provider::{HttpRequest, Identity, Message, Provider, Publisher};
+use crate::{HttpRequest, Identity, Message, Provider, Publisher};
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
 use crate::{Result, stops};

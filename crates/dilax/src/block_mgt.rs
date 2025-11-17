@@ -8,7 +8,7 @@ use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::provider::{HttpRequest, Identity, Provider};
+use crate::{HttpRequest, Identity, Provider};
 
 // const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
 // const TTL_FLEET_FAILURE: Duration = Duration::from_secs(3 * 60);

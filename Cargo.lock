@@ -827,6 +827,7 @@ dependencies = [
  "http-body",
  "http-body-util",
  "pretty_assertions",
+ "realtime",
  "serde",
  "serde_json",
  "thiserror 2.0.17",

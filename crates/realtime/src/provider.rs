@@ -26,11 +26,6 @@ pub trait HttpRequest: Send + Sync {
         T::Error: Into<Box<dyn Error + Send + Sync + 'static>>;
 }
 
-pub trait Identity: Send + Sync {
-    /// Get the unique identifier for the entity.
-    fn access_token(&self) -> impl Future<Output = Result<String>> + Send;
-}
-
 #[derive(Clone, Debug)]
 pub struct Message {
     pub payload: Vec<u8>,
@@ -48,4 +43,20 @@ impl Message {
 pub trait Publisher: Send + Sync {
     /// Make outbound HTTP request.
     fn send(&self, topic: &str, message: &Message) -> impl Future<Output = Result<()>> + Send;
+}
+
+/// The `StateStore` trait defines the behavior storing and retrieving train state.
+pub trait StateStore: Send + Sync {
+    fn get(&self, key: &str) -> impl Future<Output = Result<Option<Vec<u8>>>> + Send;
+
+    fn set(
+        &self, key: &str, value: &[u8], ttl_secs: Option<u64>,
+    ) -> impl Future<Output = Result<Option<Vec<u8>>>> + Send;
+
+    fn delete(&self, key: &str) -> impl Future<Output = Result<()>> + Send;
+}
+
+pub trait Identity: Send + Sync {
+    /// Get the unique identifier for the entity.
+    fn access_token(&self) -> impl Future<Output = Result<String>> + Send;
 }

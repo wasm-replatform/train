@@ -4,12 +4,17 @@
 
 mod error;
 mod handler;
-mod provider;
 
 pub use handler::*;
 
 pub use self::error::Error;
-pub use self::provider::*;
 
 /// Result type for handlers.
 pub type Result<T> = anyhow::Result<T, Error>;
+
+pub use realtime::{Message, Publisher};
+
+/// Provider entry point implemented by the host application.
+pub trait Provider: Publisher {}
+
+impl<T: Publisher> Provider for T {}

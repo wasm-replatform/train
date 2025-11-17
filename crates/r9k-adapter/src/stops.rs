@@ -7,7 +7,7 @@ use bytes::Bytes;
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
-use crate::provider::{HttpRequest, Provider};
+use crate::{HttpRequest, Provider};
 
 /// Stop information from GTFS
 #[derive(Debug, Clone, Serialize, Deserialize)]

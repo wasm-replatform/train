@@ -8,8 +8,8 @@ use tracing::{debug, info, warn};
 use crate::Result;
 use crate::block_mgt::{self, VehicleAllocation};
 use crate::error::Error;
-use crate::provider::{Provider, StateStore};
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
+use crate::{Provider, StateStore};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
 const THRESHOLD: Duration = Duration::hours(1);

@@ -4,7 +4,7 @@ use tracing::{debug, info};
 use crate::block_mgt::{self, FleetVehicle};
 use crate::error::Error;
 use crate::gtfs::{self, StopType, StopTypeEntry};
-use crate::provider::{HttpRequest, Provider};
+use crate::{HttpRequest, Provider};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxEnrichedEvent, DilaxMessage};
 use crate::{Result, trip_state};

@@ -4,8 +4,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+use crate::StateStore;
 use crate::error::Error;
-use crate::provider::StateStore;
 use crate::types::{DilaxMessage, Door};
 
 const KEY_OCCUPANCY: &str = "trip:occupancy";

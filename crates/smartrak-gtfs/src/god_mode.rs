@@ -1,36 +1,32 @@
 use dashmap::DashMap;
-use tracing::debug;
 
-use crate::model::events::EventType;
-use crate::model::events::SmartrakEvent;
+use crate::models::{EventType, SmartrakEvent};
 
-// Mirrors debugging helper in legacy/at_smartrak_gtfs_adapter/src/processors/god-mode.ts.
-#[derive(Debug, Default, Clone)]
+#[derive(Default)]
 pub struct GodMode {
-    vehicle_to_trip: DashMap<String, String>,
+    overrides: DashMap<String, String>,
 }
 
 impl GodMode {
     pub fn reset_all(&self) {
-        self.vehicle_to_trip.clear();
+        self.overrides.clear();
     }
 
     pub fn reset_vehicle(&self, vehicle_id: &str) {
-        self.vehicle_to_trip.remove(vehicle_id);
+        self.overrides.remove(vehicle_id);
     }
 
     pub fn set_vehicle_to_trip(&self, vehicle_id: impl Into<String>, trip_id: impl Into<String>) {
-        self.vehicle_to_trip.insert(vehicle_id.into(), trip_id.into());
+        self.overrides.insert(vehicle_id.into(), trip_id.into());
     }
 
     pub fn describe(&self) -> String {
-        let mut entries: Vec<_> = self
-            .vehicle_to_trip
+        let map: Vec<(String, String)> = self
+            .overrides
             .iter()
             .map(|entry| (entry.key().clone(), entry.value().clone()))
             .collect();
-        entries.sort_by(|lhs, rhs| lhs.0.cmp(&rhs.0));
-        serde_json::to_string(&entries).unwrap_or_else(|_| "{}".to_string())
+        serde_json::to_string(&map).unwrap_or_default()
     }
 
     pub fn preprocess(&self, event: &mut SmartrakEvent) {
@@ -38,22 +34,31 @@ impl GodMode {
             return;
         }
 
-        let Some(remote) = event.remote_data.external_id.clone() else {
+        let Some(remote_data) = event.remote_data.as_ref() else {
             return;
         };
 
-        if let Some(mapping_ref) = self.vehicle_to_trip.get(&remote) {
-            let mapping = mapping_ref.value().clone();
-            debug!(vehicle = %remote, trip = %mapping, "god mode override");
-            let serial = event.serial_data.decoded_serial_data.get_or_insert_with(Default::default);
-            if mapping.as_str() == "empty" {
-                serial.line_id = Some(String::new());
-                serial.trip_id = Some(String::new());
-                serial.trip_number = Some(String::new());
+        let Some(vehicle_id) = remote_data.external_id.as_deref() else {
+            return;
+        };
+
+        let Some(serial) = event.serial_data.as_mut() else {
+            return;
+        };
+
+        let Some(decoded) = serial.decoded_serial_data.as_mut() else {
+            return;
+        };
+
+        if let Some(override_trip) = self.overrides.get(vehicle_id) {
+            if override_trip.value() == "empty" {
+                decoded.trip_id = None;
+                decoded.trip_number = None;
+                decoded.line_id = None;
             } else {
-                serial.line_id = Some(String::new());
-                serial.trip_id = Some(mapping.clone());
-                serial.trip_number = Some(mapping);
+                decoded.trip_id = Some(override_trip.clone());
+                decoded.trip_number = Some(override_trip.clone());
+                decoded.line_id = None;
             }
         }
     }

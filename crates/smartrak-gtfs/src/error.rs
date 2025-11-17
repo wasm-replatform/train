@@ -1,122 +1,145 @@
-// use serde::{Deserialize, Serialize};
-use axum::response::{IntoResponse, Response};
-use http::StatusCode;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// Result type used across the crate.
-pub type Result<T> = anyhow::Result<T, Error>;
-
-/// Domain level error type returned by the adapter.
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+/// `OpenID` error codes for  for Verifiable Credential Issuance and
+/// Presentation.
+#[derive(Error, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Error {
-    /// The request payload is invalid or missing required fields.
-    #[error("code: 400, error: {0}")]
-    BadRequest(String),
+    #[error("code: processing_error, description: {0}")]
+    ProcessingError(String),
 
-    /// The request is not authenticated.
-    #[error("code: 401, error: {0}")]
-    Unauthorized(String),
+    #[error("code: invalid_format, description: {0}")]
+    InvalidFormat(String),
 
-    /// The request is unauthorized.
-    #[error("code: 403, error: {0}")]
-    Forbidden(String),
+    #[error("code: missing_field, description: missing {0}")]
+    MissingField(String),
 
-    /// The requested resource could not be found.
-    #[error("code: 404, error: {0}")]
-    NotFound(String),
+    #[error("code: invalid_timestamp, description: {0}")]
+    InvalidTimestamp(String),
 
-    /// A non recoverable internal error occurred.
-    #[error("code: 500, error: {0}")]
-    Internal(String),
+    #[error("code: outdated, description: {0}")]
+    Outdated(String),
 
-    /// An upstream dependency failed while fulfilling the request.
-    #[error("code: 502, error: {0}")]
-    BadGateway(String),
+    #[error("code: wrong_time, description: {0}")]
+    WrongTime(String),
+
+    #[error("code: caching_error, description: {0}")]
+    CachingError(String),
+
+    #[error("code: server_error, description: {0}")]
+    ServerError(String),
+
+    #[error("code: no_update")]
+    NoUpdate,
+
+    #[error("code: no_actual_update")]
+    NoActualUpdate,
 }
 
 impl Error {
-    /// Returns the stable error code associated with the variant.
+    /// Returns the error code.
     #[must_use]
-    pub const fn code(&self) -> StatusCode {
+    pub const fn code(&self) -> &str {
         match self {
-            Self::BadRequest(_) => StatusCode::BAD_REQUEST,
-            Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
-            Self::Forbidden(_) => StatusCode::FORBIDDEN,
-            Self::NotFound(_) => StatusCode::NOT_FOUND,
-            Self::BadGateway(_) => StatusCode::BAD_GATEWAY,
-            Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::ProcessingError(_) => "processing_error",
+            Self::InvalidFormat(_) => "invalid_format",
+            Self::MissingField(_) => "missing_field",
+            Self::InvalidTimestamp(_) => "invalid_timestamp",
+            Self::Outdated(_) => "outdated",
+            Self::WrongTime(_) => "wrong_time",
+            Self::CachingError(_) => "caching_error",
+            Self::ServerError(_) => "server_error",
+            Self::NoUpdate => "no_update",
+            Self::NoActualUpdate => "no_actual_update",
         }
+    }
+
+    /// Returns the error description.
+    #[must_use]
+    pub fn description(&self) -> String {
+        self.to_string()
     }
 }
 
 impl From<anyhow::Error> for Error {
     fn from(err: anyhow::Error) -> Self {
-        let chain = err.chain().map(ToString::to_string).collect::<Vec<_>>().join(" >> ");
-
-        // if type is Error, return it with the newly added context
-        if let Some(inner) = err.downcast_ref::<Self>() {
-            tracing::debug!("Error: {err}, caused by: {inner}");
-
-            return match inner {
-                Self::BadRequest(_s) => Self::BadRequest(chain),
-                Self::NotFound(_s) => Self::NotFound(chain),
-                Self::Unauthorized(_s) => Self::Unauthorized(chain),
-                Self::Forbidden(_s) => Self::Forbidden(chain),
-                Self::BadGateway(_s) => Self::BadGateway(chain),
-                Self::Internal(_s) => Self::Internal(chain),
-            };
+        match err.downcast_ref::<Self>() {
+            Some(Self::ProcessingError(e)) => Self::ProcessingError(format!("{err}: {e}")),
+            Some(Self::InvalidFormat(e)) => Self::InvalidFormat(format!("{err}: {e}")),
+            Some(Self::MissingField(e)) => Self::MissingField(format!("{err}: {e}")),
+            Some(Self::InvalidTimestamp(e)) => Self::InvalidTimestamp(format!("{err}: {e}")),
+            Some(Self::Outdated(e)) => Self::Outdated(format!("{err}: {e}")),
+            Some(Self::WrongTime(e)) => Self::WrongTime(format!("{err}: {e}")),
+            Some(Self::ServerError(e)) => Self::ServerError(format!("{err}: {e}")),
+            Some(Self::CachingError(e)) => Self::CachingError(format!("{err}: {e}")),
+            // Handle the specific cases for NoUpdate and NoActualUpdate
+            Some(Self::NoUpdate) => Self::NoUpdate,
+            Some(Self::NoActualUpdate) => Self::NoActualUpdate,
+            None => {
+                let stack = err.chain().fold(String::new(), |cause, e| format!("{cause} -> {e}"));
+                let stack = stack.trim_start_matches(" -> ").to_string();
+                Self::ServerError(stack)
+            }
         }
-
-        // otherwise, return an Internal error
-        Self::Internal(chain)
     }
 }
 
-pub struct HttpError {
-    status: StatusCode,
-    error: String,
-}
-
-impl From<anyhow::Error> for HttpError {
-    fn from(e: anyhow::Error) -> Self {
-        let error = format!("{e}, caused by: {}", e.root_cause());
-        let status = e.downcast_ref().map_or(StatusCode::INTERNAL_SERVER_ERROR, Error::code);
-        Self { status, error }
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Self::InvalidFormat(err.to_string())
     }
 }
 
-impl IntoResponse for HttpError {
-    fn into_response(self) -> Response {
-        (self.status, self.error).into_response()
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[cfg(test)]
+mod test {
+    use anyhow::{Context, Result, anyhow};
+    use serde_json::Value;
+
+    use super::*;
+
+    // Test that error details are returned as json.
+    #[test]
+    fn r9k_context() {
+        let result = Err::<(), Error>(Error::ServerError("server error".to_string()))
+            .context("request context");
+        let err: Error = result.unwrap_err().into();
+
+        assert_eq!(
+            err.to_string(),
+            "code: server_error, description: request context: server error"
+        );
     }
-}
 
-#[macro_export]
-macro_rules! bad_request {
-    ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::BadRequest(format!($fmt, $($arg)*))
-    };
-     ($err:expr $(,)?) => {
-        $crate::Error::BadRequest(format!($err))
-    };
-}
+    #[test]
+    fn anyhow_context() {
+        let result = Err::<(), anyhow::Error>(anyhow!("one-off error")).context("error context");
+        let err: Error = result.unwrap_err().into();
 
-#[macro_export]
-macro_rules! not_found {
-    ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::NotFound(format!($fmt, $($arg)*))
-    };
-     ($err:expr $(,)?) => {
-        $crate::Error::NotFound(format!($err))
-    };
-}
+        assert_eq!(
+            err.to_string(),
+            "code: server_error, description: error context -> one-off error"
+        );
+    }
 
-#[macro_export]
-macro_rules! bad_gateway {
-    ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::BadGateway(format!($fmt, $($arg)*))
-    };
-     ($err:expr $(,)?) => {
-        $crate::Error::BadGateway(format!($err))
-    };
+    #[test]
+    fn serde_context() {
+        let result: Result<Value, anyhow::Error> =
+            serde_json::from_str(r#"{"foo": "bar""#).context("error context");
+        let err: Error = result.unwrap_err().into();
+
+        assert_eq!(
+            err.to_string(),
+            "code: server_error, description: error context -> EOF while parsing an object at line 1 column 13"
+        );
+    }
+
+    // // Test that the error details are returned as an http query string.
+    // #[test]
+    // fn json() {
+    //     let err = Error::ServerError("bad request".to_string());
+    //     let ser = serde_json::to_value(&err).unwrap();
+    //     assert_eq!(ser, json!({"code": "server_error", "description": "bad request"}));
+    // }
 }

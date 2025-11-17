@@ -18,18 +18,24 @@ workspace = true
 [dependencies]
 anyhow.workspace = true
 async-trait.workspace = true
-axum.workspace = true
+bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 dashmap.workspace = true
+futures.workspace = true
 http.workspace = true
+http-body.workspace = true
+http-body-util.workspace = true
+once_cell = "1.19"
+regex = "1.11"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 uuid.workspace = true
+urlencoding.workspace = true
 
 [dev-dependencies]
-futures.workspace = true
+pretty_assertions.workspace = true
 serde_json.workspace = true

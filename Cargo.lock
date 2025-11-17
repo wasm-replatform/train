@@ -1866,7 +1866,7 @@ dependencies = [
  "libc",
  "redox_syscall",
  "smallvec",
- "windows-link 0.2.1",
+ "windows-link",
 ]
 
 [[package]]
@@ -2761,17 +2761,23 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "axum",
+ "bytes",
  "chrono",
  "chrono-tz",
  "dashmap",
  "futures",
  "http",
+ "http-body",
+ "http-body-util",
+ "once_cell",
+ "pretty_assertions",
+ "regex",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
  "tokio",
  "tracing",
+ "urlencoding",
  "uuid",
 ]
 
@@ -3287,6 +3293,7 @@ name = "train"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "axum",
  "bytes",
  "chrono",
@@ -3298,6 +3305,7 @@ dependencies = [
  "r9k-position",
  "serde",
  "serde_json",
+ "smartrak-gtfs",
  "tracing",
  "urlencoding",
  "wasi-http",

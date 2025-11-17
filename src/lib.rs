@@ -14,7 +14,10 @@ use credibil_api::Client;
 use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
 use r9k_position::R9kMessage;
 use serde_json::Value;
-use tracing::{Level, error, info, warn};
+use smartrak_gtfs::{
+    Config as SmartrakConfig, GodMode, KafkaWorkflow, SerializedMessage, WorkflowOutcome,
+};
+use tracing::{Level, error, info};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types::{Client as MsgClient, Message};
 use wasi_messaging::{producer, types};
@@ -87,7 +90,30 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                 );
             }
         } else {
-            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
+            let payload = message.data();
+            match SMARTRAK_WORKFLOW.process(&topic, &payload).await {
+                Ok(WorkflowOutcome::NoOp) => {}
+                Ok(WorkflowOutcome::Messages(messages)) => {
+                    if let Err(err) = publish_smartrak_messages(messages).await {
+                        error!(
+                            monotonic_counter.processing_errors = 1,
+                            error = %err,
+                            topic = %topic,
+                            service = %SERVICE,
+                            "failed to publish smartrak output"
+                        );
+                    }
+                }
+                Err(err) => {
+                    error!(
+                        monotonic_counter.processing_errors = 1,
+                        error = %err,
+                        topic = %topic,
+                        service = %SERVICE,
+                        "processing smartrak kafka message failed"
+                    );
+                }
+            }
         }
 
         Ok(())
@@ -166,45 +192,19 @@ async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
     Ok(())
 }
 
-async fn process_smartrak_gtfs(topic: &str, payload: &[u8]) {
-    let config = match smartrak_gtfs::Config::from_env() {
-        Ok(config) => Arc::new(config),
-        Err(err) => {
-            error!(monotonic_counter.processing_errors = 1, error = %err, service = %SERVICE, "loading smartrak config failed");
-            return;
-        }
-    };
+async fn publish_smartrak_messages(messages: Vec<SerializedMessage>) -> Result<()> {
+    for message in messages {
+        let client = MsgClient::connect("").context("connecting to message broker")?;
+        let mut outgoing = Message::new(&message.payload);
+        outgoing.add_metadata("key", &message.key);
 
-    let provider = provider::AppContext::new();
-    let processor = smartrak_gtfs::Processor::new(Arc::clone(&config), provider, None);
-    let workflow = KafkaWorkflow::new(config.as_ref(), processor);
-
-    match workflow.handle(topic, payload).await {
-        Ok(outcome) => {
-            for message in outcome.produced {
-                if let Err(err) = publish_serialized(message).await {
-                    error!(monotonic_counter.processing_errors = 1, error = %err, topic = %topic, service = %SERVICE, "failed to publish smartrak output");
-                }
+        let topic = message.topic.clone();
+        wit_bindgen::spawn(async move {
+            if let Err(err) = producer::send(&client, topic, outgoing).await {
+                error!(monotonic_counter.processing_errors = 1, error = %err, service = %SERVICE, "failed to publish smartrak output");
             }
-            if outcome.passenger_updates > 0 {
-                info!(
-                    monotonic_counter.smartrak_passenger_updates = outcome.passenger_updates as u64,
-                    topic = %topic,
-                    service = %SERVICE,
-                    "processed passenger count event"
-                );
-            }
-        }
-        Err(err) => {
-            error!(monotonic_counter.processing_errors = 1, error = %err, topic = %topic, service = %SERVICE, "processing smartrak kafka message failed");
-        }
+        });
     }
-}
 
-async fn publish_serialized(message: SerializedMessage) -> Result<()> {
-    let SerializedMessage { topic, key: _key, payload } = message;
-    let client = MsgClient::connect("kafka").context("connecting to message broker")?;
-    let outgoing = Message::new(&payload);
-
-    producer::send(client, topic, outgoing).await.map_err(|err| anyhow!(err.to_string()))
+    Ok(())
 }

@@ -3,24 +3,29 @@
 use std::any::Any;
 use std::env;
 use std::error::Error;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
+// use dashmap::DashMap;
 use http::{Request, Response};
+use r9k_adapter::SmarTrakEvent;
 use r9k_adapter::{HttpRequest, Identity, Publisher, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
     stops: Vec<StopInfo>,
     vehicles: Vec<String>,
+    // pub events: Arc<DashMap<String, SmarTrakEvent>>,
+    pub events: Arc<Mutex<Vec<SmarTrakEvent>>>,
 }
 
 impl MockProvider {
     #[allow(unused)]
     #[must_use]
     pub fn new() -> Self {
-        // SAFETY:
-        // This is safe in a test context as tests are run sequentially.
+        // SAFETY: This is safe in a test context as tests are run sequentially.
         unsafe {
             env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
             env::set_var("CC_STATIC_URL", "http://localhost:8080");
@@ -33,7 +38,7 @@ impl MockProvider {
         ];
         let vehicles = vec!["vehicle 1".to_string()];
 
-        Self { stops, vehicles }
+        Self { stops, vehicles, events: Arc::new(Mutex::new(Vec::new())) }
     }
 }
 
@@ -67,7 +72,10 @@ impl HttpRequest for MockProvider {
 }
 
 impl Publisher for MockProvider {
-    async fn send(&self, topic: &str, message: &r9k_adapter::Message) -> Result<()> {
+    async fn send(&self, _topic: &str, message: &r9k_adapter::Message) -> Result<()> {
+        let event: SmarTrakEvent =
+            serde_json::from_slice(&message.payload).context("deserializing event")?;
+        self.events.lock().map_err(|e| anyhow!("failed to lock: {e}"))?.push(event);
         Ok(())
     }
 }

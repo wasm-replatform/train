@@ -31,6 +31,7 @@ pub trait Identity: Send + Sync {
     fn access_token(&self) -> impl Future<Output = Result<String>> + Send;
 }
 
+#[derive(Clone, Debug)]
 pub struct Message {
     pub payload: Vec<u8>,
     pub headers: HashMap<String, String>,

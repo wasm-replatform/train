@@ -110,8 +110,7 @@ impl MockProvider {
     #[allow(unused)]
     #[must_use]
     fn new(wiretap: Wiretap) -> Self {
-        // SAFETY:
-        // This is safe in a test context as tests are run sequentially.
+        // SAFETY: This is safe in a test context as tests are run sequentially.
         unsafe {
             std::env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
             std::env::set_var("CC_STATIC_URL", "http://localhost:8080");
@@ -130,9 +129,6 @@ struct Wiretap {
     stop_info: Option<StopInfo>,
     allocated_vehicles: Option<Vec<String>>,
     error: Option<r9k_adapter::Error>,
-    not_relevant_type: Option<bool>,
-    not_relevant_station: Option<bool>,
-    output: Option<Vec<String>>,
 }
 
 impl HttpRequest for MockProvider {

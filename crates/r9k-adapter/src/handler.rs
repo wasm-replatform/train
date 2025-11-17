@@ -2,8 +2,7 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use std::time::Duration;
-use std::{env, thread};
+use std::env;
 
 use anyhow::Context;
 use bytes::Bytes;
@@ -40,7 +39,9 @@ async fn handle(
     // publish 2x in order to properly signal departure from the station
     // (for schedule adherence)
     for _ in 0..2 {
-        thread::sleep(Duration::from_secs(5));
+        #[cfg(not(debug_assertions))]
+        std::thread::sleep(std::time::Duration::from_secs(5));
+
         for event in &events {
             tracing::info!(monotonic_counter.smartrak_events_published = 1);
 

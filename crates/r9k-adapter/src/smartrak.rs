@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize, Serializer};
 
 use crate::stops::StopInfo;
 
-
-
 /// SmarTrak event.
 /// N.B. that `@JsonProperty` descriptors are used for deserialisation only,
 /// while the property name will be used when the data is serialised before

@@ -36,7 +36,7 @@ async fn arrival_event() {
 
     client.request(message).owner("owner").await.expect("should process");
 
-    let events = provider.events.lock().unwrap();
+    let events = provider.events();
     assert_eq!(events.len(), 2);
 
     let event = &events[0];
@@ -58,7 +58,7 @@ async fn departure_event() {
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
     client.request(message).owner("owner").await.expect("should process");
-    let events = provider.events.lock().unwrap();
+    let events = provider.events();
     assert_eq!(events.len(), 2);
 
     let event = &events[0];
@@ -79,7 +79,7 @@ async fn unmapped_station() {
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
     client.request(message).owner("owner").await.expect("should process");
-    let events = provider.events.lock().unwrap();
+    let events = provider.events();
     assert!(events.is_empty());
 }
 
@@ -93,7 +93,7 @@ async fn no_matching_vehicle() {
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
     client.request(message).owner("owner").await.expect("should process");
-    let events = provider.events.lock().unwrap();
+    let events = provider.events();
     assert!(events.is_empty());
 }
 
@@ -107,7 +107,7 @@ async fn no_matching_stop() {
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
     client.request(message).owner("owner").await.expect("should process");
-    let events = provider.events.lock().unwrap();
+    let events = provider.events();
     assert!(events.is_empty());
 }
 

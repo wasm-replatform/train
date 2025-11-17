@@ -34,7 +34,5 @@ thiserror.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
-dashmap = "6.1.0"
-pretty_assertions.workspace = true
 serde_yaml.workspace = true
 tokio.workspace = true

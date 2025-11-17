@@ -41,18 +41,6 @@ impl r9k_connector::Publisher for Provider {
     }
 }
 
-impl r9k_adapter::HttpRequest for Provider {
-    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
-    where
-        T: http_body::Body + Any + Send,
-        T::Data: Into<Vec<u8>>,
-        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
-    {
-        tracing::debug!("request: {:?}", request.uri());
-        wasi_http::handle(request).await
-    }
-}
-
 impl r9k_adapter::Publisher for Provider {
     async fn send(&self, topic: &str, message: &r9k_adapter::Message) -> Result<()> {
         tracing::debug!("sending to topic: {}-{topic}", ENV.as_str());
@@ -71,12 +59,15 @@ impl r9k_adapter::Publisher for Provider {
     }
 }
 
-impl r9k_adapter::Identity for Provider {
-    async fn access_token(&self) -> Result<String> {
-        let identity = env::var("AZURE_IDENTITY")?;
-        let identity = block_on(get_identity(identity))?;
-        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
-        Ok(access_token.token)
+impl r9k_adapter::HttpRequest for Provider {
+    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
+    where
+        T: http_body::Body + Any + Send,
+        T::Data: Into<Vec<u8>>,
+        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
+    {
+        tracing::debug!("request: {:?}", request.uri());
+        wasi_http::handle(request).await
     }
 }
 
@@ -106,6 +97,15 @@ impl dilax::StateStore for Provider {
     async fn delete(&self, key: &str) -> Result<()> {
         let bucket = cache::open("train_cache").context("opening cache")?;
         bucket.delete(key).context("deleting state from cache")
+    }
+}
+
+impl r9k_adapter::Identity for Provider {
+    async fn access_token(&self) -> Result<String> {
+        let identity = env::var("AZURE_IDENTITY")?;
+        let identity = block_on(get_identity(identity))?;
+        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
+        Ok(access_token.token)
     }
 }
 

@@ -3,22 +3,18 @@
 use std::any::Any;
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
-// use dashmap::DashMap;
 use http::{Request, Response};
-use r9k_adapter::SmarTrakEvent;
-use r9k_adapter::{HttpRequest, Identity, Publisher, StopInfo};
+use r9k_adapter::{HttpRequest, Identity, Publisher, SmarTrakEvent, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
     stops: Vec<StopInfo>,
     vehicles: Vec<String>,
-    // pub events: Arc<DashMap<String, SmarTrakEvent>>,
-    pub events: Arc<Mutex<Vec<SmarTrakEvent>>>,
+    events: Arc<Mutex<Vec<SmarTrakEvent>>>,
 }
 
 impl MockProvider {
@@ -39,6 +35,12 @@ impl MockProvider {
         let vehicles = vec!["vehicle 1".to_string()];
 
         Self { stops, vehicles, events: Arc::new(Mutex::new(Vec::new())) }
+    }
+
+    #[allow(clippy::missing_panics_doc, unused)]
+    #[must_use]
+    pub fn events(&self) -> Vec<SmarTrakEvent> {
+        self.events.lock().expect("should lock").clone()
     }
 }
 
@@ -75,7 +77,7 @@ impl Publisher for MockProvider {
     async fn send(&self, _topic: &str, message: &r9k_adapter::Message) -> Result<()> {
         let event: SmarTrakEvent =
             serde_json::from_slice(&message.payload).context("deserializing event")?;
-        self.events.lock().map_err(|e| anyhow!("failed to lock: {e}"))?.push(event);
+        self.events.lock().map_err(|e| anyhow!("{e}"))?.push(event);
         Ok(())
     }
 }

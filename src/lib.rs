@@ -3,9 +3,9 @@
 
 mod provider;
 
+use std::env;
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::{env};
 
 use anyhow::{Context, Result, anyhow};
 use axum::routing::{get, post};
@@ -15,8 +15,7 @@ use dilax::{DetectionRequest, DilaxMessage};
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
 use serde_json::{Value, json};
-use tracing::debug;
-use tracing::{Level, error, info, warn};
+use tracing::{Level, debug, error, info, warn};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types::{Client as MsgClient, Message};
 use wasi_messaging::{producer, types};

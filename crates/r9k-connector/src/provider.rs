@@ -2,7 +2,15 @@
 //!
 //! Provider defines external data interfaces for the crate.
 
-/// Provider entry point implemented by the host application.
-pub trait Provider: Send + Sync {}
+use anyhow::Result;
 
-impl<T: Send + Sync> Provider for T {}
+/// Provider entry point implemented by the host application.
+pub trait Provider: Publisher {}
+
+impl<T: Publisher> Provider for T {}
+
+/// The `HttpRequest` trait defines the behavior for fetching data from a source.
+pub trait Publisher: Send + Sync {
+    /// Make outbound HTTP request.
+    fn send(&self, topic: &str, payload: &[u8]) -> impl Future<Output = Result<()>> + Send;
+}

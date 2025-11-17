@@ -7,9 +7,15 @@ use bytes::Bytes;
 use dilax::{HttpRequest as DilaxHttpRequest, Identity as DilaxIdentity, StateStore};
 use http::{Request, Response};
 use r9k_adapter::{HttpRequest as R9kHttpRequest, Identity as R9kIdentity};
+use r9k_connector::Publisher;
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::cache;
+use wasi_messaging::producer;
+use wasi_messaging::types::{Client, Message};
 use wit_bindgen::block_on;
+
+use crate::ENV;
+
 
 #[derive(Clone, Default)]
 pub struct Provider;
@@ -23,6 +29,20 @@ impl R9kHttpRequest for Provider {
     {
         tracing::debug!("request: {:?}", request.uri());
         wasi_http::handle(request).await
+    }
+}
+
+impl Publisher for Provider {
+    async fn send(&self, topic: &str, payload: &[u8]) -> Result<()> {
+        tracing::debug!("sending to topic: {}-{topic}",ENV.as_str());
+
+        let client = Client::connect("").context("connecting to broker")?;
+        let topic = format!("{}-{topic}", ENV.as_str());
+        let message = Message::new(payload);
+
+        wit_bindgen::block_on(async move {
+            producer::send(&client, topic, message).await.context("sending message")
+        })
     }
 }
 

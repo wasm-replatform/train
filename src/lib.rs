@@ -16,6 +16,7 @@ use dilax::{DetectionRequest, DilaxMessage};
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
 use serde_json::{Value, json};
+use tracing::debug;
 use tracing::{Level, error, info, warn};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types::{Client as MsgClient, Message};
@@ -64,8 +65,8 @@ async fn detector() -> HttpResult<Json<Value>> {
 async fn r9k_message(req: String) -> HttpResult<String> {
     info!(monotonic_counter.message_counter = 1, service = "train");
 
-    let request = R9kRequest::from_str(&req).context("parsing envelope")?;
     let api_client = Client::new(Provider);
+    let request = R9kRequest::from_str(&req).context("parsing envelope")?;
     let result = api_client.request(request).owner("owner").await;
 
     let response = match result {
@@ -76,8 +77,6 @@ async fn r9k_message(req: String) -> HttpResult<String> {
                 error = %err,
                 service = "train"
             );
-
-            
             return Ok(err.description());
         }
     };
@@ -94,8 +93,9 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
+        debug!("received message on topic: {topic}");
 
-        if topic == format!("{}-{R9K_TOPIC}", *ENV) {
+        if topic == format!("{}-{R9K_TOPIC}", ENV.as_str()) {
             if let Err(e) = process_r9k(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
@@ -104,7 +104,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     service = "train"
                 );
             }
-        } else if topic == format!("{}-{DILAX_TOPIC}", *ENV) {
+        } else if topic == format!("{}-{DILAX_TOPIC}", ENV.as_str()) {
             if let Err(e) = process_dilax(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
@@ -132,7 +132,7 @@ async fn process_r9k(message: &[u8]) -> Result<()> {
 
     // publish events 2x in order to properly signal departure from the station
     // (for schedule adherence)
-    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
+    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", ENV.as_str());
 
     for _ in 0..2 {
         thread::sleep(Duration::from_secs(5));
@@ -179,7 +179,7 @@ async fn process_dilax(payload: &[u8]) -> Result<()> {
         message.add_metadata("key", key);
     }
 
-    producer::send(&client, format!("{}-{DILAX_ENRICHED_TOPIC}", *ENV), message)
+    producer::send(&client, format!("{}-{DILAX_ENRICHED_TOPIC}", ENV.as_str()), message)
         .await
         .map_err(|err| anyhow!("failed to publish event: {err}"))?;
 

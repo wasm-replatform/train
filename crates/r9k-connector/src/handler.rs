@@ -9,15 +9,16 @@ use std::str::FromStr;
 use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 
-use crate::provider::Provider;
+use crate::provider::{Publisher, Provider};
 use crate::{Error, Result};
 
+const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
     Fault { status_code: 500, response: FaultMessage { message: "Internal Server Error" } };
 
 #[allow(clippy::unused_async)]
 async fn handle(
-    _owner: &str, request: R9kRequest, _provider: &impl Provider,
+    _owner: &str, request: R9kRequest, provider: &impl Provider,
 ) -> Result<Response<R9kResponse>> {
     let message = &request.body.receive_message.axml_message;
 
@@ -31,7 +32,8 @@ async fn handle(
     //     this.eventStore.put(req.body);
     // }
 
-    // TODO: forward to r9k-adapter topic
+    // forward to r9k-adapter topic
+    Publisher::send(provider, R9K_TOPIC, message.as_bytes()).await?;
 
     Ok(R9kResponse("OK").into())
 }
@@ -115,7 +117,7 @@ mod tests {
 
     #[test]
     fn deserialize_soap() {
-        let xml = include_str!("../data/soap.xml");
+        let xml = include_str!("../data/receive-message.xml");
         let envelope = R9kRequest::from_str(xml).expect("should deserialize");
 
         let receive_message = envelope.body.receive_message;

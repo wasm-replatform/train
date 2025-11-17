@@ -12,7 +12,7 @@ services:
       - ./target/wasm32-wasip2/release/train.wasm:/train.wasm
     depends_on:
       - redis
-      - kafka
+      - kafka-topics
     #   - otelcol
 
   redis:
@@ -25,32 +25,64 @@ services:
     image: apache/kafka:latest
     ports:
       - 9092:9092
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      # KAFKA_BROKER_ID: 1
+      # KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      # KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: nc -z kafka 9092 || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
-  # otelcol:
-  #   image: otel/opentelemetry-collector-contrib:latest
-  #   volumes:
-  #     - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
-  #   ports:
-  #     - 4317:4317 # gRPC
-  #     - 4318:4318 # HTTP
-  #   depends_on:
-  #     - prometheus
-  #     - jaeger
+  kafka-topics:
+    image: apache/kafka:latest
+    command: |
+      sh -c '
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic dev-realtime-r9k.v1;
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic dev-realtime-dilax-apc.v1;
+      '
+    depends_on:
+      kafka:
+        condition: service_healthy
 
-  # jaeger:
-  #   image: jaegertracing/jaeger:latest
-  #   ports:
-  #     - 16686:16686
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - 4317:4317 # gRPC
+      - 4318:4318 # HTTP
+    depends_on:
+      - prometheus
+      - jaeger
 
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: prometheus
-  #   ports:
-  #     - 9090:9090
-  #   volumes:
-  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
-  #   command:
-  #     - --config.file=/etc/prometheus/prometheus.yml
-  #     - --storage.tsdb.path=/prometheus
-  #     - --web.enable-remote-write-receiver
-  #     # - --log.level=debug
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - 16686:16686
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+      - --log.level=error

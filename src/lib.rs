@@ -124,40 +124,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 async fn process_r9k(message: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider);
     let request = R9kMessage::try_from(message).context("parsing message")?;
-    let _ = api_client.request(request).owner("owner").await?;
-
-    // let Some(events) = response.body.smartrak_events.as_ref() else { return Ok(()) };
-
-    // // publish events 2x in order to properly signal departure from the station
-    // // (for schedule adherence)
-    // let dest_topic = format!("{}-{SMARTRAK_TOPIC}", ENV.as_str());
-
-    // for _ in 0..2 {
-    //     thread::sleep(Duration::from_secs(5));
-
-    //     for evt in events {
-    //         let external_id = &evt.remote_data.external_id;
-    //         let msg = serde_json::to_vec(&evt).context("serializing event")?;
-    //         let message = Message::new(&msg);
-    //         message.add_metadata("key", external_id);
-
-    //         let client = MsgClient::connect("").context("connecting to broker")?;
-    //         let topic = dest_topic.clone();
-
-    //         wit_bindgen::spawn(async move {
-    //             if let Err(e) = producer::send(&client, topic, message).await {
-    //                 error!(
-    //                     monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
-    //                 );
-    //             }
-    //         });
-
-    //         info!(
-    //             monotonic_counter.messages_sent = 1, external_id = %external_id, service = %SERVICE
-    //         );
-    //     }
-    // }
-
+    api_client.request(request).owner("owner").await?;
     Ok(())
 }
 

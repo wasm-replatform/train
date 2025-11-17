@@ -16,8 +16,8 @@ use crate::ENV;
 #[derive(Clone, Default)]
 pub struct Provider;
 
-impl r9k_connector::Publisher for Provider {
-    async fn send(&self, topic: &str, message: &r9k_connector::Message) -> Result<()> {
+impl realtime::Publisher for Provider {
+    async fn send(&self, topic: &str, message: &realtime::Message) -> Result<()> {
         tracing::debug!("sending to topic: {}-{topic}", ENV.as_str());
 
         let client = Client::connect("").context("connecting to broker")?;
@@ -41,25 +41,7 @@ impl r9k_connector::Publisher for Provider {
     }
 }
 
-impl r9k_adapter::Publisher for Provider {
-    async fn send(&self, topic: &str, message: &r9k_adapter::Message) -> Result<()> {
-        tracing::debug!("sending to topic: {}-{topic}", ENV.as_str());
-
-        let client = Client::connect("").context("connecting to broker")?;
-        let topic = format!("{}-{topic}", ENV.as_str());
-        let msg = Message::new(&message.payload);
-
-        for (key, value) in &message.headers {
-            msg.add_metadata(key, value);
-        }
-
-        wit_bindgen::block_on(async move {
-            producer::send(&client, topic, msg).await.context("sending message")
-        })
-    }
-}
-
-impl r9k_adapter::HttpRequest for Provider {
+impl realtime::HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
@@ -68,6 +50,15 @@ impl r9k_adapter::HttpRequest for Provider {
     {
         tracing::debug!("request: {:?}", request.uri());
         wasi_http::handle(request).await
+    }
+}
+
+impl realtime::Identity for Provider {
+    async fn access_token(&self) -> Result<String> {
+        let identity = env::var("AZURE_IDENTITY")?;
+        let identity = block_on(get_identity(identity))?;
+        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
+        Ok(access_token.token)
     }
 }
 
@@ -100,17 +91,8 @@ impl dilax::StateStore for Provider {
     }
 }
 
-impl r9k_adapter::Identity for Provider {
-    async fn access_token(&self) -> Result<String> {
-        let identity = env::var("AZURE_IDENTITY")?;
-        let identity = block_on(get_identity(identity))?;
-        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
-        Ok(access_token.token)
-    }
-}
-
 impl dilax::Identity for Provider {
     async fn access_token(&self) -> Result<String> {
-        r9k_adapter::Identity::access_token(self).await
+        realtime::Identity::access_token(self).await
     }
 }

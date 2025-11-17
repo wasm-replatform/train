@@ -2193,6 +2193,7 @@ dependencies = [
  "http-body",
  "http-body-util",
  "quick-xml",
+ "realtime",
  "serde",
  "serde_json",
  "serde_repr",
@@ -2209,6 +2210,7 @@ dependencies = [
  "anyhow",
  "credibil-api",
  "quick-xml",
+ "realtime",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
@@ -2288,12 +2290,9 @@ name = "realtime"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "axum",
+ "bytes",
  "http",
- "thiserror 2.0.17",
- "tokio",
- "tracing",
- "tracing-subscriber",
+ "http-body",
 ]
 
 [[package]]
@@ -3290,6 +3289,7 @@ dependencies = [
  "http-body",
  "r9k-adapter",
  "r9k-connector",
+ "realtime",
  "serde_json",
  "tracing",
  "wasi-http",

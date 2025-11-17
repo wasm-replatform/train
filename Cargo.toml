@@ -38,6 +38,7 @@ wasi-messaging.workspace = true
 wasi-otel.workspace = true
 wasip3.workspace = true
 wit-bindgen.workspace = true
+realtime.workspace = true
 
 [workspace]
 members = ["crates/*"]

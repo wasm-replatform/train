@@ -13,7 +13,7 @@ services:
     depends_on:
       - redis
       - kafka-topics
-    #   - otelcol
+      - otelcol
 
   redis:
     image: redis:latest
@@ -35,12 +35,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
-      # KAFKA_BROKER_ID: 1
-      # KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      # KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
-      # KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     healthcheck:
       test: nc -z kafka 9092 || exit 1
       interval: 5s

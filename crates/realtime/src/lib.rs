@@ -2,6 +2,6 @@
 //!
 //! Core modules for the Realtime platform.
 
-mod error;
+mod provider;
 
-pub use crate::error::{Error, HttpError, Result};
+pub use crate::provider::*;

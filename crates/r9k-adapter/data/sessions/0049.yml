@@ -115,4 +115,3 @@ input: |
    </CCO>
 delay: 21
 stop_info: {"stop_code":"102","stop_lat":-36.91009,"stop_lon":174.8157}
-not_relevant_station: true

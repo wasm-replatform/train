@@ -19,7 +19,7 @@ use serde::Deserialize;
 
 // Run a set of tests using inputs and outputs recorded from the legacy adapter.
 #[tokio::test]
-async fn run_tests() -> Result<()> {
+async fn run() -> Result<()> {
     for file in fs::read_dir("data/sessions")? {
         let reader = File::open(file?.path())?;
         let session = serde_yaml::from_reader(&reader)?;
@@ -60,13 +60,6 @@ async fn replay(session: Session) -> Result<()> {
 
     let curr_events = provider.events();
 
-    if session.not_relevant_station.unwrap_or_default() {
-        assert!(curr_events.is_empty());
-    }
-    if session.not_relevant_type.unwrap_or_default() {
-        assert!(curr_events.is_empty());
-    }
-
     let Some(orig_events) = &session.output else {
         assert!(curr_events.is_empty());
         return Ok(());
@@ -102,9 +95,7 @@ struct Session {
     error: Option<r9k_adapter::Error>,
     delay: Option<i32>,
     stop_info: Option<StopInfo>,
-    allocated_vehicles: Option<Vec<String>>,
-    not_relevant_type: Option<bool>,
-    not_relevant_station: Option<bool>,
+    vehicles: Option<Vec<String>>,
 }
 
 #[derive(Clone)]
@@ -147,10 +138,10 @@ impl HttpRequest for MockProvider {
                 serde_json::to_vec(&stops).context("failed to serialize stops")?
             }
             "/allocations/trips" => {
-                let allocated_vehicles =
-                    self.session.allocated_vehicles.clone().unwrap_or_default();
-                serde_json::to_vec(&allocated_vehicles)
-                    .context("failed to serialize allocated_vehicles")?
+                let vehicles =
+                    self.session.vehicles.clone().unwrap_or_default();
+                serde_json::to_vec(&vehicles)
+                    .context("failed to serialize vehicles")?
             }
             _ => {
                 return Err(anyhow!("unknown path: {}", request.uri().path()));

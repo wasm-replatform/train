@@ -11,20 +11,8 @@ pub enum Error {
     #[error("code: invalid_format, description: {0}")]
     InvalidFormat(String),
 
-    #[error("code: outdated, description: {0}")]
-    Outdated(String),
-
-    #[error("code: wrong_time, description: {0}")]
-    WrongTime(String),
-
     #[error("code: server_error, description: {0}")]
     ServerError(String),
-
-    #[error("code: no_update")]
-    NoUpdate,
-
-    #[error("code: no_actual_update")]
-    NoActualUpdate,
 }
 
 impl Error {
@@ -33,18 +21,16 @@ impl Error {
     pub const fn code(&self) -> &str {
         match self {
             Self::InvalidFormat(_) => "invalid_format",
-            Self::Outdated(_) => "outdated",
-            Self::WrongTime(_) => "wrong_time",
             Self::ServerError(_) => "server_error",
-            Self::NoUpdate => "no_update",
-            Self::NoActualUpdate => "no_actual_update",
         }
     }
 
     /// Returns the error description.
     #[must_use]
     pub fn description(&self) -> String {
-        self.to_string()
+        match self {
+            Self::InvalidFormat(s) | Self::ServerError(s) => s.clone(),
+        }
     }
 }
 
@@ -52,13 +38,9 @@ impl From<anyhow::Error> for Error {
     fn from(err: anyhow::Error) -> Self {
         match err.downcast_ref::<Self>() {
             Some(Self::InvalidFormat(e)) => Self::InvalidFormat(format!("{err}: {e}")),
-            Some(Self::Outdated(e)) => Self::Outdated(format!("{err}: {e}")),
-            Some(Self::WrongTime(e)) => Self::WrongTime(format!("{err}: {e}")),
             Some(Self::ServerError(e)) => Self::ServerError(format!("{err}: {e}")),
 
             // Handle the specific cases for NoUpdate and NoActualUpdate
-            Some(Self::NoUpdate) => Self::NoUpdate,
-            Some(Self::NoActualUpdate) => Self::NoActualUpdate,
             None => {
                 let stack = err.chain().fold(String::new(), |cause, e| format!("{cause} -> {e}"));
                 let stack = stack.trim_start_matches(" -> ").to_string();
@@ -73,18 +55,6 @@ impl From<DeError> for Error {
         Self::InvalidFormat(format!("failed to deserialize message: {err}"))
     }
 }
-
-// /// Construct an `Error::InvalidRequest` error from a string or existing error
-// /// value.
-// macro_rules! invalid {
-//     ($fmt:expr, $($arg:tt)*) => {
-//         $crate::error::Error::InvalidRequest(format!($fmt, $($arg)*))
-//     };
-//      ($err:expr $(,)?) => {
-//         $crate::error::Error::InvalidRequest(format!($err))
-//     };
-// }
-// pub(crate) use invalid;
 
 #[cfg(test)]
 mod test {

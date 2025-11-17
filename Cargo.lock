@@ -737,6 +737,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling"
+version = "0.21.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cdf337090841a411e2a7f3deb9187445851f91b309c0c0a29e05f74a00a48c0"
+dependencies = [
+ "darling_core",
+ "darling_macro",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.21.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1247195ecd7e3c85f83c8d2a366e4210d588e802133e1e355180a9870b517ea4"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim",
+ "syn",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.21.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d38308df82d1080de0afee5d069fa14b0326a88c14f15c5ccda35b4a6c414c81"
+dependencies = [
+ "darling_core",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -945,6 +980,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
+]
+
+[[package]]
+name = "fromenv"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd2533b77a14842773bf61b964f0505bad13f93950ae587aa7168d128ee68aee"
+dependencies = [
+ "fromenv-derive",
+]
+
+[[package]]
+name = "fromenv-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1856514341cd2126a40fb64a82c9c800c369d461fd403aba32555d0195bc4002"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1393,6 +1449,12 @@ name = "id-arena"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25a2bc672d1148e28034f176e01fffebb08b35768468cc954630da77a1449005"
+
+[[package]]
+name = "ident_case"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
@@ -2346,14 +2408,15 @@ dependencies = [
 
 [[package]]
 name = "runtime"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "2cfda271975403d5a228749f196cc7a130680fcf31e5a92f4f399ef03e20a9fd"
+checksum = "12bbe3043dc6a0e847b4a8d041bf9196adf631dbc4eccb6fdbb8f2b2c5789bbd"
 dependencies = [
  "anyhow",
  "cfg-if",
  "clap",
  "credibil-otel",
+ "fromenv",
  "tracing",
  "wasmtime",
  "wasmtime-wasi",
@@ -3374,9 +3437,9 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasi-http"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "2e257e4bd66e42b9969849c4f5baa742a263b141a3196c83fbb7c06f8416ac4d"
+checksum = "b36585eb7d2b0426abd7ce5455cc98a99f6922391cedaf12360bc02ef7484396"
 dependencies = [
  "anyhow",
  "axum",
@@ -3408,9 +3471,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-identity"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "c4b4c373956e3e684a5cb24c1a33083354054c6e5049d4d20b24bd48b3081e5d"
+checksum = "f2e31e9b3fb3bedce7d8d49927785fb1ff74aaf2bfbbcf1a3dfdc5664c4ce0fc"
 dependencies = [
  "anyhow",
  "futures",
@@ -3423,9 +3486,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-keyvalue"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "34baef66876dabf37b75ada489560064835674fb6938348239d1207459036d21"
+checksum = "70365276cbdf3836670d9a2abbd6636a0e301d63dd74495d3562ff22c9e1de5a"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -3443,9 +3506,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-messaging"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "904ed54e60cb9688daf42c7256fcad1b8a9f7026fc862f69e5e4dcb27647d09e"
+checksum = "4153c9dec063005125797c452b1f677ee485bd0b1e5bdd22b6c8118d0e0737a3"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -3463,9 +3526,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "58a8ebc00b70988846406367ca4d588bfdde1b88e44e5d2a1250845db4ab58ff"
+checksum = "5bc74c731133e69658c21c7bcfe34b697169071464282dbd9583cdc20feeecb9"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -3490,9 +3553,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel-attr"
-version = "0.15.0"
+version = "0.16.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "57d7b88812799af942a03a067f6b0eb60cc4f5b1de44653a71dcaed262a8643f"
+checksum = "27a903c8c5b590931fcbf7197f1ab738b9f844dbe78b2c3e2d9cb8d7dbd69b6c"
 dependencies = [
  "proc-macro2",
  "quote",

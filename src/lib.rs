@@ -64,17 +64,9 @@ async fn detector() -> HttpResult<Json<Value>> {
 async fn r9k_message(req: String) -> HttpResult<String> {
     info!(monotonic_counter.message_counter = 1, service = "train");
 
-    // TODO: Do we need this?
-    // if (Config.replication.endpoint) {
-    //     this.eventStore.put(req.body);
-    // }
-
     let request = R9kRequest::from_str(&req).context("parsing envelope")?;
     let api_client = Client::new(Provider);
     let result = api_client.request(request).owner("owner").await;
-
-    // let receive_message = envelope.body.receive_message;
-    // let request = receive_message.message;
 
     let response = match result {
         Ok(ok) => ok,
@@ -84,7 +76,9 @@ async fn r9k_message(req: String) -> HttpResult<String> {
                 error = %err,
                 service = "train"
             );
-            todo!()
+
+            
+            return Ok(err.description());
         }
     };
 

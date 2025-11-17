@@ -6,9 +6,10 @@ mod error;
 mod handler;
 mod provider;
 
+pub use handler::*;
+
 pub use self::error::Error;
 pub use self::provider::*;
-pub use handler::*;
 
 /// Result type for handlers.
 pub type Result<T> = anyhow::Result<T, Error>;

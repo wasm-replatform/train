@@ -1,39 +1,50 @@
 use serde::Serialize;
 use tracing::{debug, info, warn};
 
-use crate::cache::CacheStore;
-use crate::config::Config;
 use crate::error::Result;
 use crate::god_mode::GodMode;
 use crate::models::{EventType, PassengerCountEvent, SmartrakEvent, VehicleInfo};
-use crate::processor::{LocationOutcome, Processor};
+use crate::processor::location::{LocationOutcome, process_location, resolve_vehicle};
+use crate::processor::passenger_count::process_passenger_count;
+use crate::processor::serial_data::{process_serial_data};
 use crate::provider::Provider;
 
-pub async fn process(topic: &str, payload: &[u8]) -> Result<WorkflowOutcome> {
-    let config = processor.config();
-
-    if config.topics.matches_passenger_topic(topic) {
+/// Processes a Smartrak Kafka payload and emits outbound messages when applicable.
+///
+/// # Errors
+///
+/// Returns an error when the incoming payload cannot be parsed or when domain logic
+/// encounters an unrecoverable condition.
+pub async fn process(provider: &impl Provider, topic: &str, payload: &[u8]) -> Result<WorkflowOutcome> {  
+    if topic.contains("realtime-passenger-count") {
         let event: PassengerCountEvent = serde_json::from_slice(payload)?;
-        processor.process_passenger_count(&event).await?;
+        process_passenger_count(provider, &event).await?;
         debug!(topic, "processed passenger count event");
         return Ok(WorkflowOutcome::NoOp);
     }
 
     let mut event: SmartrakEvent = serde_json::from_slice(payload)?;
 
-    if event.event_type == EventType::SerialData && config.god_mode_enabled {
-        if let Some(god_mode) = processor.god_mode.as_ref() {
+    if event.event_type == EventType::SerialData {
+        if let Some(god_mode) = god_mode() {
             god_mode.preprocess(&mut event);
         }
+
+        process_serial_data(provider, &event).await?;
+        return Ok(WorkflowOutcome::NoOp);
     }
 
-    let vehicle_identifier = event.vehicle_identifier();
-    let Some(vehicle_id) = vehicle_identifier else {
+    if event.event_type != EventType::Location {
+        debug!(event_type = ?event.event_type, "unsupported smartrak event type");
+        return Ok(WorkflowOutcome::NoOp);
+    }
+
+    let Some(vehicle_id) = event.vehicle_identifier() else {
         warn!(topic, "skip smartrak event without vehicle identifier");
         return Ok(WorkflowOutcome::NoOp);
     };
 
-    let vehicle_info = processor.resolve_vehicle(vehicle_id).await?;
+    let vehicle_info = resolve_vehicle(provider, vehicle_id).await?;
     let Some(vehicle) = vehicle_info else {
         warn!(vehicle_id, topic, "vehicle info not found, skipping event");
         return Ok(WorkflowOutcome::NoOp);
@@ -44,17 +55,7 @@ pub async fn process(topic: &str, payload: &[u8]) -> Result<WorkflowOutcome> {
         return Ok(WorkflowOutcome::NoOp);
     }
 
-    if event.event_type == EventType::SerialData {
-        processor.process_serial_data(&event).await?;
-        return Ok(WorkflowOutcome::NoOp);
-    }
-
-    if event.event_type != EventType::Location {
-        debug!(event_type = ?event.event_type, "unsupported smartrak event type");
-        return Ok(WorkflowOutcome::NoOp);
-    }
-
-    let outcome = processor.process_location(&event, &vehicle).await?;
+    let outcome = process_location(provider, &event, &vehicle).await?;
     let Some(result) = outcome else {
         return Ok(WorkflowOutcome::NoOp);
     };
@@ -62,14 +63,12 @@ pub async fn process(topic: &str, payload: &[u8]) -> Result<WorkflowOutcome> {
     let mut messages = Vec::new();
     match result {
         LocationOutcome::VehiclePosition(feed) => {
-            if let Some(topic) = config.topics.vehicle_position.clone() {
-                messages.push(SerializedMessage::new(topic, feed.id.clone(), feed)?);
-            }
+            let topic = "realtime-gtfs-vp".to_string();
+            messages.push(SerializedMessage::new(topic, feed.id.clone(), feed)?);
         }
         LocationOutcome::DeadReckoning(dr) => {
-            if let Some(topic) = config.topics.dead_reckoning.clone() {
-                messages.push(SerializedMessage::new(topic, dr.vehicle.id.clone(), dr)?);
-            }
+            let topic = "realtime-dead-reckoning".to_string();
+            messages.push(SerializedMessage::new(topic, dr.vehicle.id.clone(), dr)?);
         }
     }
 
@@ -82,22 +81,21 @@ pub async fn process(topic: &str, payload: &[u8]) -> Result<WorkflowOutcome> {
 }
 
 fn should_process_topic(topic: &str, vehicle: &VehicleInfo) -> bool {
-    let topics = &processor.config.topics;
-    let tag = vehicle.tag.as_deref().map(|value| value.to_ascii_lowercase());
+    let tag = vehicle.tag.as_deref().map(str::to_ascii_lowercase);
 
-    if topics.matches_passenger_topic(topic) {
+    if topic.contains("realtime-passenger-count") {
         return true;
     }
 
-    if topics.matches_caf_topic(topic) {
+    if topic.contains("realtime-caf-avl") {
         return matches!(tag.as_deref(), Some("caf"));
     }
 
-    if topics.matches_passthrough_topic(topic) {
+    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak".contains(topic) {
         return true;
-    }
+    }    
 
-    if topics.matches_smartrak_topic(topic) {
+    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak".contains(topic) {
         return matches!(tag.as_deref(), Some("smartrak"));
     }
 
@@ -117,6 +115,11 @@ pub struct SerializedMessage {
 }
 
 impl SerializedMessage {
+    /// Creates a serialized message ready for publication.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the value cannot be serialized to JSON.
     pub fn new<T>(topic: String, key: String, value: T) -> Result<Self>
     where
         T: Serialize,

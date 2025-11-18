@@ -14,9 +14,7 @@ use credibil_api::Client;
 use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
 use r9k_position::R9kMessage;
 use serde_json::Value;
-use smartrak_gtfs::{
-    Config as SmartrakConfig, GodMode, KafkaWorkflow, SerializedMessage, WorkflowOutcome,
-};
+use smartrak_gtfs::workflow;
 use tracing::{Level, error, info};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types::{Client as MsgClient, Message};
@@ -91,9 +89,9 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
             }
         } else {
             let payload = message.data();
-            match SMARTRAK_WORKFLOW.process(&topic, &payload).await {
-                Ok(WorkflowOutcome::NoOp) => {}
-                Ok(WorkflowOutcome::Messages(messages)) => {
+            match workflow::process(&topic, &payload).await {
+                Ok(workflow::WorkflowOutcome::NoOp) => {}
+                Ok(workflow::WorkflowOutcome::Messages(messages)) => {
                     if let Err(err) = publish_smartrak_messages(messages).await {
                         error!(
                             monotonic_counter.processing_errors = 1,
@@ -192,15 +190,16 @@ async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::unused_async)]
 async fn publish_smartrak_messages(messages: Vec<SerializedMessage>) -> Result<()> {
     for message in messages {
         let client = MsgClient::connect("").context("connecting to message broker")?;
-        let mut outgoing = Message::new(&message.payload);
+        let outgoing = Message::new(&message.payload);
         outgoing.add_metadata("key", &message.key);
 
-        let topic = message.topic.clone();
-        wit_bindgen::spawn(async move {
-            if let Err(err) = producer::send(&client, topic, outgoing).await {
+            let topic = message.topic.clone();
+            wit_bindgen::spawn(async move {
+                if let Err(err) = producer::send(&client, topic, outgoing).await {
                 error!(monotonic_counter.processing_errors = 1, error = %err, service = %SERVICE, "failed to publish smartrak output");
             }
         });

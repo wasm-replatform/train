@@ -4,60 +4,69 @@ use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
 use uuid::Uuid;
 
+use crate::block_mgt;
 use crate::error::{Error, Result};
+use crate::fleet;
 use crate::models::{
     BlockInstance, DeadReckoningMessage, FeedEntity, PassengerCountEvent, Position, PositionDr,
     SmartrakEvent, TripDescriptor, TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo,
     VehiclePosition,
 };
-
 use crate::provider::{Provider, StateStore};
-use crate::{block_mgt, fleet, trip};
+use crate::trip;
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
+const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
 const TIMEZONE: Tz = chrono_tz::Pacific::Auckland;
+
+fn env_i64(key: &str, default: i64) -> i64 {
+    env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
+}
 
 pub enum LocationOutcome {
     VehiclePosition(FeedEntity),
     DeadReckoning(DeadReckoningMessage),
 }
 
-pub async fn resolve_vehicle(
-    provider: &impl Provider, vehicle_id_or_label: &str,
-) -> Result<Option<VehicleInfo>> {
+pub async fn resolve_vehicle(provider: &impl Provider, vehicle_id_or_label: &str) -> Result<Option<VehicleInfo>> {
     let mut vehicle = fleet::get_vehicle_by_id_or_label(provider, vehicle_id_or_label).await?;
     if let Some(info) = vehicle.as_mut() {
-        fleet::with_default_capacity( info);
+        apply_default_capacity(info);
     }
     Ok(vehicle)
 }
+
 pub async fn process_location(
     provider: &impl Provider, event: &SmartrakEvent, vehicle: &VehicleInfo,
 ) -> Result<Option<LocationOutcome>> {
     if !is_location_event_valid(event) {
         return Ok(None);
     }
+
     let vehicle_identifier = event.vehicle_identifier().ok_or_else(|| {
         Error::ProcessingError(format!(
             "remoteData.externalId {}",
-            event.remote_data.as_ref().map(|rd| rd.external_id.clone()).unwrap_or_default()
+            event.remote_data.as_ref().and_then(|rd| rd.external_id.clone()).unwrap_or_default()
         ))
     })?;
-    let lock_key = format!("location:{vehicle_identifier}");
-    let event_timestamp = event.timestamp_unix().ok_or_else(|| {
-        Error::ProcessingError(format!(
-            "remoteData.event_timestamp {}",
-            event.message_data.timestamp.clone()
-        ))
-    })?;
+
+    //let _guard = lock(&format!("location:{vehicle_identifier}")).await;
+
+    let event_timestamp = event
+        .timestamp_unix()
+        .ok_or_else(|| Error::ProcessingError(event.message_data.timestamp.clone()))?;
+
     if vehicle.vehicle_type.is_train() {
         let allocation =
-            block_mgt::get_allocation_by_vehicle(provider, &vehicle.id, event_timestamp).await?;
+            block_mgt::get_allocation_by_vehicle(provider, &vehicle.id, event_timestamp)
+                .await?;
         assign_train_to_trip(provider, vehicle, allocation, event_timestamp).await?;
     }
+
     let trip_instance = current_trip_instance(provider, &vehicle.id, event_timestamp).await?;
     let trip_descriptor = trip_instance.as_ref().map(TripInstance::to_trip_descriptor);
     let odometer = event.location_data.odometer.or(event.event_data.odometer);
+
     if (event.location_data.latitude.is_none() || event.location_data.longitude.is_none())
         && odometer.is_some()
         && trip_descriptor.is_some()
@@ -72,16 +81,19 @@ pub async fn process_location(
         };
         return Ok(Some(LocationOutcome::DeadReckoning(dr_message)));
     }
+
     let descriptor = VehicleDescriptor {
         id: vehicle.id.clone(),
         label: vehicle.label.clone(),
         license_plate: vehicle.registration.clone(),
     };
+
     let occupancy_status = if let Some(trip) = trip_descriptor.as_ref() {
         get_occupancy_status(provider, vehicle, trip).await?
     } else {
         None
     };
+
     let position = Position {
         latitude: event.location_data.latitude,
         longitude: event.location_data.longitude,
@@ -89,6 +101,7 @@ pub async fn process_location(
         speed: event.location_data.speed.map(|value| value * 1000.0 / 3600.0),
         odometer,
     };
+
     let vehicle_position = VehiclePosition {
         position: Some(position),
         trip: trip_descriptor,
@@ -96,42 +109,60 @@ pub async fn process_location(
         occupancy_status,
         timestamp: event_timestamp,
     };
+
     let entity = FeedEntity { id: vehicle.id.clone(), vehicle: Some(vehicle_position) };
     Ok(Some(LocationOutcome::VehiclePosition(entity)))
 }
 
-fn is_location_event_valid(event: &SmartrakEvent) -> bool {
-    //gps accuracy threshold haven't changed for 7 years
-    event.remote_data.is_some() && event.location_data.gps_accuracy >= 0.0 
+fn apply_default_capacity(vehicle: &mut VehicleInfo) {
+    if vehicle.vehicle_type.is_train() {
+        if vehicle.capacity.total.is_none() {
+            vehicle.capacity.total = Some(env_i64("DEFAULT_TRAIN_TOTAL_CAPACITY", 373));
+        }
+        if vehicle.capacity.seating.is_none() {
+            vehicle.capacity.seating = Some(env_i64("DEFAULT_TRAIN_SEATING_CAPACITY", 230));
+        }
+    }
 }
 
-async fn assign_train_to_trip(
-    provider: &impl Provider, vehicle: &VehicleInfo, allocation: Option<BlockInstance>, event_timestamp: i64,
+fn is_location_event_valid(event: &SmartrakEvent) -> bool {
+    event.remote_data.is_some()
+        && event.location_data.gps_accuracy >= 0.0
+}
+
+async fn assign_train_to_trip(provider: &impl Provider,
+    vehicle: &VehicleInfo, allocation: Option<BlockInstance>, event_timestamp: i64,
 ) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle.id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle.id);
+
     let Some(block_instance) = allocation else {
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         return Ok(());
     };
+
     if block_instance.has_error() {
         return Ok(());
     }
+
     if block_instance.vehicle_ids.first() != Some(&vehicle.id) {
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         return Ok(());
     }
-    let previous = StateStore::get::<Option<TripInstance>>(provider, &trip_key).await?.flatten();
-    if let Some(prev) = previous {
-        let same_trip = prev.trip_id == block_instance.trip_id
-            && prev.start_time == block_instance.start_time
-            && prev.service_date == block_instance.service_date;
+
+    let previous_bytes = StateStore::get(provider, &trip_key).await?;
+
+    if let Some(previous) = serde_json::from_value::<TripInstance>(previous_bytes.into()).ok() {
+        let same_trip = previous.trip_id == block_instance.trip_id
+            && previous.start_time == block_instance.start_time
+            && previous.service_date == block_instance.service_date;
         if same_trip {
             return Ok(());
         }
     }
+
     let new_trip = trip::get_trip_instance(
         provider,
         &block_instance.trip_id,
@@ -139,27 +170,35 @@ async fn assign_train_to_trip(
         &block_instance.start_time,
     )
     .await?;
+
     let Some(trip) = new_trip else {
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         return Ok(());
     };
+
     if trip.has_error() {
         return Ok(());
     }
-    StateStore::set(provider, &sign_on_key, &event_timestamp, Some(TTL_SIGN_ON)).await?;
-    StateStore::set(provider, &trip_key, &Some(trip), Some(TTL_TRIP_TRAIN)).await?;
+
+    let trip_bytes = serde_json::to_vec(&trip).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+    StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_TRAIN.num_seconds() as u64)).await?;
+    
+    let timestamp_bytes = serde_json::to_vec(&event_timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+    StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(TTL_SIGN_ON.num_seconds() as u64)).await?;
     Ok(())
 }
 
-async fn current_trip_instance(
-    provider: &impl Provider, vehicle_id: &str, event_timestamp: i64,
+async fn current_trip_instance(provider: &impl Provider,
+    vehicle_id: &str, event_timestamp: i64,
 ) -> Result<Option<TripInstance>> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
-    let trip = StateStore::get::<Option<TripInstance>>(provider, &trip_key).await?.flatten();
-    if let Some(instance) = trip {
-        let sign_on = StateStore::get::<i64>(provider, &sign_on_key).await?;
+    let bytes = StateStore::get(provider, &trip_key).await?;
+
+    if let Some(instance) = serde_json::from_value::<TripInstance>(bytes.into()).ok() {
+        let sign_on_bytes = StateStore::get(provider, &sign_on_key).await?;
+        let sign_on = serde_json::from_value::<i64>(sign_on_bytes.into()).ok();
         if let (Some(sign_on_ts), Some(start), Some(end)) = (
             sign_on,
             time_to_timestamp(&instance.service_date, &instance.start_time, TIMEZONE),
@@ -174,30 +213,26 @@ async fn current_trip_instance(
         }
         return Ok(Some(instance));
     }
+
     Ok(None)
 }
 
-fn env_i64(key: &str, default: i64) -> i64 {
-    env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
-}
-
-async fn get_occupancy_status(
-    provider: &impl Provider, vehicle: &VehicleInfo, trip: &TripDescriptor,
+async fn get_occupancy_status(provider: &impl Provider,
+    vehicle: &VehicleInfo, trip: &TripDescriptor,
 ) -> Result<Option<String>> {
     let Some(start_date) = trip.start_date.as_ref() else {
         return Ok(None);
     };
+
     let Some(start_time) = trip.start_time.as_ref() else {
         return Ok(None);
     };
-    let key = format!("smartrakGtfs:passengerCountEvent:{}:{}:{}:{}", &vehicle.id, &trip.trip_id, start_date, start_time);
 
-    let passenger_event =
-        StateStore::get::<Option<PassengerCountEvent>>(provider, &key).await?.flatten();
+    let key = format!("smartrakGtfs:passengerCountEvent:{}:{}:{}:{}", &vehicle.id, &trip.trip_id, start_date, start_time);
+    let bytes = StateStore::get(provider, &key).await?;
+    let passenger_event: Option<PassengerCountEvent> = serde_json::from_value(bytes.into()).ok();
     Ok(passenger_event.and_then(|event| event.occupancy_status))
 }
-
-const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
 
 fn time_to_timestamp(date: &str, time: &str, tz: Tz) -> Option<i64> {
     if date.is_empty() || time.is_empty() {

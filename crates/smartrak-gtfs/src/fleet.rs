@@ -5,29 +5,42 @@ use bytes::Bytes;
 use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http::{Method, StatusCode};
 use http_body_util::Empty;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use regex::Regex;
 use serde_json::Value;
 use tracing::{debug, warn};
 use urlencoding::encode;
 
 use crate::models::{VehicleCapacity, VehicleInfo};
-use crate::provider::{HttpRequest,Provider};
+use crate::provider::{HttpRequest, Provider};
 
-const CACHE_DIRECTIVE_PRIMARY: &str = "max-age=600, stale-if-error=60";
-
+/// Fetches vehicle metadata by label from the Fleet API.
+///
+/// # Errors
+///
+/// Returns an error when the Fleet API call fails or the response cannot be deserialized.
 pub async fn get_vehicle_by_label(
     provider: &impl Provider, label: &str,
 ) -> Result<Option<VehicleInfo>> {
     fetch_vehicle(provider, format!("label={}", encode(label))).await
 }
 
+/// Fetches vehicle metadata by identifier from the Fleet API.
+///
+/// # Errors
+///
+/// Returns an error when the Fleet API call fails or the response cannot be deserialized.
 pub async fn get_vehicle_by_id(
     provider: &impl Provider, vehicle_id: &str,
 ) -> Result<Option<VehicleInfo>> {
     fetch_vehicle(provider, format!("id={}", encode(vehicle_id))).await
 }
 
+/// Fetches vehicle capacity for a specific route.
+///
+/// # Errors
+///
+/// Returns an error when the Fleet API call fails or the response cannot be deserialized.
 pub async fn get_vehicle_capacity_for_route(
     provider: &impl Provider, vehicle_id: &str, route_id: &str,
 ) -> Result<Option<VehicleCapacity>> {
@@ -36,37 +49,27 @@ pub async fn get_vehicle_capacity_for_route(
         .map(|info| info.capacity))
 }
 
+/// Attempts to resolve a vehicle using multiple heuristics (label, train pattern, fallback id).
+///
+/// # Errors
+///
+/// Returns an error when the Fleet API call fails or the response cannot be deserialized.
 pub async fn get_vehicle_by_id_or_label(
     provider: &impl Provider, vehicle_id_or_label: &str,
 ) -> Result<Option<VehicleInfo>> {
-    if is_alphanumeric_label(vehicle_id_or_label) {
-        if let Some(label) = padded_train_label(vehicle_id_or_label) {
-            if let Some(vehicle) = get_vehicle_by_label(provider, &label).await? {
-                return Ok(Some(vehicle));
-            }
-        }
-    }
-
-    if looks_like_train(vehicle_id_or_label) {
-        if let Some(vehicle) = get_vehicle_by_label(provider, vehicle_id_or_label).await? {
+    if is_alphanumeric_label(vehicle_id_or_label)
+        && let Some(label) = padded_train_label(vehicle_id_or_label)
+    {
+        if let Some(vehicle) = get_vehicle_by_label(provider, &label).await? {
             return Ok(Some(vehicle));
         }
     }
 
-    get_vehicle_by_id(provider, vehicle_id_or_label).await
-}
-
-pub fn with_default_capacity(vehicle: &mut VehicleInfo) {
-    if vehicle.vehicle_type.is_train() {
-        let capacity = vehicle.capacity.total.unwrap_or(env_i64("DEFAULT_TRAIN_TOTAL_CAPACITY", 373));
-        let seating = vehicle.capacity.seating.unwrap_or(env_i64("DEFAULT_TRAIN_SEATING_CAPACITY", 230));
-        vehicle.capacity.total = Some(capacity);
-        vehicle.capacity.seating = Some(seating);
+    if looks_like_train(vehicle_id_or_label) {
+        return get_vehicle_by_label(provider, vehicle_id_or_label).await;
     }
-}
 
-fn env_i64(key: &str, default: i64) -> i64 {
-    env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
+    get_vehicle_by_id(provider, vehicle_id_or_label).await
 }
 
 async fn fetch_vehicle(provider: &impl Provider, query: String) -> Result<Option<VehicleInfo>> {
@@ -138,8 +141,9 @@ fn extract_vehicle(value: Value) -> Result<Option<VehicleInfo>> {
 }
 
 fn is_alphanumeric_label(value: &str) -> bool {
-    static REGEX: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"^[A-Z]+\d+$").expect("failed to compile vehicle label regex"));
+    static REGEX: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"^[A-Z]+\d+$").expect("failed to compile vehicle label regex")
+    });
     REGEX.is_match(value)
 }
 
@@ -156,7 +160,7 @@ fn padded_train_label(raw: &str) -> Option<String> {
 
     let mut vehicle_id = alpha.to_string();
     let padding = 14usize.saturating_sub(alpha.len() + num.len());
-    vehicle_id.extend(std::iter::repeat(' ').take(padding));
+    vehicle_id.push_str(&" ".repeat(padding));
     vehicle_id.push_str(num);
     debug!(raw, vehicle_id, "calculated padded train label");
     Some(vehicle_id)

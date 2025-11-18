@@ -2,9 +2,10 @@ use std::env;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
-use http::Method;
+use http::{Method, StatusCode};
 use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
+use tracing::warn;
 
 use crate::models::BlockInstance;
 use crate::provider::{HttpRequest, Identity, Provider};
@@ -15,13 +16,14 @@ use crate::provider::{HttpRequest, Identity, Provider};
 pub async fn get_allocation_by_vehicle(
     provider: &impl Provider, vehicle_id: &str, timestamp: i64,
 ) -> Result<Option<BlockInstance>> {
-    let key = format!("smartrakGtfs:blockManagement:{}", vehicle_id);
-
     let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
     let token = Identity::access_token(provider).await?;
+    let endpoint = format!(
+        "{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true&siblings=true&nowUnixTimeSeconds={timestamp}"
+    );
 
     let request = http::Request::builder()
-        .uri(format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true&siblings=true&nowUnixTimeSeconds=${timestamp}"))
+        .uri(&endpoint)
         .method(Method::GET)
         .header(CACHE_CONTROL, "max-age=20") // 20 seconds
         .header(IF_NONE_MATCH, vehicle_id)

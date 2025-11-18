@@ -27,7 +27,7 @@ The `Makefile` delegates to `Makefile.toml` (cargo-make configuration). Tests us
 
 ### Provider Pattern for External Dependencies
 
-The `Provider` trait (in `r9k-position-adapter/src/provider.rs`) abstracts external API calls:
+The `Provider` trait (in `r9k-position/src/provider.rs`) abstracts external API calls:
 - **Production**: `src/provider.rs` (WASM guest) returns hardcoded mock data (TODO: implement real API calls)
 - **Tests**: `tests/provider.rs` implements test fixtures
 - Key types: `Key::StopInfo(stop_code)` → GTFS API, `Key::BlockMgt(train_id)` → Block Management API
@@ -36,7 +36,7 @@ When implementing features that need external data, extend the `Key` and `Source
 
 ### Handler Pattern with credibil-api
 
-The `credibil-api` crate provides a generic `Handler<Response, Provider>` trait. See `crates/r9k-position-adapter/src/handler.rs`:
+The `credibil-api` crate provides a generic `Handler<Response, Provider>` trait. See `crates/r9k-position/src/handler.rs`:
 - Implement `Handler` on `Request<YourMessage>` 
 - Use `#[wasi_otel::instrument]` for tracing (from `sdk-otel` crate)
 - Handlers are async and return `Result<Response<YourResponse>>`
@@ -80,7 +80,7 @@ Workspace enables aggressive linting: `all`, `nursery`, `pedantic`, `cargo` + ch
 - Implement `TryFrom<&[u8]>` for message parsing
 
 **Error handling**:
-- Custom `Error` enum in `r9k-position-adapter/src/error.rs`
+- Custom `Error` enum in `r9k-position/src/error.rs`
 - Validation errors: `Error::NoUpdate`, `Error::Outdated`, `Error::WrongTime`
 - Time constraints: `MAX_DELAY_SECS = 60`, `MIN_DELAY_SECS = -30`
 

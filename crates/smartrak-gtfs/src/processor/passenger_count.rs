@@ -6,7 +6,7 @@ use crate::provider::{Provider, StateStore};
 
 const TTL_PASSENGER_COUNT: u64 = Duration::hours(3).num_seconds() as u64; // 3 hours
 
-pub async fn process_passenger_count(event: &PassengerCountEvent, provider: &impl Provider) -> Result<()> {
+pub async fn process_passenger_count(provider: &impl Provider, event: &PassengerCountEvent) -> Result<()> {
     let key = 
     format!(
         "{}:{}:{}:{}:{}",

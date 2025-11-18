@@ -2,7 +2,7 @@ use std::env;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
-use chrono::{Duration, LocalResult, NaiveDate, TimeZone, Timelike};
+use chrono::{Duration, NaiveDate, TimeZone, Timelike};
 use chrono_tz::Tz;
 use http::header::{CACHE_CONTROL, CONTENT_TYPE};
 use http::{Method, StatusCode};
@@ -15,6 +15,13 @@ use crate::provider::{HttpRequest, Provider};
 
 const CACHE_DIRECTIVE_PRIMARY: &str = "max-age=20, stale-if-error=10";
 
+/// Retrieves the trip instance that matches the exact `trip_id`, `service_date`, and
+/// `start_time` combination.
+///
+/// # Errors
+///
+/// Returns an error when the Trip Management API request fails or the response payload cannot
+/// be deserialized.
 pub async fn get_trip_instance(
     provider: &impl Provider, trip_id: &str, service_date: &str, start_time: &str,
 ) -> Result<Option<TripInstance>> {
@@ -40,13 +47,17 @@ pub async fn get_trip_instance(
     Ok(None)
 }
 
+/// Retrieves the closest trip instance to the supplied `event_timestamp`.
+///
+/// # Errors
+///
+/// Returns an error when Trip Management lookups fail or the payload cannot be decoded.
 pub async fn get_nearest_trip_instance(
     provider: &impl Provider, trip_id: &str, event_timestamp: i64,
 ) -> Result<Option<TripInstance>> {
     let tz = chrono_tz::Pacific::Auckland;
-    let event_dt = match tz.timestamp_opt(event_timestamp, 0) {
-        LocalResult::Single(dt) => dt,
-        _ => return Ok(None),
+    let Some(event_dt) = tz.timestamp_opt(event_timestamp, 0).single() else {
+        return Ok(None);
     };
 
     let current_date = event_dt.format("%Y%m%d").to_string();
@@ -79,7 +90,7 @@ pub async fn get_nearest_trip_instance(
 }
 
 async fn fetch_trips(
-    provider: &impl Provider, trip_id: &str, service_date: &str,
+    http: &impl HttpRequest, trip_id: &str, service_date: &str,
 ) -> Result<Vec<TripInstance>> {
     let base_url = env::var("TRIP_MANAGEMENT_URL").context("getting `TRIP_MANAGEMENT_URL`")?;
     let endpoint = format!("{}/tripinstances", base_url.trim_end_matches('/'));
@@ -98,8 +109,7 @@ async fn fetch_trips(
         .body(Full::new(Bytes::from(body_bytes)))
         .context("building Trip Management request")?;
 
-    let response =
-        HttpRequest::fetch(provider, request).await.context("requesting trip instances")?;
+    let response = http.fetch(request).await.context("requesting trip instances")?;
 
     let status = response.status();
     let body = response.into_body();
@@ -172,10 +182,17 @@ fn difference(event_ts: &i64, trip: &TripInstance, tz: Tz) -> i64 {
 
 fn trip_timestamp(trip: &TripInstance, tz: Tz) -> Option<i64> {
     let date = NaiveDate::parse_from_str(&trip.service_date, "%Y%m%d").ok()?;
-    let seconds = parse_time(&trip.start_time)?;
-    let midnight = date.and_hms_opt(0, 0, 0)?;
-    let local = tz.from_local_datetime(&midnight).single()?;
-    Some((local + Duration::seconds(seconds)).timestamp())
+    let total_seconds = parse_time(&trip.start_time)?;
+    let days = total_seconds.div_euclid(86_400);
+    let remaining = total_seconds.rem_euclid(86_400);
+
+    let hours = u32::try_from(remaining / 3_600).ok()?;
+    let minutes = u32::try_from((remaining % 3_600) / 60).ok()?;
+    let seconds = u32::try_from(remaining % 60).ok()?;
+
+    let date = date + Duration::days(days);
+    let local = date.and_hms_opt(hours, minutes, seconds)?;
+    tz.from_local_datetime(&local).single().map(|dt| dt.timestamp())
 }
 
 fn parse_time(time: &str) -> Option<i64> {
@@ -187,10 +204,7 @@ fn parse_time(time: &str) -> Option<i64> {
 }
 
 fn error_trip(service_date: &str) -> TripInstance {
-    let mut trip = TripInstance::default();
-    trip.service_date = service_date.to_string();
-    trip.error = true;
-    trip
+    TripInstance { service_date: service_date.to_string(), error: true, ..TripInstance::default() }
 }
 
 #[cfg(test)]
@@ -211,6 +225,8 @@ mod tests {
             error: false,
         };
         let timestamp = trip_timestamp(&trip, tz).unwrap();
-        assert_eq!(timestamp % 86_400, 45_300);
+        // 25:15 local time maps to 01:15 NZDT on the following day (UTC+13), which is
+        // 12:15 UTC — 44_100 seconds from midnight.
+        assert_eq!(timestamp % 86_400, 44_100);
     }
 }

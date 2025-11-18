@@ -7,28 +7,26 @@ use std::env;
 use std::str::FromStr;
 use std::sync::LazyLock;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use credibil_api::Client;
-use dilax::{DetectionRequest, DilaxMessage};
+use dilax_adapter::{DetectionRequest, DilaxMessage};
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
 use serde_json::{Value, json};
 use tracing::{Level, debug, error, info, warn};
 use wasi_http::Result as HttpResult;
-use wasi_messaging::types::{Client as MsgClient, Message};
-use wasi_messaging::{producer, types};
+use wasi_messaging::types;
+use wasi_messaging::types::Message;
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
 
 use crate::provider::Provider;
 
-const SERVICE: &str = "train";
+
 const R9K_TOPIC: &str = "realtime-r9k.v1";
-// const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
-const DILAX_TOPIC: &str = "realtime-dilax-apc.v1";
-const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v1";
+const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
 
 static ENV: LazyLock<String> =
     LazyLock::new(|| env::var("ENV").unwrap_or_else(|_| "dev".to_string()));
@@ -41,7 +39,7 @@ impl Guest for Http {
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
         let router = Router::new()
             .route("/jobs/detector", get(detector))
-            .route("/inbound/xml", post(r9k_message));
+            .route("/inbound/xml", post(receive_message));
         wasi_http::serve(router, request).await
     }
 }
@@ -60,7 +58,7 @@ async fn detector() -> HttpResult<Json<Value>> {
 }
 
 #[axum::debug_handler]
-async fn r9k_message(req: String) -> HttpResult<String> {
+async fn receive_message(req: String) -> HttpResult<String> {
     info!(monotonic_counter.message_counter = 1, service = "train");
 
     let api_client = Client::new(Provider);
@@ -119,7 +117,6 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     }
 }
 
-// Process incoming R9k messages, consolidating error handling.
 #[wasi_otel::instrument]
 async fn process_r9k(message: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider);
@@ -130,25 +127,8 @@ async fn process_r9k(message: &[u8]) -> Result<()> {
 
 #[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
-    let event: DilaxMessage = serde_json::from_slice(payload).context("deserializing event")?;
-
-    let api = Client::new(provider::Provider);
-    let response = api.request(event).owner("owner").await?;
-    let enriched = response.body;
-
-    let client = MsgClient::connect("<not used>").context("connecting to broker")?;
-    let payload = serde_json::to_vec(&enriched).context("serializing event")?;
-    let message = Message::new(&payload);
-
-    if let Some(key) = &enriched.trip_id {
-        message.add_metadata("key", key);
-    }
-
-    producer::send(&client, format!("{}-{DILAX_ENRICHED_TOPIC}", ENV.as_str()), message)
-        .await
-        .map_err(|err| anyhow!("failed to publish event: {err}"))?;
-
-    info!(monotonic_counter.messages_sent = 1, service = %SERVICE, event = "dilax");
-
+    let api_client = Client::new(Provider);
+    let request: DilaxMessage = serde_json::from_slice(payload).context("deserializing event")?;
+    api_client.request(request).owner("owner").await?;
     Ok(())
 }

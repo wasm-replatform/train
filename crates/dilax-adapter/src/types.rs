@@ -59,7 +59,7 @@ where
 /// Dilax message augmented with enrichment gathered from Auckland Transport
 /// systems (vehicle stop, trip and timetable context).
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct DilaxEnrichedEvent {
+pub struct EnrichedEvent {
     #[serde(flatten)]
     pub event: DilaxMessage,
 

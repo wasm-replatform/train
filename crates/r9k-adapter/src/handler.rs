@@ -10,19 +10,17 @@ use chrono::Utc;
 use credibil_api::{Handler, Request, Response};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
-use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::{HttpRequest, Identity, Message, Provider, Publisher};
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
+use crate::{HttpRequest, Identity, Message, Provider, Publisher};
 use crate::{Result, stops};
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 
-/// R9K response for SmarTrak consumption.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+/// R9K empty response.
+#[derive(Debug, Clone)]
 pub struct R9kResponse;
 
 async fn handle(

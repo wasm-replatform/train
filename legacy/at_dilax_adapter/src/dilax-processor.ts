@@ -137,7 +137,7 @@ export default class DilaxProcessor {
         let vehicleTotalSpace = 0;
         const vehicleLabel = this.getVehicleLabel(dilaxEvent);
         if (!vehicleLabel) {
-            this.log.warn("Could not get a valid vehicle label from the dilax event, skipping...", dilaxEvent);
+            this.log.warn("Could not get a valid vehicle label from the dilax-adapter event, skipping...", dilaxEvent);
         } else {
             const vehicleInfo = await this.fleetApi.trainByLabel(vehicleLabel);
             if (!vehicleInfo) {
@@ -169,7 +169,7 @@ export default class DilaxProcessor {
 
         stopId = await this.getTrainStopId(vehicleId, dilaxEvent);
         if (!stopId) {
-            this.log.warn(`vehicleId [${vehicleId}] Failed to find a stop with the dilax event`, dilaxEvent);
+            this.log.warn(`vehicleId [${vehicleId}] Failed to find a stop with the dilax-adapter event`, dilaxEvent);
         }
 
         this.log.info(`vehicleId [${vehicleId}] tripId [${tripId}] stopId [${stopId}]`);
@@ -270,7 +270,7 @@ export default class DilaxProcessor {
                 }
             } catch (err) {
                 nr.noticeError(err);
-                this.log.error(`vehicleId [${vehicleId}] Failed to process dilax apc count/state: ${err}`);
+                this.log.error(`vehicleId [${vehicleId}] Failed to process dilax-adapter apc count/state: ${err}`);
             }
 
             await this.saveVehicleTripInfo(vehicleId, vehicleLabel, tripId, stopId, dilaxEvent);

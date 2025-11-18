@@ -1,89 +1,141 @@
-# Copilot Instructions for Train Workspace
+# Copilot Instructions for Train Services
 
-## Architecture
-- Root crate `train` compiles to a WASI guest; `src/lib.rs` wires WIT messaging, splits incoming Kafka topics (R9K vs Dilax), and publishes with `wit_bindgen::spawn`.
-- Domain logic lives under `crates/`: `dilax` holds the APC rewrite (processor, detectors, providers, store), `r9k-adapter` contains the legacy R9K transformer, and `realtime` exposes shared HTTP error helpers.
-- Persistent state goes through `KvStore` (`crates/dilax/src/store.rs`); it wraps `wit_bindings::keyvalue` to preserve TTL envelopes and set semantics—avoid calling the raw bucket APIs.
+## Project Overview
 
-## Build & Test Workflow
+This is a WASM-based replatform of legacy TypeScript train services into Rust, targeting `wasm32-wasip2`. The project processes real-time train data from R9K track sensors and Dilax passenger counting systems, enriching and publishing events to Kafka topics for downstream consumption.
 
-**Use `cargo-make` exclusively** (not raw `cargo` commands):
-```bash
-make build          # Clean + build all targets
-make test           # Run nextest with all features
-make check          # Full hygiene: audit, fmt, lint, outdated, unused
-make fmt            # Format code (requires nightly rustfmt)
+**Legacy → Rust Migration**: Active conversion from `legacy/` TypeScript services to `crates/` Rust implementations. Reference `MIGRATE.md` for conversion workflow.
+
+## Architecture Patterns
+
+### Provider Pattern (Critical)
+
+The codebase uses a **Provider trait pattern** for dependency injection. Each adapter crate defines domain-specific Provider traits:
+
+```rust
+// From crates/dilax-adapter/src/lib.rs
+pub trait Provider: HttpRequest + Publisher + StateStore + Identity {}
 ```
 
-**Building WASM for local deployment:**
-```bash
-cargo build --package r9k --target wasm32-wasip2 --release
-docker compose up   # Runs ./target/wasm32-wasip2/release/r9k.wasm
+- **Domain crates** (`crates/dilax-adapter`, `crates/r9k-adapter`) define `Provider` traits with required capabilities
+- **Host application** (`src/provider.rs`) implements these traits using WASI interfaces
+- **Tests** (`tests/provider.rs`) implement mock providers for unit testing
+
+**Key trait capabilities**:
+- `HttpRequest`: Make HTTP calls via `wasi-http` (block management, GTFS data)
+- `Publisher`: Send messages to Kafka topics via `wasi-messaging`
+- `StateStore`: Redis key-value operations via `wasi-keyvalue`
+- `Identity`: Azure AD token retrieval via `wasi-identity`
+
+### WASM Component Model
+
+The main crate (`src/lib.rs`) compiles to `cdylib` and exports two WASI interfaces:
+
+1. **HTTP handler** (`wasip3::http::handler::Guest`): Receives inbound HTTP requests (R9K connector endpoint)
+2. **Messaging handler** (`wasi_messaging::incoming_handler::Guest`): Consumes Kafka messages (R9K and Dilax events)
+
+Domain crates (`crates/*`) compile as `lib` and are linked into the main component.
+
+### Service Boundaries
+
+```
+├── r9k-connector/    # Receives R9K XML from track sensors → publishes to Kafka
+├── r9k-adapter/      # Transforms R9K data → SmarTrak location events
+├── dilax-adapter/    # Enriches Dilax APC data with GTFS/block allocation
+└── realtime/         # Shared Provider traits (imported by all adapters)
 ```
 
-The `Makefile` delegates to `Makefile.toml` (cargo-make configuration). Tests use `cargo-nextest` with `--no-fail-fast --all-features`.
+## Build & Development Workflow
 
-## Code Structure Patterns
+### Essential Commands
 
-### Provider Pattern for External Dependencies
+```bash
+# Build WASM component (required before running)
+cargo build --package train --target wasm32-wasip2 --release
 
-The `Provider` trait (in `r9k-adapter-adapter/src/provider.rs`) abstracts external API calls:
-- **Production**: `src/provider.rs` (WASM guest) returns hardcoded mock data (TODO: implement real API calls)
-- **Tests**: `tests/provider.rs` implements test fixtures
-- Key types: `Key::StopInfo(stop_code)` → GTFS API, `Key::BlockMgt(train_id)` → Block Management API
+# Run with Docker Compose (includes Kafka, Redis, OTEL stack)
+docker compose up
 
-When implementing features that need external data, extend the `Key` and `SourceData` enums, then implement `Source::fetch()`.
+# Run tests (uses cargo-nextest)
+cargo make test
 
-### Handler Pattern with credibil-api
+# Lint/format/audit (pre-commit hygiene)
+cargo make check
 
-The `credibil-api` crate provides a generic `Handler<Response, Provider>` trait. See `crates/r9k-adapter-adapter/src/handler.rs`:
-- Implement `Handler` on `Request<YourMessage>` 
-- Use `#[wasi_otel::instrument]` for tracing (from `sdk-otel` crate)
-- Handlers are async and return `Result<Response<YourResponse>>`
+# Full workflow available via cargo-make
+make <task>  # delegates to cargo-make via Makefile
+```
 
-### WIT Bindings & Messaging
+**Critical**: Always build for `wasm32-wasip2` target before deploying. The `compose.yaml` mounts `./target/wasm32-wasip2/release/train.wasm`.
 
-The WASM guest exports `messaging::incoming_handler::Guest` (see `src/lib.rs`):
-- `handle(message)` processes Kafka messages from topic "r9k.request"
-- `configure()` returns topic subscriptions
-- Use `wit_bindgen::spawn()` for background tasks (e.g., publishing responses)
-- OpenTelemetry instrumentation via `#[wasi_otel::instrument]` attributes
+### Testing Strategy
 
-## Code Quality Standards
+- **Unit tests**: `crates/*/tests/` with mock providers (see `r9k-adapter/tests/provider.rs`)
+- **Integration tests**: Run Docker Compose stack, send test payloads to endpoints
+- **No miri**: Tests skip miri with `#![cfg(not(miri))]` due to WASM target incompatibility
 
-### Linting Configuration
-- **clippy.toml**: Defines domain-specific valid identifiers (`R9K`, `SmarTrak`, `KiwiRail`)
-- **rustfmt.toml**: Uses `max_width = 100`, `group_imports = "StdExternalCrate"`, requires nightly for unstable features
-- **deny.toml**: License checks, bans duplicate `tokio` versions, allows specific duplicates (see `allowed-duplicate-crates`)
+## Code Conventions
 
-### Custom Lints (Cargo.toml)
-Workspace enables aggressive linting: `all`, `nursery`, `pedantic`, `cargo` + cherry-picked `restriction` lints following [Microsoft Rust Guidelines](https://microsoft.github.io/rust-guidelines/). Examples:
-- `undocumented_unsafe_blocks`, `map_err_ignore`, `renamed_function_params`
+### Error Handling
 
-## Dependency Management
+Use `anyhow::Result` in domain logic, convert to domain-specific errors (`crate::Error`) at API boundaries:
 
-- **Custom registries**: `credibil` and `at-realtime` via Azure DevOps (see `.cargo/config.toml`)
-- **Cargo-vet**: After dependency updates, run `cargo vet regenerate imports/exemptions` (see `supply-chain/README.md`)
-- **Version pinning**: Workspace dependencies in `Cargo.toml` [workspace.dependencies]
+```rust
+// From handlers/processor.rs
+pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<DilaxEnrichedEvent> {
+    let vehicle = block_mgt::vehicle(&label, provider)
+        .await
+        .map_err(|err| Error::ProcessingError(format!("context: {err}")))?;
+    // ...
+}
+```
 
-## Environment & Deployment
+### Lint Configuration
 
-- `.env.example` shows required environment variables (CC_STATIC_URL, BLOCK_MGT_URL, OTEL endpoints, etc.)
-- **Docker Compose stack**: Kafka, Kafka UI (port 8081), Jaeger (16686), Prometheus (9090), OpenTelemetry Collector
-- WASM runtime expects `/r9k.wasm` mounted from `target/wasm32-wasip2/release/`
+Follow Microsoft Rust Guidelines with strict lints enabled (see `Cargo.toml` workspace lints):
 
-## Common Patterns
+- Use `#[allow(clippy::future_not_send)]` for WASM async (single-threaded runtime)
+- Document unsafe blocks: `#[allow(clippy::undocumented_unsafe_blocks)]` not permitted
+- Prefer semantic errors over string messages
 
-**XML deserialization** (R9K messages):
-- Uses `quick-xml` with `serde` features
-- Spanish field names mapped via `#[serde(rename(deserialize = "..."))]` (see `r9k.rs`)
-- Implement `TryFrom<&[u8]>` for message parsing
+**Domain-specific identifiers** (add to `clippy.toml`): `R9K`, `SmarTrak`, `KiwiRail`
 
-**Error handling**:
-- Custom `Error` enum in `r9k-adapter-adapter/src/error.rs`
-- Validation errors: `Error::NoUpdate`, `Error::Outdated`, `Error::WrongTime`
-- Time constraints: `MAX_DELAY_SECS = 60`, `MIN_DELAY_SECS = -30`
+### Environment Variables
 
-**Metrics/Logging**:
-- Use `tracing` macros with structured fields: `info!(gauge.r9k_delay = delay_secs)`
-- Counters: `monotonic_counter.processing_errors = 1`
+Set via `.env` file (see `compose.yaml`):
+
+- `ENV`: Environment prefix for Kafka topics (`dev`, `test`, `prod`)
+- `BLOCK_MGT_URL`: Block allocation service endpoint
+- `CC_STATIC_URL`: GTFS static data endpoint
+- `AZURE_IDENTITY`: For token retrieval
+
+**Topic naming**: `{ENV}-realtime-{service}.v1` (e.g., `dev-realtime-r9k.v1`)
+
+## Migration Notes
+
+When converting legacy TypeScript services:
+
+1. **Reference implementation**: Use `crates/r9k-adapter` as template for structure
+2. **Data models**: TypeScript interfaces → Rust structs with `serde` derives
+3. **Kafka consumers**: Replace kafkajs with `wasi-messaging` handler pattern
+4. **Redis operations**: Replace ioredis with `wasi-keyvalue` StateStore trait
+5. **HTTP clients**: Replace axios with `HttpRequest` provider trait
+
+See `MIGRATE.md` for detailed conversion workflow with AI coding agents.
+
+## External Dependencies
+
+- **Credibil registry**: Custom WASI interfaces (`wasi-http`, `wasi-messaging`, etc.) from `credibil` registry
+- **Block Management API**: `/allocations/trips` endpoint for vehicle-to-trip mapping
+- **GTFS Static Data**: `/gtfs/stops` endpoint for stop location data
+- **Kafka Topics**:
+  - Input: `{ENV}-realtime-r9k.v1`, `{ENV}-realtime-dilax-adapter-apc.v1`
+  - Output: `{ENV}-realtime-r9k-to-smartrak.v1`, `{ENV}-realtime-dilax-adapter-apc-enriched.v1`
+
+## Key Files
+
+- `src/lib.rs`: WASM entry points (HTTP + messaging handlers)
+- `src/provider.rs`: Provider trait implementations using WASI
+- `crates/realtime/src/provider.rs`: Shared Provider trait definitions
+- `crates/*/src/handlers/`: Domain handler logic (detector jobs, event processors)
+- `Makefile.toml`: Cargo-make task definitions (build, test, lint, release)

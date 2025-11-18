@@ -51,6 +51,6 @@ describe("kafka producer config test", () => {
         expect(kafkaProducerConfig.sasl).toBeDefined();
         expect(kafkaProducerConfig.schema).toBeDefined();
         expect(kafkaProducerConfig.schema?.url).toBe("https://some.url");
-        expect(kafkaProducerConfig.topic).toEqual("dev-realtime-dilax-apc-enriched.v2");
+        expect(kafkaProducerConfig.topic).toEqual("dev-realtime-dilax-adapter-apc-enriched.v2");
     });
 });

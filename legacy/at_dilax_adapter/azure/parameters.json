@@ -53,10 +53,10 @@
         "all": "info"
     },
     "site_name": {
-        "dev": "dev-at-dilax-adapter-01",
-        "vnet-test": "test-at-dilax-adapter-02",
-        "vnet-preprod": "pp-at-dilax-adapter-02",
-        "vnet-prod": "prod-at-dilax-adapter-02"
+        "dev": "dev-at-dilax-adapter-adapter-01",
+        "vnet-test": "test-at-dilax-adapter-adapter-02",
+        "vnet-preprod": "pp-at-dilax-adapter-adapter-02",
+        "vnet-prod": "prod-at-dilax-adapter-adapter-02"
     },
     "new_relic_license_key": {
         "all": "758ab64ebebbf5ccad30b3096226ecba9269ddf3",
@@ -172,7 +172,7 @@
         "vnet-prod": "prod"
     },
     "kafka_consumer_group": {
-        "all": "at-dilax-adapter"
+        "all": "at-dilax-adapter-adapter"
     },
     "secret_watcher_interval": {
         "all": 5

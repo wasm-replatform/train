@@ -1,29 +1,37 @@
+use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
 use tracing::{debug, info};
 
+use crate::Message;
+use crate::Publisher;
 use crate::block_mgt::{self, FleetVehicle};
 use crate::error::Error;
 use crate::gtfs::{self, StopType, StopTypeEntry};
-use crate::{HttpRequest, Provider};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
-use crate::types::{DilaxEnrichedEvent, DilaxMessage};
+use crate::types::{DilaxMessage, EnrichedEvent};
+use crate::{HttpRequest, Provider};
 use crate::{Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const VEHICLE_LABEL_WIDTH: usize = 14;
+const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-adapter-apc-enriched.v1";
+
+/// Dilax empty response.
+#[derive(Debug, Clone)]
+pub struct DilaxResponse;
 
 async fn handle(
     _owner: &str, request: DilaxMessage, provider: &impl Provider,
-) -> Result<Response<DilaxEnrichedEvent>> {
-    let enriched = process(request, provider).await?;
-    Ok(enriched.into())
+) -> Result<Response<DilaxResponse>> {
+    process(request, provider).await?;
+    Ok(DilaxResponse.into())
 }
 
-impl<P: Provider> Handler<DilaxEnrichedEvent, P> for Request<DilaxMessage> {
+impl<P: Provider> Handler<DilaxResponse, P> for Request<DilaxMessage> {
     type Error = Error;
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxEnrichedEvent>> {
+    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {
         handle(owner, self.body, provider).await
     }
 }
@@ -34,7 +42,7 @@ impl<P: Provider> Handler<DilaxEnrichedEvent, P> for Request<DilaxMessage> {
 ///
 /// Returns an error when one of the providers or the key-value store reports a failure
 /// while augmenting the incoming Dilax event.
-pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<DilaxEnrichedEvent> {
+pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()> {
     let vehicle_label = vehicle_label(&event).ok_or_else(|| {
         Error::ProcessingError(format!("vehicle label missing for device {:?}", event.device))
     })?;
@@ -103,13 +111,25 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<Di
         ))
     })?;
 
-    Ok(DilaxEnrichedEvent {
+    // -------------------------------------
+    let enriched = EnrichedEvent {
         event,
         stop_id: Some(stop_id_value),
         trip_id: Some(trip_id_value),
         start_date: Some(start_date_value),
         start_time: Some(start_time_value),
-    })
+    };
+
+    let payload = serde_json::to_vec(&enriched).context("serializing event")?;
+    let mut message = Message::new(&payload);
+    if let Some(trip_id) = &enriched.trip_id {
+        message.headers.insert("key".to_string(), trip_id.clone());
+    }
+
+    Publisher::send(provider, DILAX_ENRICHED_TOPIC, &message).await?;
+    // -------------------------------------
+
+    Ok(())
 }
 
 fn vehicle_label(event: &DilaxMessage) -> Option<String> {
@@ -184,7 +204,7 @@ async fn stop_id(
 
     let Some(waypoint) = event.wpt.as_ref() else {
         return Err(Error::ProcessingError(format!(
-            "dilax event missing waypoint data for vehicle {vehicle_id_owned}"
+            "dilax-adapter event missing waypoint data for vehicle {vehicle_id_owned}"
         )));
     };
 

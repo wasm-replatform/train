@@ -1,5 +1,5 @@
 [package]
-name = "dilax"
+name = "dilax-adapter"
 description = "Dilax adapter domain logic"
 readme = "README.md"
 publish = false

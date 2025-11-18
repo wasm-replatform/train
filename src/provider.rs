@@ -13,6 +13,8 @@ use wit_bindgen::block_on;
 
 use crate::ENV;
 
+// const SERVICE: &str = "train";
+
 #[derive(Clone, Default)]
 pub struct Provider;
 

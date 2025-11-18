@@ -24,11 +24,12 @@ anyhow.workspace = true
 axum = { workspace = true, features = ["json", "macros", "query"] }
 bytes.workspace = true
 credibil-api.workspace = true
-dilax = { path = "crates/dilax" }
+dilax-adapter = { path = "crates/dilax-adapter" }
 http.workspace = true
 http-body.workspace = true
 r9k-adapter = { path = "crates/r9k-adapter" }
 r9k-connector = { path = "crates/r9k-connector" }
+realtime.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 wasi-http.workspace = true
@@ -38,7 +39,6 @@ wasi-messaging.workspace = true
 wasi-otel.workspace = true
 wasip3.workspace = true
 wit-bindgen.workspace = true
-realtime.workspace = true
 
 [workspace]
 members = ["crates/*"]

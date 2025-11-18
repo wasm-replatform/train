@@ -815,7 +815,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dilax"
+name = "dilax-adapter"
 version = "0.3.0"
 dependencies = [
  "anyhow",
@@ -3285,7 +3285,7 @@ dependencies = [
  "axum",
  "bytes",
  "credibil-api",
- "dilax",
+ "dilax-adapter",
  "http",
  "http-body",
  "r9k-adapter",

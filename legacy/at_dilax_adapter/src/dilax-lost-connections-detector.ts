@@ -105,12 +105,12 @@ export class DilaxLostConnectionsDetector {
 
     public stopDetectingLostConnections(): void {
         clearTimeout(this.detectLostConnectionsTimer);
-        Config.logger.info("Stopped detecting lost dilax connections.");
+        Config.logger.info("Stopped detecting lost dilax-adapter connections.");
     }
 
     public async detectCandidates(): Promise<{ detectionTime: number; allocation: VehicleAllocation; vehicleTripInfo: VehicleTripInfo }[]> {
         const detectionTime = moment().unix();
-        Config.logger.info(`Start detecting lost dilax connection with time ${detectionTime}`);
+        Config.logger.info(`Start detecting lost dilax-adapter connection with time ${detectionTime}`);
         const allocations = this.cache.get<VehicleAllocation[]>(this.allocationsCacheKey) || [];
         const runningTrips = allocations.filter((allocation) => allocation.startDatetime <= detectionTime && allocation.endDatetime >= detectionTime);
         Config.logger.debug(`Following services are currently running: ${JSON.stringify(runningTrips)}`);

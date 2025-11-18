@@ -5,7 +5,7 @@ import { HttpClient } from "at-realtime-common/http-client";
 import { Redis } from "at-realtime-common/redis";
 import * as NodeCache from "node-cache";
 import { Config } from "../../../src/config";
-import { DilaxLostConnectionsDetector } from "../../../src/dilax-lost-connections-detector";
+import { DilaxLostConnectionsDetector } from "../../../src/dilax-adapter-lost-connections-detector";
 import BlockMgtClientAPI from "../../../src/services/block-mgt-client-api";
 import { VehicleAllocation } from "../../../src/types/vehicle-allocation";
 

@@ -3,9 +3,9 @@ import { KeyVault } from "../../../src/secret-retriever/key-vault";
 
 describe("Tests getKafkaConfig in Config", () => {
     const KAFKA_HOSTS = "lkc-prx9qk-6meoz4.australiaeast.azure.glb.confluent.cloud:9092";
-    const KAFKA_PRODUCER_TOPIC = "dev-realtime-dilax-apc-enriched.v1";
-    const KAFKA_CONSUMER_TOPIC = "dev-realtime-dilax-apc.v1";
-    const KAFKA_CONSUMER_GROUP = "dev-at-dilax-adapter";
+    const KAFKA_PRODUCER_TOPIC = "dev-realtime-dilax-adapter-apc-enriched.v1";
+    const KAFKA_CONSUMER_TOPIC = "dev-realtime-dilax-adapter-apc.v1";
+    const KAFKA_CONSUMER_GROUP = "dev-at-dilax-adapter-adapter";
     const KAFKA_SSL = true;
     const mockSecret = { key: "my-user", secret: "my-secret" };
 

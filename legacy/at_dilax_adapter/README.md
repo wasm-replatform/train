@@ -34,16 +34,16 @@ To connect to Confluent locally, you can add the secrets to the `confluent-secre
 ## Verify its working
 
 ```
-Aug 02 18:02:50 at-realtime-test test-at-dilax-adapter-02 [10980] info: Dilax adapter started
-Aug 02 18:02:51 at-realtime-test test-at-dilax-adapter-02 [20748] info: Connecting redis to [rc-test-at-realtime.redis.cache.windows.net]
-Aug 02 18:02:51 at-realtime-test test-at-dilax-adapter-02 [20748] info: Redis [rc-test-at-realtime.redis.cache.windows.net] is ready
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Status check configured
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Starting the Dilax adapter...
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Loaded 1016 allocations
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Caching 414 allocations for today
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Start detecting lost dilax connection with time 1690956172
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Starting Kafka Producer (T: tst-realtime-dilax-apc-enriched.v1)
-Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-02 [20748] info: Starting Kafka Consumer (T: ["tst-realtime-dilax-apc.v1","az-realtime-health-check"], CG: tst-at-dilax-adapter)
+Aug 02 18:02:50 at-realtime-test test-at-dilax-adapter-adapter-02 [10980] info: Dilax adapter started
+Aug 02 18:02:51 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Connecting redis to [rc-test-at-realtime.redis.cache.windows.net]
+Aug 02 18:02:51 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Redis [rc-test-at-realtime.redis.cache.windows.net] is ready
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Status check configured
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Starting the Dilax adapter...
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Loaded 1016 allocations
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Caching 414 allocations for today
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Start detecting lost dilax-adapter connection with time 1690956172
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Starting Kafka Producer (T: tst-realtime-dilax-adapter-apc-enriched.v1)
+Aug 02 18:02:52 at-realtime-test test-at-dilax-adapter-adapter-02 [20748] info: Starting Kafka Consumer (T: ["tst-realtime-dilax-adapter-apc.v1","az-realtime-health-check"], CG: tst-at-dilax-adapter-adapter)
 ```
 
 -   Configuration

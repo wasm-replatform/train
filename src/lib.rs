@@ -3,34 +3,32 @@
 
 mod provider;
 
+use std::env;
+use std::str::FromStr;
 use std::sync::LazyLock;
-use std::time::Duration;
-use std::{env, thread};
 
-use anyhow::{Context, Result, anyhow};
-use axum::routing::get;
+use anyhow::{Context, Result};
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use credibil_api::Client;
-use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
-use r9k_position::R9kMessage;
-use serde_json::Value;
-use tracing::{Level, error, info, warn};
+use dilax_adapter::{DetectionRequest, DilaxMessage};
+use r9k_adapter::R9kMessage;
+use r9k_connector::R9kRequest;
+use serde_json::{Value, json};
+use tracing::{Level, debug, error, info, warn};
 use wasi_http::Result as HttpResult;
-use wasi_messaging::types::{Client as MsgClient, Message};
-use wasi_messaging::{producer, types};
+use wasi_messaging::types;
+use wasi_messaging::types::Message;
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
 
 use crate::provider::Provider;
 
-const SERVICE: &str = "r9k-position-adapter";
-const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 const R9K_TOPIC: &str = "realtime-r9k.v1";
-const DILAX_TOPIC: &str = "realtime-dilax-apc.v1";
-const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v1";
+const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
 
 static ENV: LazyLock<String> =
-    LazyLock::new(|| env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string()));
+    LazyLock::new(|| env::var("ENV").unwrap_or_else(|_| "dev".to_string()));
 
 pub struct Http;
 wasip3::http::proxy::export!(Http);
@@ -38,24 +36,47 @@ wasip3::http::proxy::export!(Http);
 impl Guest for Http {
     #[wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
-        let router = Router::new().route("/jobs/detector", get(jobs_detector));
+        let router = Router::new()
+            .route("/jobs/detector", get(detector))
+            .route("/inbound/xml", post(receive_message));
         wasi_http::serve(router, request).await
     }
 }
 
 #[axum::debug_handler]
-async fn jobs_detector() -> HttpResult<Json<Value>> {
+async fn detector() -> HttpResult<Json<Value>> {
     let api = Client::new(provider::Provider);
-    let builder = api.request(DetectionRequest).owner("owner");
+    let router = api.request(DetectionRequest).owner("owner");
 
-    let response = builder
-        .await
-        .map_err(|err| anyhow!("failed to run Dilax lost connection detector event: {err}"))?;
+    let response = router.await.context("Issue running connection detector")?;
 
-    Ok(Json(serde_json::json!({
+    Ok(Json(json!({
         "status": "job detection triggered",
         "detections": response.detections.len()
     })))
+}
+
+#[axum::debug_handler]
+async fn receive_message(req: String) -> HttpResult<String> {
+    info!(monotonic_counter.message_counter = 1, service = "train");
+
+    let api_client = Client::new(Provider);
+    let request = R9kRequest::from_str(&req).context("parsing envelope")?;
+    let result = api_client.request(request).owner("owner").await;
+
+    let response = match result {
+        Ok(ok) => ok,
+        Err(err) => {
+            error!(
+                monotonic_counter.processing_errors = 1,
+                error = %err,
+                service = "train"
+            );
+            return Ok(err.description());
+        }
+    };
+
+    Ok(response.body.to_string())
 }
 
 pub struct Messaging;
@@ -67,101 +88,46 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
+        debug!("received message on topic: {topic}");
 
-        if topic == format!("{}-{R9K_TOPIC}", *ENV) {
-            if let Err(e) = r9k_message(&message.data()).await {
+        if topic == format!("{}-{R9K_TOPIC}", ENV.as_str()) {
+            if let Err(e) = process_r9k(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
                     error = %e,
                     topic = %topic,
-                    service = %SERVICE
+                    service = "train"
                 );
             }
-        } else if topic == format!("{}-{DILAX_TOPIC}", *ENV) {
+        } else if topic == format!("{}-{DILAX_TOPIC}", ENV.as_str()) {
             if let Err(e) = process_dilax(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
                     error = %e,
                     topic = %topic,
-                    service = %SERVICE
+                    service = "train"
                 );
             }
         } else {
-            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = %SERVICE);
+            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = "train");
         }
 
         Ok(())
     }
 }
 
-// Process incoming R9k messages, consolidating error handling.
 #[wasi_otel::instrument]
-async fn r9k_message(message: &[u8]) -> Result<()> {
+async fn process_r9k(message: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider);
     let request = R9kMessage::try_from(message).context("parsing message")?;
-    let response = api_client.request(request).owner("owner").await?;
-
-    let Some(events) = response.body.smartrak_events.as_ref() else { return Ok(()) };
-
-    // publish events 2x in order to properly signal departure from the station
-    // (for schedule adherence)
-    let dest_topic = format!("{}-{SMARTRAK_TOPIC}", *ENV);
-
-    for _ in 0..2 {
-        thread::sleep(Duration::from_secs(5));
-
-        for evt in events {
-            let external_id = &evt.remote_data.external_id;
-            let msg = serde_json::to_vec(&evt).context("serializing event")?;
-            let message = Message::new(&msg);
-            message.add_metadata("key", external_id);
-
-            let client = MsgClient::connect("").context("connecting to message broker")?;
-            let topic = dest_topic.clone();
-
-            wit_bindgen::spawn(async move {
-                if let Err(e) = producer::send(&client, topic, message).await {
-                    error!(
-                        monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
-                    );
-                }
-            });
-
-            info!(
-                monotonic_counter.messages_sent = 1, external_id = %external_id, service = %SERVICE
-            );
-        }
-    }
-
+    api_client.request(request).owner("owner").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
-    let event: DilaxMessage =
-        serde_json::from_slice(payload).context("deserializing Dilax event")?;
-
-    let api = Client::new(provider::Provider);
-    let response = api.request(event).owner("owner").await?;
-
-    let enriched = response.body;
-    publish_dilax(&enriched).await
-}
-
-#[wasi_otel::instrument]
-async fn publish_dilax(event: &DilaxEnrichedEvent) -> Result<()> {
-    let client = MsgClient::connect("<not used>").context("connecting to message broker")?;
-    let payload = serde_json::to_vec(event).context("serializing Dilax enriched event")?;
-    let message = Message::new(&payload);
-    if let Some(key) = event.trip_id.as_deref() {
-        message.add_metadata("key", key);
-    }
-
-    producer::send(&client, format!("{}-{DILAX_ENRICHED_TOPIC}", *ENV), message)
-        .await
-        .map_err(|err| anyhow!("failed to publish Dilax event: {err}"))?;
-
-    info!(monotonic_counter.messages_sent = 1, service = %SERVICE, event = "dilax");
-
+    let api_client = Client::new(Provider);
+    let request: DilaxMessage = serde_json::from_slice(payload).context("deserializing event")?;
+    api_client.request(request).owner("owner").await?;
     Ok(())
 }

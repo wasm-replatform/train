@@ -5,11 +5,10 @@ use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
-use crate::Result;
 use crate::block_mgt::{self, VehicleAllocation};
 use crate::error::Error;
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
-use crate::{Provider, StateStore};
+use crate::{Provider, Result, StateStore};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
 const THRESHOLD: Duration = Duration::hours(1);

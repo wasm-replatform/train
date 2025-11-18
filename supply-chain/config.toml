@@ -94,6 +94,18 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.darling]]
+version = "0.21.3"
+criteria = "safe-to-deploy"
+
+[[exemptions.darling_core]]
+version = "0.21.3"
+criteria = "safe-to-deploy"
+
+[[exemptions.darling_macro]]
+version = "0.20.11"
+criteria = "safe-to-deploy"
+
 [[exemptions.data-encoding]]
 version = "2.9.0"
 criteria = "safe-to-deploy"
@@ -128,6 +140,14 @@ criteria = "safe-to-deploy"
 
 [[exemptions.find-msvc-tools]]
 version = "0.1.5"
+criteria = "safe-to-deploy"
+
+[[exemptions.fromenv]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.fromenv-derive]]
+version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.futures-task]]
@@ -188,10 +208,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.nkeys]]
 version = "0.4.5"
-criteria = "safe-to-deploy"
-
-[[exemptions.nu-ansi-term]]
-version = "0.50.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.nuid]]

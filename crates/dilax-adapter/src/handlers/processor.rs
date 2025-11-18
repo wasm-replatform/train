@@ -2,15 +2,12 @@ use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
 use tracing::{debug, info};
 
-use crate::Message;
-use crate::Publisher;
 use crate::block_mgt::{self, FleetVehicle};
 use crate::error::Error;
 use crate::gtfs::{self, StopType, StopTypeEntry};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
-use crate::{HttpRequest, Provider};
-use crate::{Result, trip_state};
+use crate::{HttpRequest, Message, Provider, Publisher, Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const VEHICLE_LABEL_WIDTH: usize = 14;

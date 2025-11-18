@@ -9,8 +9,7 @@ use std::str::FromStr;
 use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 
-use crate::{Provider, Publisher};
-use crate::{Error, Message, Result};
+use crate::{Error, Message, Provider, Publisher, Result};
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =

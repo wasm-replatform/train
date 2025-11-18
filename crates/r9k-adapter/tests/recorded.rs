@@ -138,10 +138,8 @@ impl HttpRequest for MockProvider {
                 serde_json::to_vec(&stops).context("failed to serialize stops")?
             }
             "/allocations/trips" => {
-                let vehicles =
-                    self.session.vehicles.clone().unwrap_or_default();
-                serde_json::to_vec(&vehicles)
-                    .context("failed to serialize vehicles")?
+                let vehicles = self.session.vehicles.clone().unwrap_or_default();
+                serde_json::to_vec(&vehicles).context("failed to serialize vehicles")?
             }
             _ => {
                 return Err(anyhow!("unknown path: {}", request.uri().path()));

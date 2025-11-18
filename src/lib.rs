@@ -24,7 +24,6 @@ use wasip3::http::types::{ErrorCode, Request, Response};
 
 use crate::provider::Provider;
 
-
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
 

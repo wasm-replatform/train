@@ -1,11 +1,11 @@
 use std::env;
+use std::sync::LazyLock;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http::{Method, StatusCode};
 use http_body_util::Empty;
-use std::sync::LazyLock;
 use regex::Regex;
 use serde_json::Value;
 use tracing::{debug, warn};

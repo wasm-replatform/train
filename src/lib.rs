@@ -8,13 +8,17 @@ use std::time::Duration;
 use std::{env, thread};
 
 use anyhow::{Context, Result, anyhow};
+use axum::extract::Path;
+use axum::http::header::USER_AGENT;
+use axum::http::{HeaderMap, StatusCode};
 use axum::routing::get;
 use axum::{Json, Router};
 use credibil_api::Client;
 use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
 use r9k_position::R9kMessage;
 use serde_json::Value;
-use smartrak_gtfs::workflow;
+use smartrak_gtfs::rest::{self, ApiResponse, GodModeOutcome, VehicleInfoResponse};
+use smartrak_gtfs::workflow::{self, SerializedMessage};
 use tracing::{Level, error, info};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types::{Client as MsgClient, Message};
@@ -39,9 +43,21 @@ wasip3::http::proxy::export!(Http);
 impl Guest for Http {
     #[wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
-        let router = Router::new().route("/jobs/detector", get(jobs_detector));
+        let router = Router::new()
+            .route("/", get(index))
+            .route("/info/:vehicle_id", get(vehicle_info))
+            .route("/god-mode/set-trip/:vehicle_id/:trip_id", get(god_mode_set_trip))
+            .route("/god-mode/reset/:vehicle_id", get(god_mode_reset))
+            .route("/jobs/detector", get(jobs_detector));
         wasi_http::serve(router, request).await
     }
+}
+
+#[axum::debug_handler]
+async fn index(headers: HeaderMap) -> HttpResult<&'static str> {
+    let user_agent = headers.get(USER_AGENT).and_then(|v| v.to_str().ok());
+    rest::log_root(user_agent);
+    Ok("OK")
 }
 
 #[axum::debug_handler]
@@ -59,10 +75,36 @@ async fn jobs_detector() -> HttpResult<Json<Value>> {
     })))
 }
 
+#[axum::debug_handler]
+async fn vehicle_info(Path(vehicle_id): Path<String>) -> HttpResult<Json<VehicleInfoResponse>> {
+    let provider = Provider;
+    let response = rest::vehicle_info(&provider, &vehicle_id).await;
+    Ok(Json(response))
+}
+
+#[axum::debug_handler]
+async fn god_mode_set_trip(
+    Path((vehicle_id, trip_id)): Path<(String, String)>,
+) -> HttpResult<(StatusCode, Json<ApiResponse>)> {
+    match rest::god_mode_set_trip(&vehicle_id, &trip_id) {
+        GodModeOutcome::Enabled(response) => Ok((StatusCode::OK, Json(response))),
+        GodModeOutcome::Disabled(response) => Ok((StatusCode::NOT_FOUND, Json(response))),
+    }
+}
+
+#[axum::debug_handler]
+async fn god_mode_reset(
+    Path(vehicle_id): Path<String>,
+) -> HttpResult<(StatusCode, Json<ApiResponse>)> {
+    match rest::god_mode_reset(&vehicle_id) {
+        GodModeOutcome::Enabled(response) => Ok((StatusCode::OK, Json(response))),
+        GodModeOutcome::Disabled(response) => Ok((StatusCode::NOT_FOUND, Json(response))),
+    }
+}
+
 pub struct Messaging;
 
 wasi_messaging::export!(Messaging with_types_in wasi_messaging);
-
 #[allow(clippy::future_not_send)]
 impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
@@ -89,7 +131,8 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
             }
         } else {
             let payload = message.data();
-            match workflow::process(&topic, &payload).await {
+            let provider = Provider;
+            match workflow::process(&provider, &topic, &payload).await {
                 Ok(workflow::WorkflowOutcome::NoOp) => {}
                 Ok(workflow::WorkflowOutcome::Messages(messages)) => {
                     if let Err(err) = publish_smartrak_messages(messages).await {
@@ -197,10 +240,15 @@ async fn publish_smartrak_messages(messages: Vec<SerializedMessage>) -> Result<(
         let outgoing = Message::new(&message.payload);
         outgoing.add_metadata("key", &message.key);
 
-            let topic = message.topic.clone();
-            wit_bindgen::spawn(async move {
-                if let Err(err) = producer::send(&client, topic, outgoing).await {
-                error!(monotonic_counter.processing_errors = 1, error = %err, service = %SERVICE, "failed to publish smartrak output");
+        let topic = format!("{}-{}", *ENV, message.topic);
+        wit_bindgen::spawn(async move {
+            if let Err(err) = producer::send(&client, topic, outgoing).await {
+                error!(
+                    monotonic_counter.processing_errors = 1,
+                    error = %err,
+                    service = %SERVICE,
+                    "failed to publish smartrak output"
+                );
             }
         });
     }

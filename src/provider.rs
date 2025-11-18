@@ -3,9 +3,7 @@ use std::env;
 use std::error::Error;
 
 use anyhow::{Context, Result};
-use async_trait::async_trait;
 use bytes::Bytes;
-use chrono::Duration;
 use dilax::{
     HttpRequest as DilaxHttpRequest, Identity as DilaxIdentity, StateStore as DilaxStateStore,
 };

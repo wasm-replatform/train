@@ -2,11 +2,11 @@ use serde::Serialize;
 use tracing::{debug, info, warn};
 
 use crate::error::Result;
-use crate::god_mode::GodMode;
+use crate::god_mode::god_mode;
 use crate::models::{EventType, PassengerCountEvent, SmartrakEvent, VehicleInfo};
 use crate::processor::location::{LocationOutcome, process_location, resolve_vehicle};
 use crate::processor::passenger_count::process_passenger_count;
-use crate::processor::serial_data::{process_serial_data};
+use crate::processor::serial_data::process_serial_data;
 use crate::provider::Provider;
 
 /// Processes a Smartrak Kafka payload and emits outbound messages when applicable.
@@ -15,7 +15,9 @@ use crate::provider::Provider;
 ///
 /// Returns an error when the incoming payload cannot be parsed or when domain logic
 /// encounters an unrecoverable condition.
-pub async fn process(provider: &impl Provider, topic: &str, payload: &[u8]) -> Result<WorkflowOutcome> {  
+pub async fn process(
+    provider: &impl Provider, topic: &str, payload: &[u8],
+) -> Result<WorkflowOutcome> {
     if topic.contains("realtime-passenger-count") {
         let event: PassengerCountEvent = serde_json::from_slice(payload)?;
         process_passenger_count(provider, &event).await?;
@@ -91,11 +93,15 @@ fn should_process_topic(topic: &str, vehicle: &VehicleInfo) -> bool {
         return matches!(tag.as_deref(), Some("caf"));
     }
 
-    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak".contains(topic) {
+    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak"
+        .contains(topic)
+    {
         return true;
-    }    
+    }
 
-    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak".contains(topic) {
+    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak"
+        .contains(topic)
+    {
         return matches!(tag.as_deref(), Some("smartrak"));
     }
 

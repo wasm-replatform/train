@@ -1,3 +1,6 @@
+use std::env;
+use std::sync::LazyLock;
+
 use dashmap::DashMap;
 
 use crate::models::{EventType, SmartrakEvent};
@@ -20,6 +23,7 @@ impl GodMode {
         self.overrides.insert(vehicle_id.into(), trip_id.into());
     }
 
+    #[must_use]
     pub fn describe(&self) -> String {
         let map: Vec<(String, String)> = self
             .overrides
@@ -51,15 +55,35 @@ impl GodMode {
         };
 
         if let Some(override_trip) = self.overrides.get(vehicle_id) {
-            if override_trip.value() == "empty" {
+            let value = override_trip.value();
+
+            decoded.line_id = None;
+
+            if value == "empty" {
                 decoded.trip_id = None;
                 decoded.trip_number = None;
-                decoded.line_id = None;
             } else {
+                let override_trip = value.clone();
                 decoded.trip_id = Some(override_trip.clone());
-                decoded.trip_number = Some(override_trip.clone());
-                decoded.line_id = None;
+                decoded.trip_number = Some(override_trip);
             }
         }
     }
+}
+
+fn env_truthy(key: &str) -> bool {
+    env::var(key).ok().is_some_and(|value| {
+        let normalized = value.trim().to_ascii_lowercase();
+        matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
+    })
+}
+
+static GOD_MODE_ENABLED: LazyLock<bool> =
+    LazyLock::new(|| env_truthy("SMARTRAK_GOD_MODE") || env_truthy("GOD_MODE"));
+static GOD_MODE_INSTANCE: LazyLock<GodMode> = LazyLock::new(GodMode::default);
+
+/// Returns the global God Mode instance when the feature flag is enabled.
+#[must_use]
+pub fn god_mode() -> Option<&'static GodMode> {
+    (*GOD_MODE_ENABLED).then(|| &*GOD_MODE_INSTANCE)
 }

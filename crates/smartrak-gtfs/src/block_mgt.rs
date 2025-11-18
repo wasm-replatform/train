@@ -2,8 +2,8 @@ use std::env;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
-use http::{Method, StatusCode};
 use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
+use http::{Method, StatusCode};
 use http_body_util::Empty;
 use tracing::warn;
 

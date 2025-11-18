@@ -8,6 +8,7 @@ pub mod key_locker;
 pub mod models;
 pub mod processor;
 pub mod provider;
+pub mod rest;
 pub mod trip;
 pub mod workflow;
 

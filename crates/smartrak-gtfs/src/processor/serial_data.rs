@@ -16,7 +16,7 @@ fn env_i64(key: &str, default: i64) -> i64 {
     env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
 }
 
-pub async fn process_serial_data(provider: &impl Provider,event: &SmartrakEvent) -> Result<()> {
+pub async fn process_serial_data(provider: &impl Provider, event: &SmartrakEvent) -> Result<()> {
     if !is_serial_event_valid(event) {
         return Ok(());
     }
@@ -51,19 +51,28 @@ pub async fn process_serial_data(provider: &impl Provider,event: &SmartrakEvent)
     allocate_vehicle_to_trip(provider, vehicle_id, decoded, event_timestamp).await
 }
 
-async fn mark_serial_timestamp(provider: &impl Provider, vehicle_id: &str, timestamp: i64) -> Result<bool> {
-        let key =  format!("smartrakGtfs:serialTimestamp:{}", &vehicle_id);
-        let previous_bytes = StateStore::get(provider, &key).await?;
-        if let Some(previous) = serde_json::from_value::<i64>(previous_bytes.into()).ok() {
-            if previous >= timestamp {
-                return Ok(true);
-            }
+async fn mark_serial_timestamp(
+    provider: &impl Provider, vehicle_id: &str, timestamp: i64,
+) -> Result<bool> {
+    let key = format!("smartrakGtfs:serialTimestamp:{}", &vehicle_id);
+    let previous_bytes = StateStore::get(provider, &key).await?;
+    if let Some(previous) = serde_json::from_value::<i64>(previous_bytes.into()).ok() {
+        if previous >= timestamp {
+            return Ok(true);
         }
-
-        let timestamp_bytes = serde_json::to_vec(&timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
-        StateStore::set(provider, &key, &timestamp_bytes, Some(TTL_SERIAL_TIMESTAMP.num_seconds() as u64)).await?;
-        Ok(false)
     }
+
+    let timestamp_bytes =
+        serde_json::to_vec(&timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+    StateStore::set(
+        provider,
+        &key,
+        &timestamp_bytes,
+        Some(TTL_SERIAL_TIMESTAMP.num_seconds() as u64),
+    )
+    .await?;
+    Ok(false)
+}
 
 fn is_serial_event_valid(event: &SmartrakEvent) -> bool {
     let Some(remote) = event.remote_data.as_ref() else {
@@ -98,7 +107,7 @@ async fn allocate_vehicle_to_trip(
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
     let serial_timestamp_key = format!("smartrakGtfs:serialTimestamp:{}", &vehicle_id);
 
-    let Some(trip_id) = decoded.trip_id.as_deref() else {        
+    let Some(trip_id) = decoded.trip_id.as_deref() else {
         debug!(vehicle_id, "serial data without trip id, clearing state");
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
@@ -133,14 +142,25 @@ async fn allocate_vehicle_to_trip(
     }
 }
 
-async fn persist_trip(provider: &impl Provider, vehicle_id: &str, event_timestamp: i64, trip: TripInstance) -> Result<()> {
+async fn persist_trip(
+    provider: &impl Provider, vehicle_id: &str, event_timestamp: i64, trip: TripInstance,
+) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
 
-    let trip_bytes = serde_json::to_vec(&trip).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
-    StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL.num_seconds() as u64)).await?;
-    
-    let timestamp_bytes = serde_json::to_vec(&event_timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
-    StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(TTL_SIGN_ON.num_seconds() as u64)).await?;
+    let trip_bytes =
+        serde_json::to_vec(&trip).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+    StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL.num_seconds() as u64))
+        .await?;
+
+    let timestamp_bytes =
+        serde_json::to_vec(&event_timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+    StateStore::set(
+        provider,
+        &sign_on_key,
+        &timestamp_bytes,
+        Some(TTL_SIGN_ON.num_seconds() as u64),
+    )
+    .await?;
     Ok(())
 }

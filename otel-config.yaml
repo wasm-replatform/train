@@ -23,8 +23,8 @@ exporters:
     resource_to_telemetry_conversion:
       enabled: true
 
-  # debug:
-  #   verbosity: detailed
+  debug:
+    verbosity: basic
 
 service:
   pipelines:

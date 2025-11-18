@@ -12,7 +12,7 @@ use tracing::{debug, warn};
 use urlencoding::encode;
 
 use crate::models::{VehicleCapacity, VehicleInfo};
-use crate::provider::{HttpRequest, Provider};
+use crate::{HttpRequest, Provider};
 
 /// Fetches vehicle metadata by label from the Fleet API.
 ///

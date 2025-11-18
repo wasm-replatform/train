@@ -6,7 +6,7 @@ use tracing::{error, info};
 use crate::fleet;
 use crate::god_mode::god_mode;
 use crate::models::{TripInstance, VehicleInfo};
-use crate::provider::{Provider, StateStore};
+use crate::{Provider, StateStore};
 
 const PROCESS_ID: u32 = 0;
 

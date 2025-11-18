@@ -11,7 +11,7 @@ use serde_json::Value;
 use tracing::warn;
 
 use crate::models::TripInstance;
-use crate::provider::{HttpRequest, Provider};
+use crate::{HttpRequest, Provider};
 
 const CACHE_DIRECTIVE_PRIMARY: &str = "max-age=20, stale-if-error=10";
 

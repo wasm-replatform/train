@@ -8,7 +8,7 @@ use http_body_util::Empty;
 use tracing::warn;
 
 use crate::models::BlockInstance;
-use crate::provider::{HttpRequest, Identity, Provider};
+use crate::{HttpRequest, Identity, Provider};
 
 //const TTL_SUCCESS: Duration = Duration::seconds(20);
 //const TTL_FAILURE: Duration = Duration::seconds(10);

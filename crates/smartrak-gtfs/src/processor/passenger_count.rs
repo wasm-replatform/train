@@ -2,7 +2,7 @@ use chrono::Duration;
 
 use crate::error::Result;
 use crate::models::PassengerCountEvent;
-use crate::provider::{Provider, StateStore};
+use crate::{Provider, StateStore};
 
 const TTL_PASSENGER_COUNT: u64 = Duration::hours(3).num_seconds() as u64; // 3 hours
 

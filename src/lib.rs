@@ -8,33 +8,30 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 
 use anyhow::{Context, Result};
-use axum::routing::{get, post};
-use anyhow::{Context, Result, anyhow};
 use axum::extract::Path;
 use axum::http::header::USER_AGENT;
 use axum::http::{HeaderMap, StatusCode};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use credibil_api::Client;
 use dilax_adapter::{DetectionRequest, DilaxMessage};
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
-use serde_json::{Value, json};
-use tracing::{Level, debug, error, info, warn};
-use dilax::{DetectionRequest, DilaxEnrichedEvent, DilaxMessage};
-use r9k_position::R9kMessage;
-use serde_json::Value;
+use serde_json::{json, Value};
+use tracing::{debug, error, info, warn, Level};
+
 use smartrak_gtfs::rest::{self, ApiResponse, GodModeOutcome, VehicleInfoResponse};
 use smartrak_gtfs::workflow::{self, SerializedMessage};
-use tracing::{Level, error, info};
+
 use wasi_http::Result as HttpResult;
-use wasi_messaging::types;
-use wasi_messaging::types::Message;
+use wasi_messaging::{producer, types};
+use wasi_messaging::types::{Client as MsgClient, Message};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
 
 use crate::provider::Provider;
 
+const SERVICE: &str = "train";
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
 
@@ -53,7 +50,7 @@ impl Guest for Http {
             .route("/", get(index))
             .route("/info/:vehicle_id", get(vehicle_info))
             .route("/god-mode/set-trip/:vehicle_id/:trip_id", get(god_mode_set_trip))
-            .route("/god-mode/reset/:vehicle_id", get(god_mode_reset))
+            .route("/god-mode/reset/:vehicle_id", get(god_mode_reset));
         wasi_http::serve(router, request).await
     }
 }
@@ -80,7 +77,7 @@ async fn detector() -> HttpResult<Json<Value>> {
 
 #[axum::debug_handler]
 async fn receive_message(req: String) -> HttpResult<String> {
-    info!(monotonic_counter.message_counter = 1, service = "train");
+    info!(monotonic_counter.message_counter = 1, service = SERVICE);
 
     let api_client = Client::new(Provider);
     let request = R9kRequest::from_str(&req).context("parsing envelope")?;
@@ -92,7 +89,7 @@ async fn receive_message(req: String) -> HttpResult<String> {
             error!(
                 monotonic_counter.processing_errors = 1,
                 error = %err,
-                service = "train"
+                service = SERVICE
             );
             return Ok(err.description());
         }
@@ -144,7 +141,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     monotonic_counter.processing_errors = 1,
                     error = %e,
                     topic = %topic,
-                    service = "train"
+                    service = SERVICE
                 );
             }
         } else if topic == format!("{}-{DILAX_TOPIC}", ENV.as_str()) {
@@ -153,11 +150,11 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     monotonic_counter.processing_errors = 1,
                     error = %e,
                     topic = %topic,
-                    service = "train"
+                    service = SERVICE
                 );
             }
         } else {
-            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = "train");
+            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = SERVICE);
             let payload = message.data();
             let provider = Provider;
             match workflow::process(&provider, &topic, &payload).await {
@@ -168,7 +165,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                             monotonic_counter.processing_errors = 1,
                             error = %err,
                             topic = %topic,
-                            service = %SERVICE,
+                            service = SERVICE,
                             "failed to publish smartrak output"
                         );
                     }
@@ -178,7 +175,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                         monotonic_counter.processing_errors = 1,
                         error = %err,
                         topic = %topic,
-                        service = %SERVICE,
+                        service = SERVICE,
                         "processing smartrak kafka message failed"
                     );
                 }
@@ -218,7 +215,7 @@ async fn publish_smartrak_messages(messages: Vec<SerializedMessage>) -> Result<(
                 error!(
                     monotonic_counter.processing_errors = 1,
                     error = %err,
-                    service = %SERVICE,
+                    service = SERVICE,
                     "failed to publish smartrak output"
                 );
             }

@@ -5,7 +5,7 @@ use tracing::{debug, warn};
 
 use crate::error::{Error, Result};
 use crate::models::{DecodedSerialData, SmartrakEvent, TripInstance};
-use crate::provider::{Provider, StateStore};
+use crate::{Provider, StateStore};
 use crate::trip;
 
 const TTL_TRIP_SERIAL: Duration = Duration::seconds(4 * 60 * 60);

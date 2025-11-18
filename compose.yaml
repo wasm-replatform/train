@@ -2,8 +2,7 @@ name: realtime
 
 services:
   train:
-    # image: ghcr.io/credibil/realtime-messaging:latest
-    image: ghcr.io/credibil/wrt:latest
+    image: ghcr.io/credibil/realtime:latest
     env_file: .env
     ports:
       - 8080:8080

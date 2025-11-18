@@ -36,10 +36,13 @@ pub struct KeyGuard {
 
 impl Drop for KeyGuard {
     fn drop(&mut self) {
-        if let Some(existing) = self.inner.locks.get(&self.key) {
-            if Arc::strong_count(existing.value()) == 1 {
-                self.inner.locks.remove(&self.key);
-            }
+        if self
+            .inner
+            .locks
+            .get(&self.key)
+            .is_some_and(|existing| Arc::strong_count(existing.value()) == 1)
+        {
+            self.inner.locks.remove(&self.key);
         }
     }
 }

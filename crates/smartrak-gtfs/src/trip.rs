@@ -81,8 +81,9 @@ pub async fn get_nearest_trip_instance(
     }
 
     trips.sort_by(|left, right| {
-        let left_diff = difference(&event_dt.timestamp(), left, tz);
-        let right_diff = difference(&event_dt.timestamp(), right, tz);
+        let event_ts = event_dt.timestamp();
+        let left_diff = difference(event_ts, left, tz);
+        let right_diff = difference(event_ts, right, tz);
         left_diff.cmp(&right_diff)
     });
 
@@ -175,8 +176,8 @@ fn extract_trip_instances(value: Value) -> Result<Vec<TripInstance>> {
     }
 }
 
-fn difference(event_ts: &i64, trip: &TripInstance, tz: Tz) -> i64 {
-    let trip_ts = trip_timestamp(trip, tz).unwrap_or(*event_ts);
+fn difference(event_ts: i64, trip: &TripInstance, tz: Tz) -> i64 {
+    let trip_ts = trip_timestamp(trip, tz).unwrap_or(event_ts);
     (event_ts - trip_ts).abs()
 }
 

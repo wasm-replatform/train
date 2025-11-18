@@ -13,6 +13,12 @@ use crate::{HttpRequest, Identity, Provider};
 //const TTL_SUCCESS: Duration = Duration::seconds(20);
 //const TTL_FAILURE: Duration = Duration::seconds(10);
 
+/// Retrieves the cached block allocation for a specific vehicle.
+///
+/// # Errors
+///
+/// Returns an error if the request to the Block Management API fails or the
+/// response payload cannot be deserialized.
 pub async fn get_allocation_by_vehicle(
     provider: &impl Provider, vehicle_id: &str, timestamp: i64,
 ) -> Result<Option<BlockInstance>> {

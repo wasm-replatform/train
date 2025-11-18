@@ -3,10 +3,9 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::{error, info};
 
-use crate::fleet;
 use crate::god_mode::god_mode;
 use crate::models::{TripInstance, VehicleInfo};
-use crate::{Provider, StateStore};
+use crate::{Provider, StateStore, fleet};
 
 const PROCESS_ID: u32 = 0;
 
@@ -31,10 +30,12 @@ pub struct ApiResponse {
 }
 
 impl ApiResponse {
+    #[must_use]
     pub fn ok() -> Self {
         Self::new("Ok")
     }
 
+    #[must_use]
     pub fn not_found() -> Self {
         Self::new("Ops...")
     }
@@ -100,32 +101,40 @@ where
 }
 
 /// Applies a God Mode trip override, mirroring the legacy behaviour.
+#[must_use]
 pub fn god_mode_set_trip(vehicle_id: &str, trip_id: &str) -> GodModeOutcome {
-    if let Some(god_mode) = god_mode() {
-        god_mode.set_vehicle_to_trip(vehicle_id.to_string(), trip_id.to_string());
-        info!(vehicle_id, trip_id, "god mode override set");
-        GodModeOutcome::Enabled(ApiResponse::ok())
-    } else {
-        info!("god mode not enabled; set-trip ignored");
-        GodModeOutcome::Disabled(ApiResponse::not_found())
-    }
+    god_mode().map_or_else(
+        || {
+            info!("god mode not enabled; set-trip ignored");
+            GodModeOutcome::Disabled(ApiResponse::not_found())
+        },
+        |god_mode| {
+            god_mode.set_vehicle_to_trip(vehicle_id.to_string(), trip_id.to_string());
+            info!(vehicle_id, trip_id, "god mode override set");
+            GodModeOutcome::Enabled(ApiResponse::ok())
+        },
+    )
 }
 
 /// Clears God Mode overrides for a specific vehicle or for all vehicles.
+#[must_use]
 pub fn god_mode_reset(vehicle_id: &str) -> GodModeOutcome {
-    if let Some(god_mode) = god_mode() {
-        if vehicle_id == "all" {
-            god_mode.reset_all();
-            info!("god mode overrides reset for all vehicles");
-        } else {
-            god_mode.reset_vehicle(vehicle_id);
-            info!(vehicle_id, "god mode override reset");
-        }
-        GodModeOutcome::Enabled(ApiResponse::ok())
-    } else {
-        info!("god mode not enabled; reset ignored");
-        GodModeOutcome::Disabled(ApiResponse::not_found())
-    }
+    god_mode().map_or_else(
+        || {
+            info!("god mode not enabled; reset ignored");
+            GodModeOutcome::Disabled(ApiResponse::not_found())
+        },
+        |god_mode| {
+            if vehicle_id == "all" {
+                god_mode.reset_all();
+                info!("god mode overrides reset for all vehicles");
+            } else {
+                god_mode.reset_vehicle(vehicle_id);
+                info!(vehicle_id, "god mode override reset");
+            }
+            GodModeOutcome::Enabled(ApiResponse::ok())
+        },
+    )
 }
 
 fn deserialize_optional<T>(data: Option<Vec<u8>>) -> Option<T>

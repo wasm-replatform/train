@@ -73,12 +73,14 @@ pub struct SmartrakEvent {
 }
 
 impl SmartrakEvent {
+    #[must_use]
     pub fn timestamp_unix(&self) -> Option<i64> {
         DateTime::parse_from_rfc3339(&self.message_data.timestamp)
             .map(|dt| dt.with_timezone(&Utc).timestamp())
             .ok()
     }
 
+    #[must_use]
     pub fn vehicle_identifier(&self) -> Option<&str> {
         self.remote_data
             .as_ref()
@@ -142,6 +144,7 @@ pub struct VehicleType {
 }
 
 impl VehicleType {
+    #[must_use]
     pub fn is_train(&self) -> bool {
         matches!(self.r#type.as_deref(), Some("Train"))
     }
@@ -162,10 +165,12 @@ pub struct TripInstance {
 }
 
 impl TripInstance {
-    pub fn has_error(&self) -> bool {
+    #[must_use]
+    pub const fn has_error(&self) -> bool {
         self.error
     }
 
+    #[must_use]
     pub fn to_trip_descriptor(&self) -> TripDescriptor {
         TripDescriptor {
             trip_id: self.trip_id.clone(),
@@ -181,6 +186,7 @@ impl TripInstance {
         }
     }
 
+    #[must_use]
     pub fn remap(&self, trip_id: &str, route_id: &str) -> Self {
         let mut clone = self.clone();
         clone.trip_id = trip_id.to_string();
@@ -202,7 +208,8 @@ pub struct BlockInstance {
 }
 
 impl BlockInstance {
-    pub fn has_error(&self) -> bool {
+    #[must_use]
+    pub const fn has_error(&self) -> bool {
         self.error
     }
 }

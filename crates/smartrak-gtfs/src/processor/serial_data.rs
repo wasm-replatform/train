@@ -1,21 +1,26 @@
 use std::env;
 
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use tracing::{debug, warn};
 
 use crate::error::{Error, Result};
 use crate::models::{DecodedSerialData, SmartrakEvent, TripInstance};
-use crate::{Provider, StateStore};
-use crate::trip;
+use crate::{Provider, StateStore, trip};
 
-const TTL_TRIP_SERIAL: Duration = Duration::seconds(4 * 60 * 60);
-const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
-const TTL_SERIAL_TIMESTAMP: Duration = Duration::seconds(24 * 60 * 60);
+const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
+const TTL_SIGN_ON_SECS: u64 = 24 * 60 * 60;
+const TTL_SERIAL_TIMESTAMP_SECS: u64 = 24 * 60 * 60;
 
 fn env_i64(key: &str, default: i64) -> i64 {
     env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
 }
 
+/// Processes SmarTrak serial data events, updating allocations and in-memory state.
+///
+/// # Errors
+///
+/// Returns an error when required event fields are missing, cached state cannot
+/// be accessed, or downstream lookups fail.
 pub async fn process_serial_data(provider: &impl Provider, event: &SmartrakEvent) -> Result<()> {
     if !is_serial_event_valid(event) {
         return Ok(());
@@ -56,21 +61,15 @@ async fn mark_serial_timestamp(
 ) -> Result<bool> {
     let key = format!("smartrakGtfs:serialTimestamp:{}", &vehicle_id);
     let previous_bytes = StateStore::get(provider, &key).await?;
-    if let Some(previous) = serde_json::from_value::<i64>(previous_bytes.into()).ok() {
-        if previous >= timestamp {
-            return Ok(true);
-        }
+    if serde_json::from_value::<i64>(previous_bytes.into())
+        .is_ok_and(|previous| previous >= timestamp)
+    {
+        return Ok(true);
     }
 
     let timestamp_bytes =
         serde_json::to_vec(&timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
-    StateStore::set(
-        provider,
-        &key,
-        &timestamp_bytes,
-        Some(TTL_SERIAL_TIMESTAMP.num_seconds() as u64),
-    )
-    .await?;
+    StateStore::set(provider, &key, &timestamp_bytes, Some(TTL_SERIAL_TIMESTAMP_SECS)).await?;
     Ok(false)
 }
 
@@ -117,10 +116,10 @@ async fn allocate_vehicle_to_trip(
 
     let previous_bytes = StateStore::get(provider, &trip_key).await?;
 
-    if let Some(previous) = serde_json::from_value::<TripInstance>(previous_bytes.into()).ok() {
-        if previous.trip_id == trip_id {
-            return Ok(());
-        }
+    if serde_json::from_value::<TripInstance>(previous_bytes.into())
+        .is_ok_and(|previous| previous.trip_id == trip_id)
+    {
+        return Ok(());
     }
 
     let trip = trip::get_nearest_trip_instance(provider, trip_id, event_timestamp).await?;
@@ -150,17 +149,10 @@ async fn persist_trip(
 
     let trip_bytes =
         serde_json::to_vec(&trip).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
-    StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL.num_seconds() as u64))
-        .await?;
+    StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL_SECS)).await?;
 
     let timestamp_bytes =
         serde_json::to_vec(&event_timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
-    StateStore::set(
-        provider,
-        &sign_on_key,
-        &timestamp_bytes,
-        Some(TTL_SIGN_ON.num_seconds() as u64),
-    )
-    .await?;
+    StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(TTL_SIGN_ON_SECS)).await?;
     Ok(())
 }

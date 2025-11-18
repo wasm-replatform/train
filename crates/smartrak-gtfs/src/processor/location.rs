@@ -11,8 +11,7 @@ use crate::models::{
     SmartrakEvent, TripDescriptor, TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo,
     VehiclePosition,
 };
-use crate::{Provider, StateStore};
-use crate::{block_mgt, fleet, trip};
+use crate::{Provider, StateStore, block_mgt, fleet, trip};
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);

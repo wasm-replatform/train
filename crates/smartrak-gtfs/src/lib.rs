@@ -17,7 +17,6 @@ pub use key_locker::*;
 pub use models::*;
 pub use workflow::*;
 
-
 /// Result type for handlers.
 pub type Result<T> = anyhow::Result<T, Error>;
 

@@ -59,10 +59,9 @@ pub async fn get_vehicle_by_id_or_label(
 ) -> Result<Option<VehicleInfo>> {
     if is_alphanumeric_label(vehicle_id_or_label)
         && let Some(label) = padded_train_label(vehicle_id_or_label)
+        && let Some(vehicle) = get_vehicle_by_label(provider, &label).await?
     {
-        if let Some(vehicle) = get_vehicle_by_label(provider, &label).await? {
-            return Ok(Some(vehicle));
-        }
+        return Ok(Some(vehicle));
     }
 
     if looks_like_train(vehicle_id_or_label) {

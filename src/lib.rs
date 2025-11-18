@@ -17,15 +17,13 @@ use credibil_api::Client;
 use dilax_adapter::{DetectionRequest, DilaxMessage};
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
-use serde_json::{json, Value};
-use tracing::{debug, error, info, warn, Level};
-
+use serde_json::{Value, json};
 use smartrak_gtfs::rest::{self, ApiResponse, GodModeOutcome, VehicleInfoResponse};
 use smartrak_gtfs::workflow::{self, SerializedMessage};
-
+use tracing::{Level, debug, error, info, warn};
 use wasi_http::Result as HttpResult;
-use wasi_messaging::{producer, types};
 use wasi_messaging::types::{Client as MsgClient, Message};
+use wasi_messaging::{producer, types};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
 

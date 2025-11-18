@@ -11,7 +11,7 @@ import * as NodeCache from "node-cache";
 import { Config } from "../../../src/config";
 import { KafkaConsumerConfig } from "../../../src/config/kafka-consumer";
 import { KafkaProducerConfig } from "../../../src/config/kafka-producer";
-import { DilaxState } from "../../../src/dilax-processor";
+import { DilaxState } from "../../../src/dilax-adapter-processor";
 import Main from "../../../src/main";
 import BlockMgtClientAPI from "../../../src/services/block-mgt-client-api";
 import CcStaticApi from "../../../src/services/cc-static-api";
@@ -91,7 +91,7 @@ class DilaxSteps {
     public async before(): Promise<void> {
         Config.fleetApiUrl = "http://localhost:3000";
         process.env = {
-            KAFKA_CONSUMER_GROUP: "at-dilax-adapter",
+            KAFKA_CONSUMER_GROUP: "at-dilax-adapter-adapter",
             KAFKA_ENVIRONMENT: "dev",
             KAFKA_HOSTS: "mock-host",
         };

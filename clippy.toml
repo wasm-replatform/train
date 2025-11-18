@@ -7,10 +7,14 @@ doc-valid-idents = [
     "OpenTelemetry",
 ]
 allowed-duplicate-crates = [
+    "axum",
+    "axum-core",
     "embedded-io",
     "getrandom",
     "hashbrown",
     "linux-raw-sys",
+    "matchit",
+    "quick-xml",
     "rand",
     "rand_chacha",
     "rand_core",

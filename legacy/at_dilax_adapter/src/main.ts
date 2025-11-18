@@ -1,11 +1,11 @@
 import { KafkaConsumer, KafkaMessage, KafkaProducer, Topics } from "at-realtime-common/kafka";
 import { Redis } from "at-realtime-common/redis";
-import DilaxProcessor from "./dilax-processor";
+import DilaxProcessor from "./dilax-adapter-processor";
 
 import * as nr from "newrelic";
 import * as cron from "node-cron";
 import { Config } from "./config";
-import { DilaxLostConnectionsDetector } from "./dilax-lost-connections-detector";
+import { DilaxLostConnectionsDetector } from "./dilax-adapter-lost-connections-detector";
 import BlockMgtClientAPI from "./services/block-mgt-client-api";
 import CcStaticApi from "./services/cc-static-api";
 import FleetApi from "./services/fleet-api";

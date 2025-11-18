@@ -89,7 +89,7 @@ export class Config extends ConfigCommon {
         consumer: {
             endpoints: (process.env.KAFKA_HOSTS || "lkc-prx9qk-6meoz4.australiaeast.azure.glb.confluent.cloud:9092").split(","),
             topics: (Config.addConfluentPrefix(process.env.KAFKA_SOURCE_TOPIC) || "dev-realtime-r9k.v1").split(","),
-            consumerGroup: Config.addConfluentPrefix(process.env.KAFKA_CONSUMER_GROUP) || "dev-r9k-position-adapter-v2-local-3",
+            consumerGroup: Config.addConfluentPrefix(process.env.KAFKA_CONSUMER_GROUP) || "dev-r9k-adapter-adapter-v2-local-3",
         },
         producer: {
             endpoints: (process.env.KAFKA_HOSTS || "lkc-prx9qk-6meoz4.australiaeast.azure.glb.confluent.cloud:9092").split(","),

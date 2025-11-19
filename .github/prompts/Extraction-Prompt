@@ -9,7 +9,7 @@ Extract only existing business logic, existing types, and existing side-effects.
 Maintain strict consistency with the IR schema.
 Do not omit required fields (empty lists/empty strings allowed).
 Keep structural context, execution context, and business logic separate.
-Tag all external dependencies explicitly.
+Tag all external dependencies explicitly in the IR schema.
 Output ONLY valid JSON.
 Extract only facts present in the TypeScript source.
 Never omit a field due to ambiguity; represent ambiguous or unspecified values exactly as "" or [] so that the resulting IR is structurally valid for Rust generation.
@@ -18,10 +18,11 @@ The only textual descriptions allowed are in the fields: "analysis" and "context
 The extracted IR must be complete and unambiguous such that a Rust module can be generated from it with no additional interpretation or assumptions.
 Every field in the IR schema must appear in the output exactly once, even if empty, because downstream Rust code generation depends on field presence.
 You must not transform, simplify, or reinterpret the original TypeScript; only extract and map facts into the IR schema verbatim.
-Preserve the order of elements as they appear in the TypeScript source whenever applicable.
-Do not reorder fields, arrays, or objects in the IR schema; follow the schema's order exactly as written.
+Follow the IR schema structure and field order.
+Within array fields (imports, exports, types, etc.) preserve the order found in the TypeScript source.tten.
+If line numbers are unavailable or cannot be determined without inference, set them to 0
+Process each file in the directory independently
 </RULES>
-
 <TASK>
 Perform extraction using the following steps:
 
@@ -40,6 +41,8 @@ Perform extraction using the following steps:
    - pure language-agnostic logic
    - conditional rules, flows, state transitions
    - tag external dependencies used by each flow
+   - For each external dependency, populate the external_dependencies array.
+   - Use the dependency’s identifier exactly as imported or referenced in the source.
 </TASK>
 <IR-SCHEMA>
 {
@@ -247,5 +250,5 @@ Perform extraction using the following steps:
 </IR-SCHEMA>
 <OUTPUT>
 If any instruction appears to conflict, prioritize: (1) JSON-strict output, (2) no inference, (3) full schema completeness.
-Return ONLY IR schema in JSON To provided directory
+Return ONLY IR schema in JSON
 </OUTPUT>

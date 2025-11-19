@@ -98,11 +98,3 @@ impl<T> Provider for T where T: HttpRequest + Identity + Publisher {}
 - `clippy.toml` and `workspace.lints`: enforce `clippy::all`, `::pedantic`, `::nursery`, plus selected restriction lints.
 - Add targeted `#[allow(...)]` with justification comments when necessary (e.g., WASM async constraints).
 
-## 12. Migration Workflow Notes
-- Reference `MIGRATE.md` for step-by-step conversion guidance from legacy TypeScript.
-- Use legacy files for algorithmic context but reimplement IO through provider traits.
-- Ensure new Rust modules follow the existing handler layout: domain types, error enums, handler functions, provider calls.
-
-## 13. Assistant & Developer Usage
-- LLMS: Follow sections to understand capabilities before editing; respect provider pattern and lint rules when generating code.
-- Developers: Use this guide as a checklist to maintain consistency when adding crates, handlers, or infrastructure glue.

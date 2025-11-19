@@ -4,6 +4,7 @@ use std::error::Error;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
+use fromenv::FromEnv;
 use http::{Request, Response};
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::cache;
@@ -11,20 +12,66 @@ use wasi_messaging::producer;
 use wasi_messaging::types::{Client, Message};
 use wit_bindgen::block_on;
 
-use crate::ENV;
-
 // const SERVICE: &str = "train";
 
 #[derive(Clone, Default)]
-pub struct Provider;
+pub struct Provider {
+    config: ConfigSettings,
+}
+
+#[derive(Debug, Clone, FromEnv)]
+pub struct ConfigSettings {
+    #[env(from = "ENVIRONMENT", default = "dev")]
+    pub environment: String,
+
+    #[env(from = "BLOCK_MGT_URL")]
+    pub block_mgt_url: String,
+
+    #[env(from = "CC_STATIC_URL")]
+    pub cc_static_url: String,
+
+    #[env(from = "FLEET_URL")]
+    pub fleet_url: String,
+
+    #[env(from = "GTFS_STATIC_URL")]
+    pub gtfs_static_url: String,
+
+    #[env(from = "AZURE_IDENTITY")]
+    pub azure_identity: String,
+}
+
+impl Default for ConfigSettings {
+    fn default() -> Self {
+        Self::from_env().finalize().unwrap_or_default()
+    }
+}
+
+impl Provider {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl realtime::Config for Provider {
+    async fn get(&self, key: &str) -> Result<String> {
+        match key {
+            "ENVIRONMENT" => Ok(self.config.environment.clone()),
+            "BLOCK_MGT_URL" => Ok(self.config.block_mgt_url.clone()),
+            "CC_STATIC_URL" => Ok(self.config.cc_static_url.clone()),
+            "FLEET_URL" => Ok(self.config.fleet_url.clone()),
+            "GTFS_STATIC_URL" => Ok(self.config.gtfs_static_url.clone()),
+            _ => Err(anyhow::anyhow!("unknown config key: {key}")),
+        }
+    }
+}
 
 impl realtime::Publisher for Provider {
     async fn send(&self, topic: &str, message: &realtime::Message) -> Result<()> {
-        tracing::debug!("sending to topic: {}-{topic}", ENV.as_str());
+        tracing::debug!("sending to topic: {topic}");
 
         let client = Client::connect("").context("connecting to broker")?;
-        let topic = format!("{}-{topic}", ENV.as_str());
         let msg = Message::new(&message.payload);
+        let topic = format!("{}-{topic}", self.config.environment);
 
         wit_bindgen::block_on(async move {
             let _ = producer::send(&client, topic, msg).await.context("sending message");
@@ -57,7 +104,7 @@ impl realtime::HttpRequest for Provider {
 
 impl realtime::Identity for Provider {
     async fn access_token(&self) -> Result<String> {
-        let identity = env::var("AZURE_IDENTITY")?;
+        let identity = self.config.azure_identity.clone();
         let identity = block_on(get_identity(identity))?;
         let access_token = block_on(async move { identity.get_token(vec![]).await })?;
         Ok(access_token.token)

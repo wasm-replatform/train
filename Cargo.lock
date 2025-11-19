@@ -3286,6 +3286,7 @@ dependencies = [
  "bytes",
  "credibil-api",
  "dilax-adapter",
+ "fromenv",
  "http",
  "http-body",
  "r9k-adapter",

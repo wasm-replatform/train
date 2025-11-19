@@ -5,7 +5,6 @@ mod provider;
 
 use std::env;
 use std::str::FromStr;
-use std::sync::LazyLock;
 
 use anyhow::{Context, Result};
 use axum::routing::{get, post};
@@ -27,9 +26,6 @@ use crate::provider::Provider;
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
 
-static ENV: LazyLock<String> =
-    LazyLock::new(|| env::var("ENV").unwrap_or_else(|_| "dev".to_string()));
-
 pub struct Http;
 wasip3::http::proxy::export!(Http);
 
@@ -45,9 +41,8 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Json<Value>> {
-    let api = Client::new(provider::Provider);
+    let api = Client::new(provider::Provider::new());
     let router = api.request(DetectionRequest).owner("owner");
-
     let response = router.await.context("Issue running connection detector")?;
 
     Ok(Json(json!({
@@ -60,7 +55,7 @@ async fn detector() -> HttpResult<Json<Value>> {
 async fn receive_message(req: String) -> HttpResult<String> {
     info!(monotonic_counter.message_counter = 1, service = "train");
 
-    let api_client = Client::new(Provider);
+    let api_client = Client::new(Provider::new());
     let request = R9kRequest::from_str(&req).context("parsing envelope")?;
     let result = api_client.request(request).owner("owner").await;
 
@@ -90,7 +85,9 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
         let topic = message.topic().unwrap_or_default();
         debug!("received message on topic: {topic}");
 
-        if topic == format!("{}-{R9K_TOPIC}", ENV.as_str()) {
+        let env = env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
+
+        if topic == format!("{env}-{R9K_TOPIC}") {
             if let Err(e) = process_r9k(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
@@ -99,7 +96,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     service = "train"
                 );
             }
-        } else if topic == format!("{}-{DILAX_TOPIC}", ENV.as_str()) {
+        } else if topic == format!("{env}-{DILAX_TOPIC}") {
             if let Err(e) = process_dilax(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
@@ -118,7 +115,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 
 #[wasi_otel::instrument]
 async fn process_r9k(message: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider);
+    let api_client = Client::new(Provider::new());
     let request = R9kMessage::try_from(message).context("parsing message")?;
     api_client.request(request).owner("owner").await?;
     Ok(())
@@ -126,7 +123,7 @@ async fn process_r9k(message: &[u8]) -> Result<()> {
 
 #[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider);
+    let api_client = Client::new(Provider::new());
     let request: DilaxMessage = serde_json::from_slice(payload).context("deserializing event")?;
     api_client.request(request).owner("owner").await?;
     Ok(())

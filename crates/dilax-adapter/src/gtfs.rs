@@ -37,7 +37,7 @@ pub async fn location_stops(
         .context("building cc stops_by_location request")?;
 
     let response =
-        HttpRequest::fetch(provider, request).await.context("CC Static  request failed")?;
+        HttpRequest::fetch(provider, request).await.context("CC Static request failed")?;
 
     let body = response.into_body();
     let stops: Vec<CcStopResponse> =

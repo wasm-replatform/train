@@ -56,15 +56,16 @@ impl Provider {
 
 impl realtime::Config for Provider {
     async fn get(&self, key: &str) -> Result<String> {
-        match key {
-            "ENVIRONMENT" => Ok(self.config.environment.clone()),
-            "BLOCK_MGT_URL" => Ok(self.config.block_mgt_url.clone()),
-            "CC_STATIC_URL" => Ok(self.config.cc_static_url.clone()),
-            "FLEET_URL" => Ok(self.config.fleet_url.clone()),
-            "GTFS_STATIC_URL" => Ok(self.config.gtfs_static_url.clone()),
-            "AZURE_IDENTITY" => Ok(self.config.azure_identity.clone()),
-            _ => Err(anyhow::anyhow!("unknown config key: {key}")),
+        Ok(match key {
+            "ENVIRONMENT" => &self.config.environment,
+            "BLOCK_MGT_URL" => &self.config.block_mgt_url,
+            "CC_STATIC_URL" => &self.config.cc_static_url,
+            "FLEET_URL" => &self.config.fleet_url,
+            "GTFS_STATIC_URL" => &self.config.gtfs_static_url,
+            "AZURE_IDENTITY" => &self.config.azure_identity,
+            _ => return Err(anyhow::anyhow!("unknown config key: {key}")),
         }
+        .clone())
     }
 }
 

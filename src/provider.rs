@@ -16,7 +16,7 @@ use wit_bindgen::block_on;
 
 #[derive(Clone, Default)]
 pub struct Provider {
-    config: ConfigSettings,
+    pub config: ConfigSettings,
 }
 
 #[derive(Debug, Clone, FromEnv)]
@@ -42,7 +42,9 @@ pub struct ConfigSettings {
 
 impl Default for ConfigSettings {
     fn default() -> Self {
-        Self::from_env().finalize().unwrap_or_default()
+        // we panic here to ensure configuration is always loaded
+        // i.e. guest should not start without proper configuration
+        Self::from_env().finalize().expect("should load configuration")
     }
 }
 
@@ -60,6 +62,7 @@ impl realtime::Config for Provider {
             "CC_STATIC_URL" => Ok(self.config.cc_static_url.clone()),
             "FLEET_URL" => Ok(self.config.fleet_url.clone()),
             "GTFS_STATIC_URL" => Ok(self.config.gtfs_static_url.clone()),
+            "AZURE_IDENTITY" => Ok(self.config.azure_identity.clone()),
             _ => Err(anyhow::anyhow!("unknown config key: {key}")),
         }
     }

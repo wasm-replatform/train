@@ -3,7 +3,6 @@
 
 mod provider;
 
-use std::env;
 use std::str::FromStr;
 
 use anyhow::{Context, Result};
@@ -24,7 +23,7 @@ use wasip3::http::types::{ErrorCode, Request, Response};
 use crate::provider::Provider;
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
-const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
+const DILAX_TOPIC: &str = "realtime-dilax-apc.v1";
 
 pub struct Http;
 wasip3::http::proxy::export!(Http);
@@ -41,7 +40,7 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Json<Value>> {
-    let api = Client::new(provider::Provider::new());
+    let api = Client::new(Provider::new());
     let router = api.request(DetectionRequest).owner("owner");
     let response = router.await.context("Issue running connection detector")?;
 
@@ -85,7 +84,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
         let topic = message.topic().unwrap_or_default();
         debug!("received message on topic: {topic}");
 
-        let env = env::var("ENVIRONMENT").unwrap_or_else(|_| "dev".to_string());
+        let env = Provider::new().config.environment.clone();
 
         if topic == format!("{env}-{R9K_TOPIC}") {
             if let Err(e) = process_r9k(&message.data()).await {

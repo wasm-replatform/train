@@ -1,5 +1,3 @@
-use std::env;
-
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use http::Method;
@@ -7,7 +5,7 @@ use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
-use crate::HttpRequest;
+use crate::{Config, HttpRequest, Provider};
 
 const KEY_TRAIN_STOPS: &str = "gtfs:trainStops";
 
@@ -22,9 +20,11 @@ struct CcStopResponse {
 }
 
 pub async fn location_stops(
-    lat: &str, lon: &str, distance: u32, http: &impl HttpRequest,
+    lat: &str, lon: &str, distance: u32, provider: &impl Provider,
 ) -> Result<Vec<StopInfo>> {
-    let cc_static_addr = env::var("CC_STATIC_URL").context("getting `CC_STATIC_URL`")?;
+    let cc_static_addr =
+        Config::get(provider, "CC_STATIC_URL").await.context("getting `CC_STATIC_URL`")?;
+
     let url =
         format!("{cc_static_addr}/gtfs/stops/geosearch?lat={lat}&lng={lon}&distance={distance}");
 
@@ -36,7 +36,8 @@ pub async fn location_stops(
         .body(Empty::<Bytes>::new())
         .context("building cc stops_by_location request")?;
 
-    let response = http.fetch(request).await.context("CC Static  request failed")?;
+    let response =
+        HttpRequest::fetch(provider, request).await.context("CC Static request failed")?;
 
     let body = response.into_body();
     let stops: Vec<CcStopResponse> =
@@ -48,8 +49,9 @@ pub async fn location_stops(
         .collect())
 }
 
-pub async fn stop_types(http: &impl HttpRequest) -> Result<Vec<StopTypeEntry>> {
-    let gtfs_static_url = env::var("GTFS_STATIC_URL").context("getting `GTFS_STATIC_URL`")?;
+pub async fn stop_types(provider: &impl Provider) -> Result<Vec<StopTypeEntry>> {
+    let gtfs_static_url =
+        Config::get(provider, "GTFS_STATIC_URL").await.context("getting `GTFS_STATIC_URL`")?;
     let url = format!("{gtfs_static_url}/stopstypes/");
 
     let request = http::Request::builder()
@@ -61,7 +63,8 @@ pub async fn stop_types(http: &impl HttpRequest) -> Result<Vec<StopTypeEntry>> {
         .body(Empty::<Bytes>::new())
         .context("building train_stop_types request")?;
 
-    let response = http.fetch(request).await.context("GTFS Static request failed")?;
+    let response =
+        HttpRequest::fetch(provider, request).await.context("GTFS Static request failed")?;
 
     let body = response.into_body();
     let payload: StopTypesResponse =

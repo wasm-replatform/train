@@ -16,9 +16,9 @@ pub use self::stops::StopInfo;
 /// Result type for handlers.
 pub type Result<T> = anyhow::Result<T, Error>;
 
-pub use realtime::{HttpRequest, Identity, Message, Publisher};
+pub use realtime::{Config, HttpRequest, Identity, Message, Publisher};
 
 /// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + Identity + Publisher {}
+pub trait Provider: Config + HttpRequest + Identity + Publisher {}
 
-impl<T> Provider for T where T: HttpRequest + Identity + Publisher {}
+impl<T> Provider for T where T: Config + HttpRequest + Identity + Publisher {}

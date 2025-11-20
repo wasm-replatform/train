@@ -14,7 +14,7 @@ use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
 use http::{Request, Response};
-use r9k_adapter::{HttpRequest, Identity, Publisher, R9kMessage, SmarTrakEvent, StopInfo};
+use r9k_adapter::{Config, HttpRequest, Identity, Publisher, R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
 
 // Run a set of tests using inputs and outputs recorded from the legacy adapter.
@@ -108,12 +108,6 @@ impl MockProvider {
     #[allow(unused)]
     #[must_use]
     fn new(session: Session) -> Self {
-        // SAFETY: This is safe in a test context as tests are run sequentially.
-        unsafe {
-            std::env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
-            std::env::set_var("CC_STATIC_URL", "http://localhost:8080");
-        };
-
         Self { session, events: Arc::new(Mutex::new(Vec::new())) }
     }
 
@@ -121,6 +115,13 @@ impl MockProvider {
     #[must_use]
     pub fn events(&self) -> Vec<SmarTrakEvent> {
         self.events.lock().expect("should lock").clone()
+    }
+}
+
+impl Config for MockProvider {
+    async fn get(&self, _key: &str) -> Result<String> {
+        // BLOCK_MGT_URL, CC_STATIC_URL
+        Ok("http://localhost:8080".to_string())
     }
 }
 

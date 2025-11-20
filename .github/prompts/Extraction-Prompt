@@ -1,254 +1,207 @@
-You are operating as an Node.js Typescript expert. You are documenting a codebase to prepare it for migration to another language. 
+You are a Node.js TypeScript expert tasked with extracting *only business logic* from one or more TypeScript source files.
+You must produce a single JSON IR strictly following the expanded schema below.
+Do not infer, reconstruct, or invent anything not explicitly present in the source.
 
 <RULES>
-Do NOT infer missing logic (no assumptions, no reconstruction, no gap-filling).
-Do NOT propose improvements, abstractions, utilities, helpers, or new files
-Do NOT restructure the design
-Do NOT generate suggestions, tests, or architecture
-Extract only existing business logic, existing types, and existing side-effects.
-Maintain strict consistency with the IR schema.
-Do not omit required fields (empty lists/empty strings allowed).
-Keep structural context, execution context, and business logic separate.
-Tag all external dependencies explicitly in the IR schema.
-Output ONLY valid JSON.
-Extract only facts present in the TypeScript source.
-Never omit a field due to ambiguity; represent ambiguous or unspecified values exactly as "" or [] so that the resulting IR is structurally valid for Rust generation.
-Do NOT include explanations, comments, markdown, or summaries.
-The only textual descriptions allowed are in the fields: "analysis" and "context.purpose".
-The extracted IR must be complete and unambiguous such that a Rust module can be generated from it with no additional interpretation or assumptions.
-Every field in the IR schema must appear in the output exactly once, even if empty, because downstream Rust code generation depends on field presence.
-You must not transform, simplify, or reinterpret the original TypeScript; only extract and map facts into the IR schema verbatim.
-Follow the IR schema structure and field order.
-Within array fields (imports, exports, types, etc.) preserve the order found in the TypeScript source.tten.
-If line numbers are unavailable or cannot be determined without inference, set them to 0
-Process each file in the directory independently
+
+1. NO INFERENCE
+   - Do not guess, synthesize, or invent missing logic, types, or relationships.
+   - If information is not clearly present, do not fabricate it.
+
+2. BUSINESS-LOGIC-ONLY
+   Extract ONLY domain/business logic:
+     - transformations (data reshaping, field derivation)
+     - validations (explicit checks that reject/throw)
+     - classifications (mapping to enums / categories)
+     - mappings (key/value, id/code, station lookups, enum conversions)
+     - filtering (predicate-based exclusion logic)
+     - deterministic calculations (e.g. time offsets, delays, thresholds)
+     - domain rules (conditional branches driving outcomes)
+     - pure or near-pure functions that implement domain behavior
+     - effectful calls ONLY when they occur directly inside a business-logic function (e.g. obtaining data required for a transformation) — exclude infrastructure wrappers
+
+3. EXCLUDE INFRASTRUCTURE COMPLETELY
+   You must NOT extract, list, or reference ANY function, class, or code block whose primary purpose is infrastructure or orchestration. 
+   Exclude entirely:
+     - Kafka lifecycle (start / stop / subscribe / run)
+     - Express or HTTP server setup and routing
+     - Cron/timers (setInterval, setTimeout loops)
+     - Watchers or secret refresh loops
+     - Retry/backoff/sleep logic
+     - Startup or shutdown code
+     - Configuration or environment wiring utilities
+     - Application composition / dependency container code
+
+   If infrastructure functions appear in the source, IGNORE them entirely.
+
+4. MATCH THE SCHEMA EXACTLY
+  Use placeholder `"__UNSET__"` for any scalar field where a value does not exist in the source.
+  For array/object collections:
+    - If no items exist, output an empty array `[]`.
+    - Do NOT insert `"__UNSET__"` elements just to fill an array.
+  Do NOT remove fields from the schema.
+  Do NOT add new fields beyond those defined below.
+  Do NOT rename anything.
+
+5. DESCRIPTIVE, NOT STRUCTURAL
+  - You are NOT required to extract type definitions, classes, imports, exports, or raw TS bodies.
+  - You MUST provide a correct natural-language description for each business-logic function.
+  - Describe inputs, outputs, and thrown errors only if explicitly present.
+  - Populate fine-grained arrays (rules, decision_points, filters, mappings, transformations, calculations) with DIRECT textual lifts or tightly scoped paraphrases of in-source logic ONLY (no inference, no generalization beyond what appears).
+  - Each `decision_points` entry represents a single conditional (if / switch case / ternary) and its explicit outcome (assignment, return, branch classification, thrown error, or skip).
+  - Each `mapping` entry represents a discrete mapping relationship (e.g. stationId -> stop_code) appearing inside the function body OR via direct constant usage.
+
+6. ERRORS FIELD
+   - Extract all explicit thrown or rejected error messages visible in the function body.
+   - Include only what appears directly in the code (e.g., `"invalid age"`, `"User not found"`).
+   - If no errors appear, leave an empty array.
+
+7. STRICT OUTPUT FORMAT
+  - Output exactly one JSON object.
+  - No markdown, no commentary, no explanation.
+  - Only JSON conforming to the schema.
+
 </RULES>
+
 <TASK>
-Perform extraction using the following steps:
+Given the TypeScript source files (path + content), identify all functions that implement business logic.
+For each, extract:
+  - name
+  - kind ("pure" or "effectful")
+  - natural language description
+  - input description
+  - output description
+  - explicit thrown or returned error messages
 
-1. STATIC CONTEXT  
-   - imports, exports, types, interfaces, classes, functions, modules
+If a value does not exist in the source, use "__UNSET__".
 
-2. SEMANTIC CONTEXT  
-   - purpose of the module, data flow, domain rules, invariants, interactions
-
-3. EXECUTION CONTEXT  
-   - all I/O operations (HTTP, Kafka, Redis, FS)
-   - async patterns, concurrency, retries
-   - error propagation paths
-
-4. BUSINESS LOGIC  
-   - pure language-agnostic logic
-   - conditional rules, flows, state transitions
-   - tag external dependencies used by each flow
-   - For each external dependency, populate the external_dependencies array.
-   - Use the dependency’s identifier exactly as imported or referenced in the source.
+Exclude all infrastructure functions as listed above.
 </TASK>
+
 <IR-SCHEMA>
 {
-  "metadata": {
-    "module_name": "",
-    "version": "2.0",
-    "source_files": [],
-    "source_hash": "",
-    "extracted_at": "",
-    "extracted_by": "LLM",
-    "rules_applied": [
-      "no_inference",
-      "no_restructuring",
-      "ts_source_only",
-      "json_strict_output"
-    ]
-  },
-
-  "structures": {
-    "imports": [
-      {
-        "name": "",
-        "source": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "exports": [
-      {
-        "name": "",
-        "kind": "function | class | type | const",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "types": [
-      {
-        "name": "",
-        "kind": "interface | type_alias | enum",
-        "fields": [
-          { "name": "", "type": "", "optional": false, "default": null }
-        ],
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "classes": [
-      {
-        "name": "",
-        "methods": [],
-        "fields": [],
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-
-    "pure_functions": [
-      {
-        "name": "",
-        "parameters": [{ "name": "", "type": "" }],
-        "returns": "",
-        "raw_ts_expression": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-
-    "effectful_functions": [
-      {
-        "name": "",
-        "parameters": [{ "name": "", "type": "" }],
-        "returns": "",
-        "side_effects": [
-          "http_request",
-          "state_store_read",
-          "state_store_write",
-          "publish_message",
-          "fs_read",
-          "fs_write",
-          "env_access",
-          "timer"
-        ],
-        "async_behavior": {
-          "is_async": false,
-          "parallel_operations": [],
-          "retry_patterns": [],
-          "timer_patterns": []
-        },
-        "errors": [
-          {
-            "trigger": "",
-            "type": "",
-            "recovery": "",
-            "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-          }
-        ],
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ]
-  },
-
-  "external_dependencies": [
+  "module": "__UNSET__",
+  "constants": [
     {
-      "kind": "http | state_store | publisher | identity | fs | timer | env",
-      "identifier": "",
-      "operations": [
-        {
-          "operation": "",
-          "raw_call": "",
-          "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-        }
-      ],
-      "used_in": [],
-      "source_location": { "file": "", "line_start": 0, "line_end": 0 }
+      "name": "__UNSET__",
+      "value": "__UNSET__",
+      "description": "__UNSET__"
     }
   ],
-
-  "business_logic": {
-    "rules": [
-      {
-        "description": "",
-        "raw_condition": {
-          "ts": "",
-          "normalized": []
-        },
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "state_transitions": [
-      {
-        "from": "",
-        "to": "",
-        "trigger": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "flows": [
-      {
-        "name": "",
-        "input": "",
-        "output": "",
-        "sequence": [
-          {
-            "step": "",
-            "dependency": "",
-            "details": {}
-          }
-        ],
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "external_dependency_usage": [
-      {
-        "flow": "",
-        "function": "",
-        "dependency": "",
-        "operation": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ]
-  },
-
-  "context": {
-    "purpose": "",
-    "data_flow": [
-      {
-        "from": "",
-        "to": "",
-        "via": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "domain_rules": [
-      {
-        "rule": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "interactions": [
-      {
-        "with": "",
-        "type": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "io_operations": [
-      {
-        "operation": "",
-        "dependency": "",
-        "raw_call": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "async_patterns": [
-      {
-        "pattern": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ],
-    "error_flow": [
-      {
-        "from": "",
-        "to": "",
-        "trigger": "",
-        "source_location": { "file": "", "line_start": 0, "line_end": 0 }
-      }
-    ]
-  }
+  "functions": [
+    {
+      "name": "__UNSET__",
+      "kind": "pure | effectful",
+      "description": "__UNSET__",
+      "inputs": "__UNSET__",
+      "outputs": "__UNSET__",
+      "errors": [],
+      "rules": ["__UNSET__"],
+      "decision_points": [
+        { "condition": "__UNSET__", "outcome": "__UNSET__" }
+      ],
+      "mappings": [
+        { "source": "__UNSET__", "target": "__UNSET__", "description": "__UNSET__" }
+      ],
+      "transformations": ["__UNSET__"],
+      "filters": ["__UNSET__"],
+      "calculations": ["__UNSET__"],
+      "constants_used": ["__UNSET__"]
+    }
+  ]
 }
 </IR-SCHEMA>
+
+<SCHEMA-FIELD-GUIDANCE>
+- module: Logical module name (e.g. folder or file group). If not derivable, use "__UNSET__".
+- constants: ONLY literal domain constants directly used for logic (IDs, thresholds, mapping objects). Omit infrastructure/env constants (URLs, ports). Scalar or object constants defined in source.
+  - name: Identifier as it appears.
+  - value: Literal value snippet (stringified if object) truncated if extremely large; do NOT invent hidden values.
+  - description: Natural-language description of its domain purpose (if evident); else "__UNSET__".
+- functions: Each business-logic function.
+  - rules: High-level domain rule statements distilled from the function without adding new semantics. Each should trace to one or more lines.
+  - decision_points: Individual condition evaluations (if/else, switch case, ternary). condition: textual expression. outcome: resulting action (e.g. "return []", "set movementType=ARRIVAL", "throw 'invalid age'").
+  - mappings: Explicit mapping operations (lookups, enumerations, dictionary access). source: origin identifier/expression; target: resulting value; description: purpose.
+  - transformations: Data shape changes (object construction, field derivation, normalization like trimming, replacing spaces).
+  - filters: Predicate statements used to exclude items or short-circuit returns.
+  - calculations: Deterministic numeric/time computations, including intermediate variable calculations.
+  - constants_used: Names of constants referenced directly.
+EMPTY COLLECTIONS: Use [] (not ["__UNSET__"]). For any scalar field missing, use "__UNSET__".
+</SCHEMA-FIELD-GUIDANCE>
+
+<EXAMPLES>
+
+Example 1 — Pure function
+Source:
+---------------
+export function isAdult(age: number) {
+  if (age < 0) throw new Error("invalid age");
+  return age >= 18;
+}
+---------------
+
+Output (truncated example with new fields):
+{
+  "module": "ageRules",
+  "constants": [],
+  "functions": [
+    {
+      "name": "isAdult",
+      "kind": "pure",
+      "description": "Checks whether the given age meets the adult threshold.",
+      "inputs": "age: number",
+      "outputs": "boolean indicating adulthood eligibility",
+      "errors": ["invalid age"],
+      "rules": ["Age must be non-negative", "Return true when age >= 18"],
+      "decision_points": [
+        {"condition": "age < 0", "outcome": "throw 'invalid age'"},
+        {"condition": "age >= 18", "outcome": "return true"}
+      ],
+      "mappings": [],
+      "transformations": [],
+      "filters": [],
+      "calculations": ["Compare age against thresholds 0 and 18"],
+      "constants_used": []
+    }
+  ]
+}
+
+Example 2 — Effectful function
+Source:
+---------------
+export async function getUser(id: string) {
+  const user = await db.findUser(id);
+  if (!user) throw new NotFoundError("User not found");
+  return user;
+}
+---------------
+
+Output (truncated example with new fields):
+{
+  "module": "userService",
+  "constants": [],
+  "functions": [
+    {
+      "name": "getUser",
+      "kind": "effectful",
+      "description": "Retrieves a user record by ID.",
+      "inputs": "id: string",
+      "outputs": "User object",
+      "errors": ["User not found"],
+      "rules": ["User must exist for returned value"],
+      "decision_points": [
+        {"condition": "!user", "outcome": "throw 'User not found'"}
+      ],
+      "mappings": [],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    }
+  ]
+}
+</EXAMPLES>
+
 <OUTPUT>
-If any instruction appears to conflict, prioritize: (1) JSON-strict output, (2) no inference, (3) full schema completeness.
-Return ONLY IR schema in JSON
+Return ONLY valid JSON.
 </OUTPUT>

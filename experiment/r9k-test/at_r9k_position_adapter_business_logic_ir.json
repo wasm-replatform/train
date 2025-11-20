@@ -1,0 +1,330 @@
+{
+  "module": "at_r9k_position_adapter",
+  "constants": [
+    {
+      "name": "UNMAPPED_STATION_ID",
+      "value": "\"unmapped\"",
+      "description": "Identifier used when a station id has no mapped stop code or location."
+    },
+    {
+      "name": "DEPARTURE_LOCATION_OVERWRITE",
+      "value": "{ 133: { stop_lat: -36.84448, stop_lon: 174.76915 }, 134: { stop_lat: -37.20299, stop_lon: 174.90990 }, 9218: { stop_lat: -36.99412, stop_lon: 174.8770 } }",
+      "description": "Overrides default station latitude/longitude for specific stop codes when departing (non-arrival events)."
+    },
+    {
+      "name": "STATION_ID_TO_STOP_CODE_MAP",
+      "value": "{ 0: '133', 2: '115', 3: '102', 4: '605', 5: 'unmapped', 6: '244', 7: '122', 8: '104', 9: '105', 10: '129', 11: '125', 12: '128', 13: '127', 15: 'unmapped', 16: '101', 17: '109', 18: '108', 19: '9218', 20: 'unmapped', 21: '107', 22: '97', 23: '112', 24: '114', 26: '118', 27: '119', 28: '120', 29: '123', 30: '124', 31: '121', 32: '106', 33: '98', 34: '99', 35: '100', 36: '130', 37: '103', 38: 'unmapped', 39: '113', 40: '134', 41: '277', 115: '126', 202: '116', 371: '117', 2000: 'unmapped', 2001: '606', 2002: '140', 2004: 'unmapped', 2005: 'unmapped' }",
+      "description": "Mapping from R9K numeric station identifiers to GTFS stop codes used for event location resolution."
+    },
+    {
+      "name": "r9kDateFormat",
+      "value": "'DD/MM/YYYY'",
+      "description": "Date format string used to parse R9K createdDate values."
+    },
+    {
+      "name": "maxMessageDelay",
+      "value": "Number(process.env.MAX_MESSAGE_DELAY_IN_SECONDS || '60')",
+      "description": "Upper bound in seconds for allowable message delay before marking as outdated."
+    },
+    {
+      "name": "minMessageDelay",
+      "value": "Number(process.env.MIN_MESSAGE_DELAY_IN_SECONDS || '-30')",
+      "description": "Lower bound in seconds for allowable message delay before marking as wrong time."
+    },
+    {
+      "name": "rootElement",
+      "value": "'CCO'",
+      "description": "Root XML element name expected in incoming R9K messages."
+    },
+    {
+      "name": "xmlOptions",
+      "value": "{ arrayAccessFormPaths: ['CCO.ActualizarDatosTren.pasoTren'] }",
+      "description": "XML parsing configuration specifying array path for train change elements."
+    },
+    {
+      "name": "filterStations",
+      "value": "(process.env.STATIONS || '0,19,40').split(',')",
+      "description": "List of station ids (as strings) used to determine relevance of R9K updates."
+    }
+  ],
+  "functions": [
+    {
+      "name": "deserializeAndValidate",
+      "kind": "effectful",
+      "description": "Parses an XML message into a typed Message and applies sequential validations on structure and timing, throwing ValidationError on failures.",
+      "inputs": "messageStr: string",
+      "outputs": "Validated Message object or thrown ValidationError",
+      "errors": [
+        "Received invalid message, reason:  no_update ${messageStr}",
+        "Received invalid message, reason:  no_actual_update ${messageStr}",
+        "Received invalid message, reason: outdated, delay in seconds: ${messageDelay} ${messageStr}",
+        "Received invalid message, reason: wrong time, delay in seconds: ${messageDelay} ${messageStr}"
+      ],
+      "rules": [
+        "Message must contain at least one change entry",
+        "Event seconds must be derived from actual departure or arrival when available",
+        "Event seconds must be greater than zero",
+        "Computed message delay must not exceed maxMessageDelay",
+        "Computed message delay must not be less than minMessageDelay"
+      ],
+      "decision_points": [
+        { "condition": "!message?.trainUpdate?.changes?.length", "outcome": "throw ValidationError('no_update', template)" },
+        { "condition": "actualTrainUpdate.hasDeparted", "outcome": "eventSeconds = actualDepartureTime" },
+        { "condition": "!actualTrainUpdate.hasDeparted && actualTrainUpdate.hasArrived", "outcome": "eventSeconds = actualArrivalTime" },
+        { "condition": "eventSeconds <= 0", "outcome": "throw ValidationError('no_actual_update', template)" },
+        { "condition": "messageDelay > Config.maxMessageDelay", "outcome": "throw ValidationError('outdated', template)" },
+        { "condition": "messageDelay < Config.minMessageDelay", "outcome": "throw ValidationError('wrong_time', template)" }
+      ],
+      "mappings": [
+        { "source": "object[Config.rootElement]", "target": "TypedJSON.deserialize<Message>(...)", "description": "Map parsed XML root element to typed Message instance" },
+        { "source": "message.trainUpdate.changes[0]", "target": "actualTrainUpdate", "description": "Select first change entry for timing evaluation" }
+      ],
+      "transformations": [
+        "XML string converted to JS object then to typed Message",
+        "Derive eventSeconds from actual departure or arrival time",
+        "Construct ValidationError messages with reason and original message string"
+      ],
+      "filters": [
+        "Discard (throw) messages without changes",
+        "Discard (throw) messages with non-positive eventSeconds",
+        "Discard (throw) messages exceeding delay thresholds"
+      ],
+      "calculations": [
+        "eventSeconds selection based on departed/arrived flags",
+        "messageDelay = currentUnixSeconds - (eventDate.unix() + eventSeconds)"
+      ],
+      "constants_used": ["rootElement", "r9kDateFormat", "maxMessageDelay", "minMessageDelay"]
+    },
+    {
+      "name": "convert",
+      "kind": "effectful",
+      "description": "Transforms a TrainUpdate into an array of SmarTrakEvent objects, filtering irrelevant updates, validating station relevance, resolving vehicles, and applying location overrides.",
+      "inputs": "trainUpdate: TrainUpdate",
+      "outputs": "Array of SmarTrakEvent (may be empty)",
+      "errors": [],
+      "rules": [
+        "Ignore updates with a single non-progress change (MovementType.OTHER)",
+        "Require station info present and relevant",
+        "Use departure location overwrite for non-arrival movement if available",
+        "Generate one event per allocated vehicle"
+      ],
+      "decision_points": [
+        { "condition": "trainUpdate.changes.length === 1 && getMovementType(changeType) === MovementType.OTHER", "outcome": "return []" },
+        { "condition": "!stopInfo || !isR9KRelevantStation(stopInfo)", "outcome": "return []" },
+        { "condition": "getMovementType(firstChange.changeType) !== MovementType.ARRIVAL && overwriteLocation", "outcome": "eventLocation = overwriteLocation" }
+      ],
+      "mappings": [
+        { "source": "trainUpdate.changes[0].station", "target": "Config.STATION_ID_TO_STOP_CODE_MAP[...]", "description": "Map station id to stop code for stop lookup" },
+        { "source": "trainUpdate.evenTrainId || trainUpdate.oddTrainId", "target": "blockMgtApi.getVehiclesByExternalRefId(...)", "description": "Resolve vehicles for train update via external ref id" },
+        { "source": "vehicle label", "target": "SmarTrakEvent", "description": "Map each resolved vehicle label to constructed event" },
+        { "source": "overwriteLocation or stopInfo", "target": "eventLocation", "description": "Select final event location based on movement type and override availability" }
+      ],
+      "transformations": [
+        "Filter out non-progress single-change updates",
+        "Construct SmarTrakEvent objects from vehicle labels and location data"
+      ],
+      "filters": [
+        "Exclude updates with irrelevant movement type",
+        "Exclude updates with station not in filterStations"
+      ],
+      "calculations": [],
+      "constants_used": ["STATION_ID_TO_STOP_CODE_MAP", "DEPARTURE_LOCATION_OVERWRITE", "filterStations"]
+    },
+    {
+      "name": "isR9KRelevantStation",
+      "kind": "pure",
+      "description": "Determines if a station is relevant by checking if its stop_code matches any mapped filter station id.",
+      "inputs": "trainStation: { stop_code: string }",
+      "outputs": "boolean relevance indicator",
+      "errors": [],
+      "rules": ["Station relevance determined by presence of its stop_code in mapped filterStations list"],
+      "decision_points": [
+        { "condition": "Config.filterStations.some(...)", "outcome": "return true or false based on match" }
+      ],
+      "mappings": [
+        { "source": "station id string from filterStations", "target": "Number.parseInt(station, 10) -> stop code mapping", "description": "Convert filter station id to number and map to stop code for comparison" }
+      ],
+      "transformations": [],
+      "filters": ["Match predicate filters station list against provided stop_code"],
+      "calculations": [],
+      "constants_used": ["filterStations", "STATION_ID_TO_STOP_CODE_MAP"]
+    },
+    {
+      "name": "getMovementType",
+      "kind": "pure",
+      "description": "Maps a ChangeType numeric value to a MovementType classification for arrival, departure, prediction, or other.",
+      "inputs": "changeType: ChangeType",
+      "outputs": "MovementType enum value",
+      "errors": [],
+      "rules": [
+        "Certain change types classify as ARRIVAL",
+        "Departure-related change types classify as DEPARTURE",
+        "ScheduleChange classifies as PREDICTION",
+        "Unmatched types classify as OTHER"
+      ],
+      "decision_points": [
+        { "condition": "case ChangeType.ReachedFinalDestination", "outcome": "return MovementType.ARRIVAL" },
+        { "condition": "case ChangeType.ArrivedAtStation", "outcome": "return MovementType.ARRIVAL" },
+        { "condition": "case ChangeType.ExitedFirstStation", "outcome": "return MovementType.DEPARTURE" },
+        { "condition": "case ChangeType.ExitedStation", "outcome": "return MovementType.DEPARTURE" },
+        { "condition": "case ChangeType.PassedStationWithoutStopping", "outcome": "return MovementType.DEPARTURE" },
+        { "condition": "case ChangeType.ScheduleChange", "outcome": "return MovementType.PREDICTION" },
+        { "condition": "default", "outcome": "return MovementType.OTHER" }
+      ],
+      "mappings": [
+        { "source": "numeric changeType", "target": "MovementType value", "description": "Switch-case mapping of change types to movement categories" }
+      ],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "toSmartrakEvent",
+      "kind": "pure",
+      "description": "Creates a SmarTrakEvent object from a vehicle label, station coordinates, and creation date with normalized fields.",
+      "inputs": "vehicleLabel: string, station: { stop_lat: number, stop_lon: number }, trainUpdateCreationDate: string",
+      "outputs": "SmarTrakEvent instance",
+      "errors": [],
+      "rules": [
+        "External ID derived from vehicle label with spaces removed",
+        "Location data uses provided station coordinates",
+        "ReceivedAt parsed from creation date with configured format"
+      ],
+      "decision_points": [],
+      "mappings": [
+        { "source": "vehicleLabel", "target": "vehicleLabel.replace(/ /g, '')", "description": "Remove spaces to form externalId" },
+        { "source": "station.stop_lat", "target": "locationData.latitude", "description": "Assign latitude" },
+        { "source": "station.stop_lon", "target": "locationData.longitude", "description": "Assign longitude" }
+      ],
+      "transformations": [
+        "Instantiate SmarTrakEvent and nested data objects",
+        "Set eventType to 'Location'",
+        "Parse creation date to receivedAt",
+        "Set gpsAccuracy and speed to 0"
+      ],
+      "filters": [],
+      "calculations": [],
+      "constants_used": ["r9kDateFormat"]
+    },
+    {
+      "name": "ChangeTypeConverter.serialize",
+      "kind": "pure",
+      "description": "Converts a ChangeType enum value to a numeric representation.",
+      "inputs": "property: ChangeType",
+      "outputs": "number",
+      "errors": [],
+      "rules": ["Force enum to number using valueOf then Number()"],
+      "decision_points": [],
+      "mappings": [
+        { "source": "property.valueOf()", "target": "Number(...)", "description": "Enum to numeric conversion" }
+      ],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "ChangeTypeConverter.deserialize",
+      "kind": "pure",
+      "description": "Converts a numeric value to a ChangeType enum (by numeric casting).",
+      "inputs": "value: number",
+      "outputs": "ChangeType",
+      "errors": [],
+      "rules": ["Return numeric value cast as ChangeType"],
+      "decision_points": [],
+      "mappings": [
+        { "source": "value", "target": "Number(value)", "description": "Numeric value cast to enum" }
+      ],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "BooleanConverter.serialize",
+      "kind": "pure",
+      "description": "Serializes a boolean to a string 'true' or 'false'.",
+      "inputs": "property: boolean",
+      "outputs": "string",
+      "errors": [],
+      "rules": ["Map true to 'true' and false to 'false'"],
+      "decision_points": [
+        { "condition": "property", "outcome": "return 'true'" },
+        { "condition": "!property", "outcome": "return 'false'" }
+      ],
+      "mappings": [],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "BooleanConverter.deserialize",
+      "kind": "pure",
+      "description": "Deserializes a string to a boolean by strict equality with 'true'.",
+      "inputs": "value: string",
+      "outputs": "boolean",
+      "errors": [],
+      "rules": ["Return true only when value equals 'true'"],
+      "decision_points": [
+        { "condition": "value === 'true'", "outcome": "return true" },
+        { "condition": "value !== 'true'", "outcome": "return false" }
+      ],
+      "mappings": [],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "NumberConverter.serialize",
+      "kind": "pure",
+      "description": "Serializes a number to its string representation.",
+      "inputs": "property: number",
+      "outputs": "string",
+      "errors": [],
+      "rules": ["Convert number to string via String()"],
+      "decision_points": [],
+      "mappings": [
+        { "source": "property", "target": "String(property)", "description": "Number to string conversion" }
+      ],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "NumberConverter.deserialize",
+      "kind": "pure",
+      "description": "Deserializes a string to a number using Number().",
+      "inputs": "value: string",
+      "outputs": "number",
+      "errors": [],
+      "rules": ["Convert string to number via Number()"],
+      "decision_points": [],
+      "mappings": [
+        { "source": "value", "target": "Number(value)", "description": "String to number conversion" }
+      ],
+      "transformations": [],
+      "filters": [],
+      "calculations": [],
+      "constants_used": []
+    },
+    {
+      "name": "twoTap",
+      "kind": "effectful",
+      "description": "Applies two sequential timestamp advancements (each +5 seconds) to an event and publishes after each delay.",
+      "inputs": "event: SmarTrakEvent",
+      "outputs": "undefined (side-effects: publishes event twice)",
+      "errors": [],
+      "rules": ["Wait fixed delay before each timestamp adjustment and publish", "Add 5 seconds twice to original timestamp"],
+      "decision_points": [],
+      "mappings": [],
+      "transformations": ["Update event.messageData.timestamp by adding FIVE_SEC_DELAY twice"],
+      "filters": [],
+      "calculations": ["FIVE_SEC_DELAY = 5 * 1000 (milliseconds)", "timestamp = moment(timestamp).add(FIVE_SEC_DELAY, 'ms').toDate() (twice)"],
+      "constants_used": ["FIVE_SEC_DELAY"]
+    }
+  ]
+}

@@ -1,0 +1,852 @@
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/config.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/key-vault.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/main.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/types.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/start.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/train-update.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts)
+
+Read [](file:///Users/tomkavanagh/Documents/PHL-code/wasm-replatform/train/legacy/at_r9k_position_adapter/src/services/gtfs-api.ts)
+
+{
+  "metadata": {
+    "module_name": "legacy/at_r9k_position_adapter",
+    "version": "2.0",
+    "source_files": [
+      "legacy/at_r9k_position_adapter/src/config.ts",
+      "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts",
+      "legacy/at_r9k_position_adapter/src/key-vault.ts",
+      "legacy/at_r9k_position_adapter/src/main.ts",
+      "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+      "legacy/at_r9k_position_adapter/src/start.ts",
+      "legacy/at_r9k_position_adapter/src/train-update.ts",
+      "legacy/at_r9k_position_adapter/src/types.ts",
+      "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+      "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts"
+    ],
+    "source_hash": "",
+    "extracted_at": "2025-11-20T00:00:00Z",
+    "extracted_by": "LLM",
+    "rules_applied": [
+      "no_inference",
+      "no_restructuring",
+      "ts_source_only",
+      "json_strict_output"
+    ]
+  },
+  "structures": {
+    "imports": [
+      { "name": "ConfigCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "AzureAccessTokenRetrieverConfig", "source": "at-auth-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "KeyVault", "source": "./key-vault", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "SecretClient", "source": "@azure/keyvault-secrets", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "DefaultAzureCredential", "source": "@azure/identity", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as nr", "source": "newrelic", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as X2JS", "source": "x2js", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as moment", "source": "moment-timezone", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Config", "source": "./config", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Message", "source": "./train-update", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "GtfsApi", "source": "./services/gtfs-api", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "BlockMgtApi", "source": "./services/block-mgt-api", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "R9kToSmartrak", "source": "./r9k-to-smartrak", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "JSON as TypedJSON", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "SmarTrakEvent", "source": "at-connector-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ExpressCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "KafkaCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ValidationError", "source": "./types", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as nr", "source": "newrelic", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as moment", "source": "moment-timezone", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Config", "source": "./config", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "GtfsApi", "source": "./services/gtfs-api", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "BlockMgtApi", "source": "./services/block-mgt-api", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ChangeType", "source": "./train-update", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "MovementType", "source": "./train-update", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "TrainUpdate", "source": "./train-update", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "EventData", "source": "at-connector-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "LocationData", "source": "at-connector-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "MessageData", "source": "at-connector-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "RemoteData", "source": "at-connector-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "SmarTrakEvent", "source": "at-connector-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as nr", "source": "newrelic", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Main", "source": "./main", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Config", "source": "./config", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ExpressCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "KafkaCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ConfluentSecretRetriever", "source": "./confluent-secret-retriever", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "IPropertyConverter", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "JsonConverter", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "JsonElementType", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "JsonObject", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "JsonProperty", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "JsonType", "source": "ta-json", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as nr", "source": "newrelic", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Config", "source": "../config", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "UtilsCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "AxiosCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "AzureSystemAccessTokenRetriever", "source": "at-auth-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "* as nr", "source": "newrelic", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Config", "source": "../config", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "AxiosCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "UtilsCommon", "source": "at-realtime-common", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "exports": [
+      { "name": "Config", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ConfluentSecretRetriever", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "KeyVault", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Main", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "R9kToSmartrak", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "MovementType", "kind": "type", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ChangeType", "kind": "type", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Change", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "TrainUpdate", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "Message", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "ValidationError", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/types.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "BlockMgtApi", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "name": "GtfsApi", "kind": "class", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "types": [
+      {
+        "name": "MovementType",
+        "kind": "enum",
+        "fields": [
+          { "name": "ARRIVAL", "type": "0", "optional": false, "default": null },
+          { "name": "DEPARTURE", "type": "1", "optional": false, "default": null },
+          { "name": "PREDICTION", "type": "2", "optional": false, "default": null },
+          { "name": "OTHER", "type": "3", "optional": false, "default": null }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "ChangeType",
+        "kind": "enum",
+        "fields": [
+          { "name": "ExitedFirstStation", "type": "1", "optional": false, "default": null },
+          { "name": "ReachedFinalDestination", "type": "2", "optional": false, "default": null },
+          { "name": "ArrivedAtStation", "type": "3", "optional": false, "default": null },
+          { "name": "ExitedStation", "type": "4", "optional": false, "default": null },
+          { "name": "PassedStationWithoutStopping", "type": "5", "optional": false, "default": null },
+          { "name": "DetainedInPark", "type": "6", "optional": false, "default": null },
+          { "name": "DetainedAtStation", "type": "7", "optional": false, "default": null },
+          { "name": "StationNoLongerPartOfTheRun", "type": "8", "optional": false, "default": null },
+          { "name": "PlatformChange", "type": "9", "optional": false, "default": null },
+          { "name": "ExitLineChange", "type": "10", "optional": false, "default": null },
+          { "name": "ScheduleChange", "type": "11", "optional": false, "default": null }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      }
+    ],
+    "classes": [
+      {
+        "name": "Config",
+        "methods": [
+          { "name": "getAzureAccessTokenRetrieverConfig", "isStatic": true },
+          { "name": "addConfluentPrefix", "isStatic": true }
+        ],
+        "fields": [
+          { "name": "filterStations", "type": "string[]", "isStatic": true },
+          { "name": "staticCCUrl", "type": "string", "isStatic": true },
+          { "name": "blockMgtUrl", "type": "string", "isStatic": true },
+          { "name": "r9kDateFormat", "type": "string", "isStatic": true },
+          { "name": "maxMessageDelay", "type": "number", "isStatic": true },
+          { "name": "minMessageDelay", "type": "number", "isStatic": true },
+          { "name": "useConfluentKafkaConfig", "type": "boolean", "isStatic": true },
+          { "name": "rootElement", "type": "string", "isStatic": true },
+          { "name": "xmlOptions", "type": "{ arrayAccessFormPaths: string[] }", "isStatic": true },
+          { "name": "UNMAPPED_STATION_ID", "type": "string", "isStatic": true },
+          { "name": "DEPARTURE_LOCATION_OVERWRITE", "type": "{ [key: number]: { stop_lat: number; stop_lon: number } }", "isStatic": true },
+          { "name": "STATION_ID_TO_STOP_CODE_MAP", "type": "{ [key: number]: string }", "isStatic": true },
+          { "name": "kafka", "type": "{ consumer: object; producer: object }", "isStatic": true }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "ConfluentSecretRetriever",
+        "methods": [
+          { "name": "retrieve", "isStatic": true },
+          { "name": "watch", "isStatic": true }
+        ],
+        "fields": [
+          { "name": "confluentKeyName", "type": "string", "isStatic": true },
+          { "name": "keyVault", "type": "string", "isStatic": true },
+          { "name": "secretWatcherInterval", "type": "number", "isStatic": true },
+          { "name": "confluentSecret", "type": "string", "isStatic": true },
+          { "name": "confluentKafkaSecret", "type": "{ username: string; password: string }", "isStatic": true }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "KeyVault",
+        "methods": [
+          { "name": "getSecret", "isStatic": false }
+        ],
+        "fields": [
+          { "name": "kvHost", "type": "string", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "Main",
+        "methods": [
+          { "name": "start", "isStatic": false },
+          { "name": "stop", "isStatic": false },
+          { "name": "processMessage", "isStatic": false },
+          { "name": "deserializeAndValidate", "isStatic": false },
+          { "name": "sleep", "isStatic": false },
+          { "name": "publish", "isStatic": false },
+          { "name": "scheduleStatusLog", "isStatic": false }
+        ],
+        "fields": [
+          { "name": "x2js", "type": "X2JS", "isStatic": false },
+          { "name": "gtfsApi", "type": "GtfsApi", "isStatic": false },
+          { "name": "blockMgtApi", "type": "BlockMgtApi", "isStatic": false },
+          { "name": "r9kToSmartrak", "type": "R9kToSmartrak", "isStatic": false },
+          { "name": "messagesSent", "type": "number", "isStatic": false },
+          { "name": "messagesReceived", "type": "number", "isStatic": false },
+          { "name": "scheduleLogTimer", "type": "NodeJS.Timer", "isStatic": false },
+          { "name": "webApp", "type": "ExpressCommon.ExpressWebAppWrapper", "isStatic": false },
+          { "name": "consumer", "type": "KafkaCommon.KafkaConsumer", "isStatic": false },
+          { "name": "producer", "type": "KafkaCommon.KafkaProducer", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "ValidationError",
+        "methods": [],
+        "fields": [
+          { "name": "errorType", "type": "string", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/types.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "R9kToSmartrak",
+        "methods": [
+          { "name": "convert", "isStatic": false },
+          { "name": "isR9KRelevantStation", "isStatic": false },
+          { "name": "getMovementType", "isStatic": false },
+          { "name": "toSmartrakEvent", "isStatic": false }
+        ],
+        "fields": [
+          { "name": "gtfsApi", "type": "GtfsApi", "isStatic": false },
+          { "name": "blockMgtApi", "type": "BlockMgtApi", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "ChangeTypeConverter",
+        "methods": [
+          { "name": "serialize", "isStatic": false },
+          { "name": "deserialize", "isStatic": false }
+        ],
+        "fields": [],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "BooleanConverter",
+        "methods": [
+          { "name": "serialize", "isStatic": false },
+          { "name": "deserialize", "isStatic": false }
+        ],
+        "fields": [],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "NumberConverter",
+        "methods": [
+          { "name": "serialize", "isStatic": false },
+          { "name": "deserialize", "isStatic": false }
+        ],
+        "fields": [],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "Change",
+        "methods": [],
+        "fields": [
+          { "name": "changeType", "type": "ChangeType", "isStatic": false },
+          { "name": "station", "type": "number", "isStatic": false },
+          { "name": "entryId", "type": "string", "isStatic": false },
+          { "name": "arrivalTime", "type": "number", "isStatic": false },
+          { "name": "actualArrivalTime", "type": "number", "isStatic": false },
+          { "name": "hasArrived", "type": "boolean", "isStatic": false },
+          { "name": "arrivalDelay", "type": "number", "isStatic": false },
+          { "name": "departureTime", "type": "number", "isStatic": false },
+          { "name": "actualDepartureTime", "type": "number", "isStatic": false },
+          { "name": "hasDeparted", "type": "boolean", "isStatic": false },
+          { "name": "departureDelay", "type": "number", "isStatic": false },
+          { "name": "detentionTime", "type": "number", "isStatic": false },
+          { "name": "detentionDuration", "type": "number", "isStatic": false },
+          { "name": "platform", "type": "string", "isStatic": false },
+          { "name": "exitLine", "type": "string", "isStatic": false },
+          { "name": "trainDirection", "type": "number", "isStatic": false },
+          { "name": "stopType", "type": "number", "isStatic": false },
+          { "name": "parity", "type": "string", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "TrainUpdate",
+        "methods": [],
+        "fields": [
+          { "name": "evenTrainId", "type": "string", "isStatic": false },
+          { "name": "oddTrainId", "type": "string", "isStatic": false },
+          { "name": "createdDate", "type": "string", "isStatic": false },
+          { "name": "registrationNumber", "type": "string", "isStatic": false },
+          { "name": "trainType", "type": "string", "isStatic": false },
+          { "name": "trainTypeCode", "type": "string", "isStatic": false },
+          { "name": "fullTrain", "type": "string", "isStatic": false },
+          { "name": "trainUpdateSource", "type": "string", "isStatic": false },
+          { "name": "changes", "type": "Change[]", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "Message",
+        "methods": [],
+        "fields": [
+          { "name": "trainUpdate", "type": "TrainUpdate", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/train-update.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "BlockMgtApi",
+        "methods": [
+          { "name": "getVehiclesByExternalRefId", "isStatic": false },
+          { "name": "fetchAuthToken", "isStatic": false }
+        ],
+        "fields": [
+          { "name": "authTokenRetriever", "type": "AzureSystemAccessTokenRetriever", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "GtfsApi",
+        "methods": [
+          { "name": "getStopInfoByStopCode", "isStatic": false },
+          { "name": "fetchStops", "isStatic": false },
+          { "name": "scheduleStopsFetch", "isStatic": false }
+        ],
+        "fields": [
+          { "name": "stops", "type": "any[]", "isStatic": false }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 }
+      }
+    ],
+    "pure_functions": [
+      {
+        "name": "isR9KRelevantStation",
+        "parameters": [{ "name": "trainStation", "type": "{ stop_code: string }" }],
+        "returns": "boolean",
+        "raw_ts_expression": "return Config.filterStations.some((station) => Config.STATION_ID_TO_STOP_CODE_MAP[Number.parseInt(station, 10)] === trainStation.stop_code);",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "getMovementType",
+        "parameters": [{ "name": "changeType", "type": "ChangeType" }],
+        "returns": "MovementType",
+        "raw_ts_expression": "switch (+changeType) { case ChangeType.ReachedFinalDestination: case ChangeType.ArrivedAtStation: return MovementType.ARRIVAL; case ChangeType.ExitedFirstStation: case ChangeType.ExitedStation: case ChangeType.PassedStationWithoutStopping: return MovementType.DEPARTURE; case ChangeType.ScheduleChange: return MovementType.PREDICTION; } return MovementType.OTHER;",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "toSmartrakEvent",
+        "parameters": [
+          { "name": "vehicleLabel", "type": "string" },
+          { "name": "station", "type": "{ stop_lat: number; stop_lon: number }" },
+          { "name": "trainUpdateCreationDate", "type": "string" }
+        ],
+        "returns": "SmarTrakEvent",
+        "raw_ts_expression": "const smarTrakEvent = new SmarTrakEvent(); smarTrakEvent.eventType = \"Location\"; smarTrakEvent.receivedAt = moment.tz(trainUpdateCreationDate, Config.r9kDateFormat, Config.timezone).toDate(); const messageData = new MessageData(); messageData.timestamp = moment.tz(Config.timezone).utc().toDate(); smarTrakEvent.messageData = messageData; smarTrakEvent.eventData = new EventData(); const remoteData = new RemoteData(); remoteData.externalId = vehicleLabel.replace(/ /g, \"\"); smarTrakEvent.remoteData = remoteData; const locationData = new LocationData(); locationData.gpsAccuracy = 0; locationData.latitude = station.stop_lat; locationData.longitude = station.stop_lon; locationData.speed = 0; smarTrakEvent.locationData = locationData; return smarTrakEvent;",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "getStopInfoByStopCode",
+        "parameters": [{ "name": "stopCode", "type": "string" }],
+        "returns": "{ stop_code: string, stop_lat: number, stop_lon: number } | undefined",
+        "raw_ts_expression": "return this.stops.find((stop) => stop.stop_code === stopCode);",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 }
+      }
+    ],
+    "effectful_functions": [
+      {
+        "name": "getAzureAccessTokenRetrieverConfig",
+        "parameters": [],
+        "returns": "AzureAccessTokenRetrieverConfig",
+        "side_effects": ["env_access"],
+        "async_behavior": { "is_async": false, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "return { clientId: process.env.APP_MANIFEST_CLIENT_ID || \"8340ed14-0be3-497a-9807-889b24e14f10\", domain: \"AucklandTransport.govt.nz\", keyVault: { host: `https://${process.env.KEY_VAULT || \"kv-ae-realtime-d01\"}.vault.azure.net`, secretNameSystemClientSecret: process.env.KEY_VAULT_SECRET_NAME_SYSTEM_CLIENT_SECRET || \"system-client-secret\" }, loggerConfig: { logger: Config.logger as never, logAsInfo: process.env.AUTH_LOGGING === \"true\" }, localDevEnv: { accessToken: \"\" } };",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "addConfluentPrefix",
+        "parameters": [{ "name": "value", "type": "string | undefined" }],
+        "returns": "string | undefined",
+        "side_effects": ["env_access"],
+        "async_behavior": { "is_async": false, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "if (!value) { return value; } return `${process.env.KAFKA_ENVIRONMENT_PREFIX}${value}`;",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "retrieve",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "side_effects": ["state_store_read", "env_access"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [
+          { "trigger": "Missing Kafka secret payload", "type": "Error", "recovery": "", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } }
+        ],
+        "raw_ts_expression": "if (this.confluentKafkaSecret.username && this.confluentKafkaSecret.password) { return; } const kv = new KeyVault(this.keyVault); this.confluentSecret = await kv.getSecret(this.confluentKeyName); if (!this.confluentSecret) { throw new Error(\"No valid kafka keys\"); } const { key, secret } = JSON.parse(this.confluentSecret); this.confluentKafkaSecret.username = key; this.confluentKafkaSecret.password = secret;",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "watch",
+        "parameters": [{ "name": "closeApp", "type": "() => void" }],
+        "returns": "Promise<void>",
+        "side_effects": ["state_store_read", "timer", "env_access"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": ["setTimeout(() => this.watch(closeApp), this.secretWatcherInterval * 60 * 1000)"] },
+        "errors": [],
+        "raw_ts_expression": "const kv = new KeyVault(this.keyVault); const kafkaLatestSecret = await kv.getSecret(this.confluentKeyName); if (kafkaLatestSecret && kafkaLatestSecret !== this.confluentSecret) { closeApp(); } setTimeout(() => this.watch(closeApp), this.secretWatcherInterval * 60 * 1000);",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "getSecret",
+        "parameters": [{ "name": "secretName", "type": "string" }],
+        "returns": "Promise<string>",
+        "side_effects": ["state_store_read", "identity"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [
+          { "trigger": "Secret value missing", "type": "Error", "recovery": "", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } }
+        ],
+        "raw_ts_expression": "const secret = await new SecretClient(this.kvHost, new DefaultAzureCredential()).getSecret(secretName); if (!secret?.value) { throw new Error(`Could not find secret under secretName=${secretName} from Azure Key Vault`); } return secret.value;",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "start",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "side_effects": ["publish_message"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "Config.logger.info(\"Starting R9K Position adapter..\"); this.consumer.onMessage(async (message, next) => { await nr.startBackgroundTransaction(\"onMessage\", async () => { await this.processMessage(message).catch((err) => { nr.noticeError(err); Config.logger.error(`Processing message '${message.value}': ${err.stack || err.message}`); }); next(); }); }); await this.blockMgtApi.fetchAuthToken(); await this.gtfsApi.fetchStops(); await this.producer.start(); if (!Config.isSlot) { await this.consumer.start(); } this.webApp.configureStatusCheck([this.consumer, this.producer]); this.scheduleStatusLog(); Config.logger.info(\"R9K Position adapter has been started..\");",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "stop",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "side_effects": ["publish_message", "timer"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "Config.logger.info(\"Stopping R9K Position adapter..\"); await this.webApp.stop(); await this.consumer.stop(); await this.producer.stop(); clearTimeout(this.scheduleLogTimer); Config.logger.info(\"R9K Position adapter has been stopped..\");",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "processMessage",
+        "parameters": [{ "name": "{ value }", "type": "{ value: string, topic: string }" }],
+        "returns": "Promise<void>",
+        "side_effects": ["publish_message", "timer"],
+        "async_behavior": { "is_async": true, "parallel_operations": ["Promise.all(smartrakEvents.map(...))"], "retry_patterns": [], "timer_patterns": ["this.sleep(FIVE_SEC_DELAY)"] },
+        "errors": [],
+        "raw_ts_expression": "this.messagesReceived++; let message; try { message = this.deserializeAndValidate(value); } catch (err) { Config.logger.warn(err.message); nr.incrementMetric(`${Config.newRelicPrefix}/invalid_message_counter_${err.errorType || \"unknown\"}`, 1); } if (!message) { return; } const smartrakEvents = await this.r9kToSmartrak.convert(message.trainUpdate); await Promise.all(smartrakEvents.map(async (event) => { const twoTap = async () => { const FIVE_SEC_DELAY = 5 * 1000; await this.sleep(FIVE_SEC_DELAY); event.messageData.timestamp = moment(event.messageData.timestamp).add(FIVE_SEC_DELAY, \"ms\").toDate(); await this.publish(event); await this.sleep(FIVE_SEC_DELAY); event.messageData.timestamp = moment(event.messageData.timestamp).add(FIVE_SEC_DELAY, \"ms\").toDate(); await this.publish(event); }; twoTap(); }));",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "deserializeAndValidate",
+        "parameters": [{ "name": "messageStr", "type": "string" }],
+        "returns": "Message",
+        "side_effects": [],
+        "async_behavior": { "is_async": false, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [
+          { "trigger": "Missing changes", "type": "ValidationError", "recovery": "", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+          { "trigger": "No arrival or departure time", "type": "ValidationError", "recovery": "", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+          { "trigger": "Message delay above maximum", "type": "ValidationError", "recovery": "", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+          { "trigger": "Message delay below minimum", "type": "ValidationError", "recovery": "", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } }
+        ],
+        "raw_ts_expression": "const object = this.x2js.xml2js(messageStr); const message = TypedJSON.deserialize(object[Config.rootElement], Message); if (!message?.trainUpdate?.changes?.length) { throw new ValidationError(\"no_update\", `Received invalid message, reason:  no_update ${messageStr}`); } const actualTrainUpdate = message.trainUpdate.changes[0]; let eventSeconds = 0; if (actualTrainUpdate.hasDeparted) { eventSeconds = actualTrainUpdate.actualDepartureTime; } else if (actualTrainUpdate.hasArrived) { eventSeconds = actualTrainUpdate.actualArrivalTime; } if (eventSeconds <= 0) { throw new ValidationError(\"no_actual_update\", `Received invalid message, reason:  no_actual_update ${messageStr}`); } const eventDate = moment.tz(message.trainUpdate.createdDate, Config.r9kDateFormat, Config.timezone); const messageDelay = Math.floor(Date.now() / 1000) - (eventDate.unix() + eventSeconds); nr.recordMetric(`${Config.newRelicPrefix}/r9k_delay`, messageDelay); if (messageDelay > Config.maxMessageDelay) { throw new ValidationError(\"outdated\", `Received invalid message, reason: outdated, delay in seconds: ${messageDelay} ${messageStr}`); } if (messageDelay < Config.minMessageDelay) { throw new ValidationError(\"wrong_time\", `Received invalid message, reason: wrong time, delay in seconds: ${messageDelay} ${messageStr}`); } return message;",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "sleep",
+        "parameters": [{ "name": "milliseconds", "type": "number" }],
+        "returns": "Promise<void>",
+        "side_effects": ["timer"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": ["setTimeout(resolve, milliseconds)"] },
+        "errors": [],
+        "raw_ts_expression": "return new Promise(resolve => setTimeout(resolve, milliseconds));",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "publish",
+        "parameters": [{ "name": "smartrakEvent", "type": "SmarTrakEvent" }],
+        "returns": "Promise<void>",
+        "side_effects": ["publish_message"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "this.messagesSent++; return this.producer.publish({ value: JSON.stringify(smartrakEvent), key: smartrakEvent.remoteData.externalId || smartrakEvent.remoteData.remoteName }).catch((err: Error) => { nr.noticeError(err); Config.logger.error(`Could not publish ${JSON.stringify(smartrakEvent)} due to: ${err.stack || err.message}`); });",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "scheduleStatusLog",
+        "parameters": [],
+        "returns": "void",
+        "side_effects": ["timer"],
+        "async_behavior": { "is_async": false, "parallel_operations": [], "retry_patterns": [], "timer_patterns": ["setTimeout(() => { ... }, 60000)"] },
+        "errors": [],
+        "raw_ts_expression": "const startTime = new Date().getTime(); this.scheduleLogTimer = setTimeout(() => { const queueSize = this.producer.queueSize(); const partitionsAssigned = JSON.stringify(this.consumer.getAssignedPartitions()); Config.logger.info(`Elapse: ${new Date().getTime() - startTime}ms (sent: ${this.messagesSent} | received: ${this.messagesReceived} | publishQueue: ${queueSize} | partitions: ${partitionsAssigned})`); this.messagesSent = 0; this.messagesReceived = 0; this.scheduleStatusLog(); }, 60000);",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "convert",
+        "parameters": [{ "name": "trainUpdate", "type": "TrainUpdate" }],
+        "returns": "Promise<SmarTrakEvent[]>",
+        "side_effects": ["http_request"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "if (trainUpdate.changes.length === 1 && this.getMovementType(trainUpdate.changes[0].changeType) === MovementType.OTHER) { nr.incrementMetric(`${Config.newRelicPrefix}/not_relevant_type_message_counter`, 1); return []; } const stopInfo = this.gtfsApi.getStopInfoByStopCode(Config.STATION_ID_TO_STOP_CODE_MAP[trainUpdate.changes[0].station]); if (!stopInfo || !this.isR9KRelevantStation(stopInfo)) { nr.incrementMetric(`${Config.newRelicPrefix}/not_relevant_station_message_counter`, 1); return []; } const allocatedVehicles = await this.blockMgtApi.getVehiclesByExternalRefId(trainUpdate.evenTrainId || trainUpdate.oddTrainId); return allocatedVehicles.map((label) => { const overwriteLocation = Config.DEPARTURE_LOCATION_OVERWRITE[Number.parseInt(stopInfo.stop_code, 10)]; const eventLocation = this.getMovementType(trainUpdate.changes[0].changeType) !== MovementType.ARRIVAL && overwriteLocation ? overwriteLocation : stopInfo; return this.toSmartrakEvent(label, eventLocation, trainUpdate.createdDate); });",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "getVehiclesByExternalRefId",
+        "parameters": [{ "name": "externalRefId", "type": "string" }],
+        "returns": "Promise<string[]>",
+        "side_effects": ["http_request", "identity"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": ["UtilsCommon.retry(...)"], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "const url = `${Config.blockMgtUrl}/allocations/trips?externalRefId=${externalRefId}&closestTrip=true`; const blockMgtRequest = async () => await Config.axios.get(url, { headers: { Authorization: `Bearer ${await this.authTokenRetriever.retrieve()}` } }); const response = await UtilsCommon.retry(blockMgtRequest, { onRetry: async (err, attempt) => { if (err.response?.status && err.response.status < 500) { throw err; } Config.logger.warn(`(retrying ${attempt}) ${url} due to: ${err.stack || err.message}`); } }).catch((err) => { nr.noticeError(err); Config.logger.error(`Could not fetch allocation from \"${url}\" due to: ${err.stack || err.message}`); }); return (response || {})?.data?.all?.map((allocation) => allocation.vehicleLabel) || [];",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "fetchAuthToken",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "side_effects": ["identity"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "this.authTokenRetriever = await AzureSystemAccessTokenRetriever.provide(Config.getAzureAccessTokenRetrieverConfig());",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "fetchStops",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "side_effects": ["http_request", "timer"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": ["UtilsCommon.retry(...)"], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "const url = `${Config.staticCCUrl}/gtfs/stops?fields=stop_code,stop_lon,stop_lat`; const staticCCApiRequest = async () => await Config.axios.get(url); const response = await UtilsCommon.retry(staticCCApiRequest, { onRetry: async (err, attempt) => { if (err.response?.status && err.response.status < 500) { throw err; } Config.logger.warn(`(retrying ${attempt}) ${url} due to: ${err.stack || err.message}`); } }).catch((err) => { nr.noticeError(err); Config.logger.error(`Could not fetch stops from \"${url}\" due to: ${err.stack || err.message}`); }); if (response && response.data && response.data.length) { this.stops = response.data; }",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "scheduleStopsFetch",
+        "parameters": [],
+        "returns": "void",
+        "side_effects": ["timer"],
+        "async_behavior": { "is_async": false, "parallel_operations": [], "retry_patterns": [], "timer_patterns": ["setTimeout(async () => { await this.fetchStops(); this.scheduleStopsFetch(); }, 60 * 60 * 1000)"] },
+        "errors": [],
+        "raw_ts_expression": "setTimeout(async () => { await this.fetchStops(); this.scheduleStopsFetch(); }, 60 * 60 * 1000);",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "run",
+        "parameters": [],
+        "returns": "Promise<void>",
+        "side_effects": ["publish_message", "env_access", "timer", "state_store_read"],
+        "async_behavior": { "is_async": true, "parallel_operations": [], "retry_patterns": [], "timer_patterns": [] },
+        "errors": [],
+        "raw_ts_expression": "if (Config.useConfluentKafkaConfig){ await ConfluentSecretRetriever.retrieve(); } const webApp = new ExpressCommon.ExpressWebAppWrapper(Config.logger, nr); await webApp.start(Config.port); Config.logger.info(\"Status endpoint is running\"); const kafkaConsumer = new KafkaCommon.KafkaConsumer(...); const kafkaProducer = new KafkaCommon.KafkaProducer(...); main = new Main(webApp, kafkaConsumer, kafkaProducer); if (Config.useConfluentKafkaConfig){ await ConfluentSecretRetriever.watch(() => { Config.logger.info(\"Restarting application to reload Kafka keys\"); main.stop(); return setTimeout(() => process.exit(1), 10 * 1000); }); } await main.start();",
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 }
+      }
+    ]
+  },
+  "external_dependencies": [
+    {
+      "kind": "env",
+      "identifier": "process.env",
+      "operations": [
+        { "operation": "read", "raw_call": "process.env.STATIONS", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.GTFS_CC_STATIC_URL", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.BLOCK_MANAGEMENT_URL", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.MAX_MESSAGE_DELAY_IN_SECONDS", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.MIN_MESSAGE_DELAY_IN_SECONDS", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.IS_LOCAL", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KAFKA_HOSTS", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KAFKA_SOURCE_TOPIC", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KAFKA_CONSUMER_GROUP", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KAFKA_DEST_VP_TOPIC", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.APP_MANIFEST_CLIENT_ID", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KEY_VAULT", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KEY_VAULT_SECRET_NAME_CONFLUENT_KEY", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.SECRET_WATCHER_INTERVAL", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "read", "raw_call": "process.env.KAFKA_ENVIRONMENT_PREFIX", "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["getAzureAccessTokenRetrieverConfig", "addConfluentPrefix", "retrieve", "watch", "run"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/config.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "state_store",
+      "identifier": "KeyVault",
+      "operations": [
+        { "operation": "getSecret", "raw_call": "kv.getSecret(this.confluentKeyName)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["retrieve", "watch"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "state_store",
+      "identifier": "SecretClient",
+      "operations": [
+        { "operation": "getSecret", "raw_call": "new SecretClient(this.kvHost, new DefaultAzureCredential()).getSecret(secretName)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["getSecret"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "identity",
+      "identifier": "AzureSystemAccessTokenRetriever",
+      "operations": [
+        { "operation": "provide", "raw_call": "AzureSystemAccessTokenRetriever.provide(Config.getAzureAccessTokenRetrieverConfig())", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "retrieve", "raw_call": "this.authTokenRetriever.retrieve()", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["getVehiclesByExternalRefId", "fetchAuthToken"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "identity",
+      "identifier": "DefaultAzureCredential",
+      "operations": [
+        { "operation": "constructor", "raw_call": "new DefaultAzureCredential()", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["getSecret"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "http",
+      "identifier": "Config.axios",
+      "operations": [
+        { "operation": "get", "raw_call": "Config.axios.get(url, { headers: { Authorization: ... } })", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "get", "raw_call": "Config.axios.get(url)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["getVehiclesByExternalRefId", "fetchStops"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "publisher",
+      "identifier": "KafkaCommon.KafkaProducer",
+      "operations": [
+        { "operation": "start", "raw_call": "this.producer.start()", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "publish", "raw_call": "this.producer.publish({ value: JSON.stringify(smartrakEvent), key: ... })", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "stop", "raw_call": "this.producer.stop()", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["start", "publish", "stop", "run"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "publisher",
+      "identifier": "KafkaCommon.KafkaConsumer",
+      "operations": [
+        { "operation": "onMessage", "raw_call": "this.consumer.onMessage(async (message, next) => { ... })", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "start", "raw_call": "this.consumer.start()", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "stop", "raw_call": "this.consumer.stop()", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["start", "stop", "run"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+    },
+    {
+      "kind": "timer",
+      "identifier": "setTimeout",
+      "operations": [
+        { "operation": "delay", "raw_call": "setTimeout(() => this.watch(closeApp), this.secretWatcherInterval * 60 * 1000)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "delay", "raw_call": "setTimeout(resolve, milliseconds)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "delay", "raw_call": "this.scheduleLogTimer = setTimeout(() => { ... }, 60000)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "delay", "raw_call": "setTimeout(async () => { await this.fetchStops(); this.scheduleStopsFetch(); }, 60 * 60 * 1000)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "delay", "raw_call": "setTimeout(() => process.exit(1), 10 * 1000)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+        { "operation": "delay", "raw_call": "setTimeout(() => process.exit(1), 30000)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } }
+      ],
+      "used_in": ["watch", "sleep", "scheduleStatusLog", "scheduleStopsFetch", "run"],
+      "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+    }
+  ],
+  "business_logic": {
+    "rules": [
+      {
+        "description": "Confluent Kafka credentials are only fetched when cached username and password are empty.",
+        "raw_condition": { "ts": "if (this.confluentKafkaSecret.username && this.confluentKafkaSecret.password) { return; }", "normalized": ["confluentKafkaSecret.username && confluentKafkaSecret.password"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Application throws an error when the retrieved Kafka secret payload is empty.",
+        "raw_condition": { "ts": "if (!this.confluentSecret) { throw new Error(\"No valid kafka keys\"); }", "normalized": ["!confluentSecret"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Watcher triggers application restart when the latest Kafka secret differs from the cached value.",
+        "raw_condition": { "ts": "if (kafkaLatestSecret && kafkaLatestSecret !== this.confluentSecret) { closeApp(); }", "normalized": ["kafkaLatestSecret && kafkaLatestSecret !== confluentSecret"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Message is discarded when no train change entries exist.",
+        "raw_condition": { "ts": "if (!message?.trainUpdate?.changes?.length) { throw new ValidationError(\"no_update\", ...); }", "normalized": ["!(message?.trainUpdate?.changes?.length)"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Message is rejected when neither arrival nor departure actual times are provided.",
+        "raw_condition": { "ts": "if (eventSeconds <= 0) { throw new ValidationError(\"no_actual_update\", ...); }", "normalized": ["eventSeconds <= 0"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Messages exceeding configured maximum delay raise an outdated validation error.",
+        "raw_condition": { "ts": "if (messageDelay > Config.maxMessageDelay) { throw new ValidationError(\"outdated\", ...); }", "normalized": ["messageDelay > Config.maxMessageDelay"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Messages with delay below minimum trigger wrong time validation error.",
+        "raw_condition": { "ts": "if (messageDelay < Config.minMessageDelay) { throw new ValidationError(\"wrong_time\", ...); }", "normalized": ["messageDelay < Config.minMessageDelay"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Updates with a single change of type OTHER are ignored and counted.",
+        "raw_condition": { "ts": "if (trainUpdate.changes.length === 1 && this.getMovementType(trainUpdate.changes[0].changeType) === MovementType.OTHER) { ... return []; }", "normalized": ["trainUpdate.changes.length === 1", "getMovementType(trainUpdate.changes[0].changeType) === MovementType.OTHER"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Train updates for unmapped or filtered stations are discarded.",
+        "raw_condition": { "ts": "if (!stopInfo || !this.isR9KRelevantStation(stopInfo)) { ... return []; }", "normalized": ["!stopInfo || !isR9KRelevantStation(stopInfo)"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Departure events use overwrite coordinates when configured for the station.",
+        "raw_condition": { "ts": "const eventLocation = this.getMovementType(...) !== MovementType.ARRIVAL && overwriteLocation ? overwriteLocation : stopInfo;", "normalized": ["getMovementType(changeType) !== MovementType.ARRIVAL", "overwriteLocation ? overwriteLocation : stopInfo"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "GTFS stop cache is replaced only when the response contains data.",
+        "raw_condition": { "ts": "if (response && response.data && response.data.length) { this.stops = response.data; }", "normalized": ["response && response.data && response.data.length"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "description": "Block management retries stop retrying on client errors and rethrow.",
+        "raw_condition": { "ts": "if (err.response?.status && err.response.status < 500) { throw err; }", "normalized": ["err.response?.status && err.response.status < 500"] },
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+      }
+    ],
+    "state_transitions": [],
+    "flows": [
+      {
+        "name": "message_processing",
+        "input": "Kafka message payload",
+        "output": "Published SmarTrak location events",
+        "sequence": [
+          { "step": "Deserialize XML message into typed structure", "dependency": "TypedJSON", "details": { "call": "TypedJSON.deserialize(object[Config.rootElement], Message)" } },
+          { "step": "Validate timing constraints and compute message delay", "dependency": "", "details": { "call": "deserializeAndValidate(messageStr)" } },
+          { "step": "Convert train update into SmarTrak events", "dependency": "BlockMgtApi", "details": { "call": "this.r9kToSmartrak.convert(trainUpdate)" } },
+          { "step": "Publish two-tap events with delay adjustments", "dependency": "KafkaCommon.KafkaProducer", "details": { "call": "this.publish(event)" } }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "confluent_secret_management",
+        "input": "Azure Key Vault secret",
+        "output": "Cached Kafka SASL credentials",
+        "sequence": [
+          { "step": "Retrieve secret JSON", "dependency": "KeyVault", "details": { "call": "kv.getSecret(confluentKeyName)" } },
+          { "step": "Parse and store credentials", "dependency": "", "details": { "call": "JSON.parse(confluentSecret)" } },
+          { "step": "Monitor secret changes and trigger restart", "dependency": "KeyVault", "details": { "call": "this.watch(closeApp)" } }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "block_management_lookup",
+        "input": "Train external reference id",
+        "output": "Allocated vehicle labels",
+        "sequence": [
+          { "step": "Ensure authentication token available", "dependency": "AzureSystemAccessTokenRetriever", "details": { "call": "AzureSystemAccessTokenRetriever.provide(...)" } },
+          { "step": "Request block allocations", "dependency": "Config.axios", "details": { "call": "Config.axios.get(url, { headers })" } },
+          { "step": "Extract vehicle labels from response", "dependency": "", "details": { "call": "response.data.all.map(...)" } }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "gtfs_refresh",
+        "input": "GTFS static API",
+        "output": "Cached stop metadata",
+        "sequence": [
+          { "step": "Fetch stops via axios", "dependency": "Config.axios", "details": { "call": "Config.axios.get(url)" } },
+          { "step": "Update stops cache when data present", "dependency": "", "details": { "call": "this.stops = response.data" } },
+          { "step": "Schedule next refresh", "dependency": "setTimeout", "details": { "call": "setTimeout(async () => { await this.fetchStops(); ... }, 60*60*1000)" } }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 }
+      },
+      {
+        "name": "service_startup",
+        "input": "Process bootstrap",
+        "output": "Running adapter services",
+        "sequence": [
+          { "step": "Load Confluent credentials when required", "dependency": "ConfluentSecretRetriever", "details": { "call": "ConfluentSecretRetriever.retrieve()" } },
+          { "step": "Start status web endpoint", "dependency": "ExpressCommon.ExpressWebAppWrapper", "details": { "call": "webApp.start(Config.port)" } },
+          { "step": "Construct Kafka consumer and producer", "dependency": "KafkaCommon", "details": { "call": "new KafkaCommon.KafkaConsumer(...)" } },
+          { "step": "Bootstrap main workflow", "dependency": "Main", "details": { "call": "await main.start()" } }
+        ],
+        "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 }
+      }
+    ],
+    "external_dependency_usage": [
+      { "flow": "message_processing", "function": "publish", "dependency": "KafkaCommon.KafkaProducer", "operation": "publish", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "message_processing", "function": "convert", "dependency": "Config.axios", "operation": "get", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "message_processing", "function": "sleep", "dependency": "setTimeout", "operation": "delay", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "confluent_secret_management", "function": "retrieve", "dependency": "KeyVault", "operation": "getSecret", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "confluent_secret_management", "function": "watch", "dependency": "setTimeout", "operation": "delay", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "block_management_lookup", "function": "getVehiclesByExternalRefId", "dependency": "AzureSystemAccessTokenRetriever", "operation": "retrieve", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "gtfs_refresh", "function": "fetchStops", "dependency": "Config.axios", "operation": "get", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "service_startup", "function": "run", "dependency": "KafkaCommon.KafkaProducer", "operation": "start", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } },
+      { "flow": "service_startup", "function": "run", "dependency": "KafkaCommon.KafkaConsumer", "operation": "start", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } }
+    ]
+  },
+  "context": {
+    "purpose": "Translate KiwiRail R9K position updates into SmarTrak location events for downstream consumers while managing supporting secrets, GTFS data, and block allocations.",
+    "data_flow": [
+      { "from": "KafkaCommon.KafkaConsumer", "to": "Main.processMessage", "via": "consumer.onMessage callback", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "from": "Main.processMessage", "to": "KafkaCommon.KafkaProducer", "via": "publish() two-tap calls", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "from": "BlockMgtApi.getVehiclesByExternalRefId", "to": "R9kToSmartrak.convert", "via": "vehicle label allocation", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "from": "GtfsApi.fetchStops", "to": "R9kToSmartrak.convert", "via": "cache stop metadata", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "domain_rules": [
+      { "rule": "Only stations listed in Config.filterStations map to SmarTrak stop codes for processing.", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } },
+      { "rule": "Messages must include actual arrival or departure times to be considered valid.", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "rule": "Message latency must stay within Config.maxMessageDelay and Config.minMessageDelay bounds.", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "rule": "Departure events may override stop coordinates based on Config.DEPARTURE_LOCATION_OVERWRITE entries.", "source_location": { "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "interactions": [
+      { "with": "Azure Key Vault", "type": "state_store_read", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+      { "with": "Block Management API", "type": "http_request", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "with": "GTFS Static API", "type": "http_request", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+      { "with": "Kafka", "type": "publish_message", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "io_operations": [
+      { "operation": "GET allocations/trips", "dependency": "Config.axios", "raw_call": "Config.axios.get(`${Config.blockMgtUrl}/allocations/trips?externalRefId=${externalRefId}&closestTrip=true`, { headers })", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "operation": "GET gtfs/stops", "dependency": "Config.axios", "raw_call": "Config.axios.get(`${Config.staticCCUrl}/gtfs/stops?fields=stop_code,stop_lon,stop_lat`)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } },
+      { "operation": "Retrieve secret", "dependency": "KeyVault", "raw_call": "kv.getSecret(confluentKeyName)", "source_location": { "file": "legacy/at_r9k_position_adapter/src/confluent-secret-retriever.ts", "line_start": 0, "line_end": 0 } },
+      { "operation": "Publish Kafka message", "dependency": "KafkaCommon.KafkaProducer", "raw_call": "this.producer.publish({ value: JSON.stringify(smartrakEvent), key: ... })", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "async_patterns": [
+      { "pattern": "Kafka consumer callback executed inside New Relic background transaction", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "pattern": "Two-tap publish uses sequential awaits with setTimeout-based sleep", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "pattern": "Retry helper wraps axios requests for block management and GTFS APIs", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "pattern": "Hourly GTFS refresh scheduled via recursive setTimeout", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts", "line_start": 0, "line_end": 0 } }
+    ],
+    "error_flow": [
+      { "from": "KeyVault.getSecret", "to": "ConfluentSecretRetriever.retrieve", "trigger": "Error when secret value missing", "source_location": { "file": "legacy/at_r9k_position_adapter/src/key-vault.ts", "line_start": 0, "line_end": 0 } },
+      { "from": "deserializeAndValidate", "to": "Main.processMessage", "trigger": "ValidationError thrown for invalid message", "source_location": { "file": "legacy/at_r9k_position_adapter/src/main.ts", "line_start": 0, "line_end": 0 } },
+      { "from": "UtilsCommon.retry on block API", "to": "Config.logger.warn", "trigger": "Server error triggers retry logging", "source_location": { "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts", "line_start": 0, "line_end": 0 } },
+      { "from": "ConfluentSecretRetriever.watch", "to": "main.stop()", "trigger": "Secret change initiates restart sequence", "source_location": { "file": "legacy/at_r9k_position_adapter/src/start.ts", "line_start": 0, "line_end": 0 } }
+    ]
+  }
+}

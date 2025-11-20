@@ -1,0 +1,1690 @@
+{
+  "metadata": {
+    "module_name": "at_r9k_position_adapter",
+    "version": "2.0",
+    "source_files": [
+      "legacy/at_r9k_position_adapter/src/config.ts",
+      "legacy/at_r9k_position_adapter/src/types.ts",
+      "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+      "legacy/at_r9k_position_adapter/src/train-update.ts",
+      "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+      "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+      "legacy/at_r9k_position_adapter/src/main.ts"
+    ],
+    "source_hash": "",
+    "extracted_at": "2025-11-20T00:00:00Z",
+    "extracted_by": "LLM",
+    "rules_applied": [
+      "no_inference",
+      "no_restructuring",
+      "ts_source_only",
+      "json_strict_output"
+    ]
+  },
+  "structures": {
+    "imports": [
+      {
+        "name": "moment-timezone",
+        "source": "moment-timezone",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 2,
+          "line_end": 2
+        }
+      },
+      {
+        "name": "Config",
+        "source": "./config",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 3,
+          "line_end": 3
+        }
+      },
+      {
+        "name": "GtfsApi",
+        "source": "./services/gtfs-api",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 4,
+          "line_end": 4
+        }
+      },
+      {
+        "name": "BlockMgtApi",
+        "source": "./services/block-mgt-api",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 5,
+          "line_end": 5
+        }
+      },
+      {
+        "name": "ChangeType",
+        "source": "./train-update",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 6,
+          "line_end": 6
+        }
+      },
+      {
+        "name": "MovementType",
+        "source": "./train-update",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 6,
+          "line_end": 6
+        }
+      },
+      {
+        "name": "TrainUpdate",
+        "source": "./train-update",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 6,
+          "line_end": 6
+        }
+      },
+      {
+        "name": "EventData",
+        "source": "at-connector-common",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 7,
+          "line_end": 7
+        }
+      },
+      {
+        "name": "LocationData",
+        "source": "at-connector-common",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 7,
+          "line_end": 7
+        }
+      },
+      {
+        "name": "MessageData",
+        "source": "at-connector-common",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 7,
+          "line_end": 7
+        }
+      },
+      {
+        "name": "RemoteData",
+        "source": "at-connector-common",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 7,
+          "line_end": 7
+        }
+      },
+      {
+        "name": "SmarTrakEvent",
+        "source": "at-connector-common",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 7,
+          "line_end": 7
+        }
+      },
+      {
+        "name": "IPropertyConverter",
+        "source": "ta-json",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "JsonConverter",
+        "source": "ta-json",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "JsonElementType",
+        "source": "ta-json",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "JsonObject",
+        "source": "ta-json",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "JsonProperty",
+        "source": "ta-json",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "JsonType",
+        "source": "ta-json",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "ValidationError",
+        "source": "./types",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/main.ts",
+          "line_start": 11,
+          "line_end": 11
+        }
+      }
+    ],
+    "exports": [
+      {
+        "name": "R9kToSmartrak",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 9,
+          "line_end": 9
+        }
+      },
+      {
+        "name": "ChangeType",
+        "kind": "type",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 36,
+          "line_end": 36
+        }
+      },
+      {
+        "name": "MovementType",
+        "kind": "type",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 26,
+          "line_end": 26
+        }
+      },
+      {
+        "name": "Change",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 53,
+          "line_end": 53
+        }
+      },
+      {
+        "name": "TrainUpdate",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 168,
+          "line_end": 168
+        }
+      },
+      {
+        "name": "Message",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 209,
+          "line_end": 209
+        }
+      },
+      {
+        "name": "ValidationError",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/types.ts",
+          "line_start": 1,
+          "line_end": 1
+        }
+      },
+      {
+        "name": "BlockMgtApi",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 6,
+          "line_end": 6
+        }
+      },
+      {
+        "name": "GtfsApi",
+        "kind": "class",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 5,
+          "line_end": 5
+        }
+      }
+    ],
+    "types": [
+      {
+        "name": "ValidationError",
+        "kind": "class",
+        "fields": [
+          {
+            "name": "errorType",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "msg",
+            "type": "string",
+            "optional": false,
+            "default": null
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/types.ts",
+          "line_start": 1,
+          "line_end": 6
+        }
+      },
+      {
+        "name": "MovementType",
+        "kind": "enum",
+        "fields": [
+          {
+            "name": "ARRIVAL",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "DEPARTURE",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "PREDICTION",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "OTHER",
+            "type": "number",
+            "optional": false,
+            "default": null
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 26,
+          "line_end": 32
+        }
+      },
+      {
+        "name": "ChangeType",
+        "kind": "enum",
+        "fields": [
+          {
+            "name": "ExitedFirstStation",
+            "type": "number",
+            "optional": false,
+            "default": 1
+          },
+          {
+            "name": "ReachedFinalDestination",
+            "type": "number",
+            "optional": false,
+            "default": 2
+          },
+          {
+            "name": "ArrivedAtStation",
+            "type": "number",
+            "optional": false,
+            "default": 3
+          },
+          {
+            "name": "ExitedStation",
+            "type": "number",
+            "optional": false,
+            "default": 4
+          },
+          {
+            "name": "PassedStationWithoutStopping",
+            "type": "number",
+            "optional": false,
+            "default": 5
+          },
+          {
+            "name": "DetainedInPark",
+            "type": "number",
+            "optional": false,
+            "default": 6
+          },
+          {
+            "name": "DetainedAtStation",
+            "type": "number",
+            "optional": false,
+            "default": 7
+          },
+          {
+            "name": "StationNoLongerPartOfTheRun",
+            "type": "number",
+            "optional": false,
+            "default": 8
+          },
+          {
+            "name": "PlatformChange",
+            "type": "number",
+            "optional": false,
+            "default": 9
+          },
+          {
+            "name": "ExitLineChange",
+            "type": "number",
+            "optional": false,
+            "default": 10
+          },
+          {
+            "name": "ScheduleChange",
+            "type": "number",
+            "optional": false,
+            "default": 11
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 34,
+          "line_end": 50
+        }
+      },
+      {
+        "name": "Change",
+        "kind": "class",
+        "fields": [
+          {
+            "name": "changeType",
+            "type": "ChangeType",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "station",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "entryId",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "arrivalTime",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "actualArrivalTime",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "hasArrived",
+            "type": "boolean",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "arrivalDelay",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "departureTime",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "actualDepartureTime",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "hasDeparted",
+            "type": "boolean",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "departureDelay",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "detentionTime",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "detentionDuration",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "platform",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "exitLine",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "trainDirection",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "stopType",
+            "type": "number",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "parity",
+            "type": "string",
+            "optional": false,
+            "default": null
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 53,
+          "line_end": 165
+        }
+      },
+      {
+        "name": "TrainUpdate",
+        "kind": "class",
+        "fields": [
+          {
+            "name": "evenTrainId",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "oddTrainId",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "createdDate",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "registrationNumber",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "trainType",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "trainTypeCode",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "fullTrain",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "trainUpdateSource",
+            "type": "string",
+            "optional": false,
+            "default": null
+          },
+          {
+            "name": "changes",
+            "type": "Change[]",
+            "optional": false,
+            "default": []
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 168,
+          "line_end": 206
+        }
+      },
+      {
+        "name": "Message",
+        "kind": "class",
+        "fields": [
+          {
+            "name": "trainUpdate",
+            "type": "TrainUpdate",
+            "optional": false,
+            "default": null
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 209,
+          "line_end": 213
+        }
+      }
+    ],
+    "classes": [
+      {
+        "name": "ChangeTypeConverter",
+        "methods": [
+          {
+            "name": "serialize",
+            "parameters": [
+              {
+                "name": "property",
+                "type": "ChangeType"
+              }
+            ],
+            "returns": "number"
+          },
+          {
+            "name": "deserialize",
+            "parameters": [
+              {
+                "name": "value",
+                "type": "number"
+              }
+            ],
+            "returns": "ChangeType"
+          }
+        ],
+        "fields": [],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 6,
+          "line_end": 15
+        }
+      },
+      {
+        "name": "BooleanConverter",
+        "methods": [
+          {
+            "name": "serialize",
+            "parameters": [
+              {
+                "name": "property",
+                "type": "boolean"
+              }
+            ],
+            "returns": "string"
+          },
+          {
+            "name": "deserialize",
+            "parameters": [
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ],
+            "returns": "boolean"
+          }
+        ],
+        "fields": [],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 17,
+          "line_end": 24
+        }
+      },
+      {
+        "name": "NumberConverter",
+        "methods": [
+          {
+            "name": "serialize",
+            "parameters": [
+              {
+                "name": "property",
+                "type": "number"
+              }
+            ],
+            "returns": "string"
+          },
+          {
+            "name": "deserialize",
+            "parameters": [
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ],
+            "returns": "number"
+          }
+        ],
+        "fields": [],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 26,
+          "line_end": 34
+        }
+      },
+      {
+        "name": "R9kToSmartrak",
+        "methods": [
+          {
+            "name": "constructor",
+            "parameters": [
+              {
+                "name": "gtfsApi",
+                "type": "GtfsApi"
+              },
+              {
+                "name": "blockMgtApi",
+                "type": "BlockMgtApi"
+              }
+            ],
+            "returns": "void"
+          },
+          {
+            "name": "convert",
+            "parameters": [
+              {
+                "name": "trainUpdate",
+                "type": "TrainUpdate"
+              }
+            ],
+            "returns": "Promise<SmarTrakEvent[]>"
+          },
+          {
+            "name": "isR9KRelevantStation",
+            "parameters": [
+              {
+                "name": "trainStation",
+                "type": "{ stop_code: string }"
+              }
+            ],
+            "returns": "boolean"
+          },
+          {
+            "name": "getMovementType",
+            "parameters": [
+              {
+                "name": "changeType",
+                "type": "ChangeType"
+              }
+            ],
+            "returns": "MovementType"
+          },
+          {
+            "name": "toSmartrakEvent",
+            "parameters": [
+              {
+                "name": "vehicleLabel",
+                "type": "string"
+              },
+              {
+                "name": "station",
+                "type": "{ stop_lat: number, stop_lon: number }"
+              },
+              {
+                "name": "trainUpdateCreationDate",
+                "type": "string"
+              }
+            ],
+            "returns": "SmarTrakEvent"
+          }
+        ],
+        "fields": [
+          {
+            "name": "gtfsApi",
+            "type": "GtfsApi"
+          },
+          {
+            "name": "blockMgtApi",
+            "type": "BlockMgtApi"
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 9,
+          "line_end": 56
+        }
+      },
+      {
+        "name": "BlockMgtApi",
+        "methods": [
+          {
+            "name": "getVehiclesByExternalRefId",
+            "parameters": [
+              {
+                "name": "externalRefId",
+                "type": "string"
+              }
+            ],
+            "returns": "Promise<string[]>"
+          }
+        ],
+        "fields": [
+          {
+            "name": "authTokenRetriever",
+            "type": "AzureSystemAccessTokenRetriever"
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 6,
+          "line_end": 30
+        }
+      },
+      {
+        "name": "GtfsApi",
+        "methods": [
+          {
+            "name": "getStopInfoByStopCode",
+            "parameters": [
+              {
+                "name": "stopCode",
+                "type": "string"
+              }
+            ],
+            "returns": "{ stop_code: string, stop_lat: number, stop_lon: number } | undefined"
+          }
+        ],
+        "fields": [
+          {
+            "name": "stops",
+            "type": "Array"
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 5,
+          "line_end": 11
+        }
+      }
+    ],
+    "pure_functions": [
+      {
+        "name": "serialize",
+        "parameters": [
+          {
+            "name": "property",
+            "type": "ChangeType"
+          }
+        ],
+        "returns": "number",
+        "raw_ts_expression": "Number(property.valueOf())",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 7,
+          "line_end": 10
+        }
+      },
+      {
+        "name": "deserialize",
+        "parameters": [
+          {
+            "name": "value",
+            "type": "number"
+          }
+        ],
+        "returns": "ChangeType",
+        "raw_ts_expression": "Number(value)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 12,
+          "line_end": 15
+        }
+      },
+      {
+        "name": "serialize",
+        "parameters": [
+          {
+            "name": "property",
+            "type": "boolean"
+          }
+        ],
+        "returns": "string",
+        "raw_ts_expression": "property ? \"true\" : \"false\"",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 22,
+          "line_end": 24
+        }
+      },
+      {
+        "name": "deserialize",
+        "parameters": [
+          {
+            "name": "value",
+            "type": "string"
+          }
+        ],
+        "returns": "boolean",
+        "raw_ts_expression": "value === \"true\"",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 26,
+          "line_end": 28
+        }
+      },
+      {
+        "name": "serialize",
+        "parameters": [
+          {
+            "name": "property",
+            "type": "number"
+          }
+        ],
+        "returns": "string",
+        "raw_ts_expression": "String(property)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 38,
+          "line_end": 40
+        }
+      },
+      {
+        "name": "deserialize",
+        "parameters": [
+          {
+            "name": "value",
+            "type": "string"
+          }
+        ],
+        "returns": "number",
+        "raw_ts_expression": "Number(value)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/train-update.ts",
+          "line_start": 42,
+          "line_end": 44
+        }
+      },
+      {
+        "name": "isR9KRelevantStation",
+        "parameters": [
+          {
+            "name": "trainStation",
+            "type": "{ stop_code: string }"
+          }
+        ],
+        "returns": "boolean",
+        "raw_ts_expression": "Config.filterStations.some((station) => Config.STATION_ID_TO_STOP_CODE_MAP[Number.parseInt(station, 10)] === trainStation.stop_code)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 29,
+          "line_end": 31
+        }
+      },
+      {
+        "name": "getMovementType",
+        "parameters": [
+          {
+            "name": "changeType",
+            "type": "ChangeType"
+          }
+        ],
+        "returns": "MovementType",
+        "raw_ts_expression": "switch (+changeType) {\n            case ChangeType.ReachedFinalDestination:\n            case ChangeType.ArrivedAtStation:\n                return MovementType.ARRIVAL;\n            case ChangeType.ExitedFirstStation:\n            case ChangeType.ExitedStation:\n            case ChangeType.PassedStationWithoutStopping:\n                return MovementType.DEPARTURE;\n            case ChangeType.ScheduleChange:\n                return MovementType.PREDICTION;\n        }\n\n        return MovementType.OTHER;",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 33,
+          "line_end": 46
+        }
+      },
+      {
+        "name": "toSmartrakEvent",
+        "parameters": [
+          {
+            "name": "vehicleLabel",
+            "type": "string"
+          },
+          {
+            "name": "station",
+            "type": "{ stop_lat: number, stop_lon: number }"
+          },
+          {
+            "name": "trainUpdateCreationDate",
+            "type": "string"
+          }
+        ],
+        "returns": "SmarTrakEvent",
+        "raw_ts_expression": "const smarTrakEvent = new SmarTrakEvent();\n        smarTrakEvent.eventType = \"Location\";\n        smarTrakEvent.receivedAt = moment.tz(trainUpdateCreationDate, Config.r9kDateFormat, Config.timezone).toDate();\n\n        const messageData = new MessageData();\n        messageData.timestamp = moment.tz(Config.timezone).utc().toDate();\n        smarTrakEvent.messageData = messageData;\n\n        smarTrakEvent.eventData = new EventData();\n\n        const remoteData = new RemoteData();\n        remoteData.externalId = vehicleLabel.replace(/ /g, \"\");\n        smarTrakEvent.remoteData = remoteData;\n\n        const locationData = new LocationData();\n        locationData.gpsAccuracy = 0;\n        locationData.latitude = station.stop_lat;\n        locationData.longitude = station.stop_lon;\n        locationData.speed = 0;\n        smarTrakEvent.locationData = locationData;\n\n        return smarTrakEvent;",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 48,
+          "line_end": 71
+        }
+      },
+      {
+        "name": "getStopInfoByStopCode",
+        "parameters": [
+          {
+            "name": "stopCode",
+            "type": "string"
+          }
+        ],
+        "returns": "{ stop_code: string, stop_lat: number, stop_lon: number } | undefined",
+        "raw_ts_expression": "this.stops.find((stop: { stop_code: string, stop_lat: number, stop_lon: number }) => stop.stop_code === stopCode)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 13,
+          "line_end": 15
+        }
+      }
+    ],
+    "effectful_functions": [
+      {
+        "name": "convert",
+        "parameters": [
+          {
+            "name": "trainUpdate",
+            "type": "TrainUpdate"
+          }
+        ],
+        "returns": "Promise<SmarTrakEvent[]>",
+        "side_effects": [
+          "http_request",
+          "state_store_read"
+        ],
+        "async_behavior": {
+          "is_async": true,
+          "parallel_operations": [],
+          "retry_patterns": [],
+          "timer_patterns": []
+        },
+        "errors": [],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 12,
+          "line_end": 27
+        }
+      },
+      {
+        "name": "getVehiclesByExternalRefId",
+        "parameters": [
+          {
+            "name": "externalRefId",
+            "type": "string"
+          }
+        ],
+        "returns": "Promise<string[]>",
+        "side_effects": [
+          "http_request"
+        ],
+        "async_behavior": {
+          "is_async": true,
+          "parallel_operations": [],
+          "retry_patterns": [
+            {
+              "library": "UtilsCommon.retry",
+              "condition": "err.response?.status && err.response.status < 500"
+            }
+          ],
+          "timer_patterns": []
+        },
+        "errors": [
+          {
+            "trigger": "err.response?.status && err.response.status < 500",
+            "type": "AxiosError",
+            "recovery": "throw err",
+            "source_location": {
+              "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+              "line_start": 17,
+              "line_end": 19
+            }
+          },
+          {
+            "trigger": "catch block",
+            "type": "Error",
+            "recovery": "nr.noticeError(err); Config.logger.error",
+            "source_location": {
+              "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+              "line_start": 23,
+              "line_end": 26
+            }
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 9,
+          "line_end": 28
+        }
+      }
+    ]
+  },
+  "external_dependencies": [
+    {
+      "kind": "http",
+      "identifier": "BlockMgtApi",
+      "operations": [
+        {
+          "operation": "GET /allocations/trips",
+          "raw_call": "await Config.axios.get(url, { headers: { Authorization: `Bearer ${await this.authTokenRetriever.retrieve()}` } })",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+            "line_start": 11,
+            "line_end": 16
+          }
+        }
+      ],
+      "used_in": [
+        "getVehiclesByExternalRefId"
+      ],
+      "source_location": {
+        "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+        "line_start": 11,
+        "line_end": 16
+      }
+    },
+    {
+      "kind": "http",
+      "identifier": "GtfsApi",
+      "operations": [
+        {
+          "operation": "GET /gtfs/stops",
+          "raw_call": "await Config.axios.get(url)",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+            "line_start": 19,
+            "line_end": 19
+          }
+        }
+      ],
+      "used_in": [],
+      "source_location": {
+        "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+        "line_start": 19,
+        "line_end": 19
+      }
+    },
+    {
+      "kind": "state_store",
+      "identifier": "GtfsApi.stops",
+      "operations": [
+        {
+          "operation": "read",
+          "raw_call": "this.stops.find((stop: { stop_code: string, stop_lat: number, stop_lon: number }) => stop.stop_code === stopCode)",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+            "line_start": 14,
+            "line_end": 14
+          }
+        }
+      ],
+      "used_in": [
+        "getStopInfoByStopCode"
+      ],
+      "source_location": {
+        "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+        "line_start": 6,
+        "line_end": 6
+      }
+    },
+    {
+      "kind": "identity",
+      "identifier": "AzureSystemAccessTokenRetriever",
+      "operations": [
+        {
+          "operation": "retrieve",
+          "raw_call": "await this.authTokenRetriever.retrieve()",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+            "line_start": 14,
+            "line_end": 14
+          }
+        }
+      ],
+      "used_in": [
+        "getVehiclesByExternalRefId"
+      ],
+      "source_location": {
+        "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+        "line_start": 14,
+        "line_end": 14
+      }
+    },
+    {
+      "kind": "env",
+      "identifier": "Config",
+      "operations": [
+        {
+          "operation": "read",
+          "raw_call": "Config.STATION_ID_TO_STOP_CODE_MAP",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+            "line_start": 16,
+            "line_end": 16
+          }
+        },
+        {
+          "operation": "read",
+          "raw_call": "Config.DEPARTURE_LOCATION_OVERWRITE",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+            "line_start": 23,
+            "line_end": 23
+          }
+        },
+        {
+          "operation": "read",
+          "raw_call": "Config.filterStations",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+            "line_start": 30,
+            "line_end": 30
+          }
+        },
+        {
+          "operation": "read",
+          "raw_call": "Config.r9kDateFormat",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+            "line_start": 51,
+            "line_end": 51
+          }
+        },
+        {
+          "operation": "read",
+          "raw_call": "Config.timezone",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+            "line_start": 51,
+            "line_end": 51
+          }
+        },
+        {
+          "operation": "read",
+          "raw_call": "Config.blockMgtUrl",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+            "line_start": 11,
+            "line_end": 11
+          }
+        },
+        {
+          "operation": "read",
+          "raw_call": "Config.staticCCUrl",
+          "source_location": {
+            "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+            "line_start": 18,
+            "line_end": 18
+          }
+        }
+      ],
+      "used_in": [
+        "convert",
+        "isR9KRelevantStation",
+        "toSmartrakEvent",
+        "getVehiclesByExternalRefId"
+      ],
+      "source_location": {
+        "file": "legacy/at_r9k_position_adapter/src/config.ts",
+        "line_start": 4,
+        "line_end": 4
+      }
+    }
+  ],
+  "business_logic": {
+    "rules": [
+      {
+        "description": "Filter out train updates that only have one change and that change is of type OTHER (not relevant to trip progress)",
+        "raw_condition": {
+          "ts": "trainUpdate.changes.length === 1 && this.getMovementType(trainUpdate.changes[0].changeType) === MovementType.OTHER",
+          "normalized": [
+            "trainUpdate.changes.length === 1",
+            "this.getMovementType(trainUpdate.changes[0].changeType) === MovementType.OTHER"
+          ]
+        },
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 14,
+          "line_end": 16
+        }
+      },
+      {
+        "description": "Filter out train updates for stations that are not relevant (not in stopInfo or not in R9K relevant stations)",
+        "raw_condition": {
+          "ts": "!stopInfo || !this.isR9KRelevantStation(stopInfo)",
+          "normalized": [
+            "!stopInfo",
+            "!this.isR9KRelevantStation(stopInfo)"
+          ]
+        },
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 18,
+          "line_end": 21
+        }
+      },
+      {
+        "description": "Determine movement type based on change type: ARRIVAL for ReachedFinalDestination or ArrivedAtStation, DEPARTURE for ExitedFirstStation/ExitedStation/PassedStationWithoutStopping, PREDICTION for ScheduleChange, OTHER otherwise",
+        "raw_condition": {
+          "ts": "switch (+changeType) { case ChangeType.ReachedFinalDestination: case ChangeType.ArrivedAtStation: return MovementType.ARRIVAL; case ChangeType.ExitedFirstStation: case ChangeType.ExitedStation: case ChangeType.PassedStationWithoutStopping: return MovementType.DEPARTURE; case ChangeType.ScheduleChange: return MovementType.PREDICTION; } return MovementType.OTHER;",
+          "normalized": [
+            "changeType === ChangeType.ReachedFinalDestination => MovementType.ARRIVAL",
+            "changeType === ChangeType.ArrivedAtStation => MovementType.ARRIVAL",
+            "changeType === ChangeType.ExitedFirstStation => MovementType.DEPARTURE",
+            "changeType === ChangeType.ExitedStation => MovementType.DEPARTURE",
+            "changeType === ChangeType.PassedStationWithoutStopping => MovementType.DEPARTURE",
+            "changeType === ChangeType.ScheduleChange => MovementType.PREDICTION",
+            "default => MovementType.OTHER"
+          ]
+        },
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 33,
+          "line_end": 46
+        }
+      },
+      {
+        "description": "Use departure location overwrite if movement type is not ARRIVAL and overwrite location exists for the station",
+        "raw_condition": {
+          "ts": "this.getMovementType(trainUpdate.changes[0].changeType) !== MovementType.ARRIVAL && overwriteLocation",
+          "normalized": [
+            "this.getMovementType(trainUpdate.changes[0].changeType) !== MovementType.ARRIVAL",
+            "overwriteLocation !== undefined"
+          ]
+        },
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 23,
+          "line_end": 24
+        }
+      },
+      {
+        "description": "Filter relevant stations based on configured filter stations matching stop code in STATION_ID_TO_STOP_CODE_MAP",
+        "raw_condition": {
+          "ts": "Config.filterStations.some((station) => Config.STATION_ID_TO_STOP_CODE_MAP[Number.parseInt(station, 10)] === trainStation.stop_code)",
+          "normalized": [
+            "Config.filterStations contains station where Config.STATION_ID_TO_STOP_CODE_MAP[station] === trainStation.stop_code"
+          ]
+        },
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 29,
+          "line_end": 31
+        }
+      }
+    ],
+    "state_transitions": [],
+    "flows": [
+      {
+        "name": "R9K to SmarTrak Event Conversion",
+        "input": "TrainUpdate",
+        "output": "SmarTrakEvent[]",
+        "sequence": [
+          {
+            "step": "1. Validate update relevance",
+            "dependency": "getMovementType",
+            "details": {
+              "condition": "Filter out single-change updates with MovementType.OTHER"
+            }
+          },
+          {
+            "step": "2. Lookup stop information",
+            "dependency": "GtfsApi.getStopInfoByStopCode",
+            "details": {
+              "parameter": "Config.STATION_ID_TO_STOP_CODE_MAP[trainUpdate.changes[0].station]"
+            }
+          },
+          {
+            "step": "3. Validate station relevance",
+            "dependency": "isR9KRelevantStation",
+            "details": {
+              "condition": "Filter out non-relevant stations"
+            }
+          },
+          {
+            "step": "4. Fetch allocated vehicles",
+            "dependency": "BlockMgtApi.getVehiclesByExternalRefId",
+            "details": {
+              "parameter": "trainUpdate.evenTrainId || trainUpdate.oddTrainId"
+            }
+          },
+          {
+            "step": "5. Determine event location",
+            "dependency": "getMovementType, Config.DEPARTURE_LOCATION_OVERWRITE",
+            "details": {
+              "condition": "Use overwrite location if movement type is not ARRIVAL and overwrite exists"
+            }
+          },
+          {
+            "step": "6. Convert to SmarTrak events",
+            "dependency": "toSmartrakEvent",
+            "details": {
+              "mapping": "For each allocated vehicle, create SmarTrakEvent with location and timestamp"
+            }
+          }
+        ],
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 12,
+          "line_end": 27
+        }
+      }
+    ],
+    "external_dependency_usage": [
+      {
+        "flow": "R9K to SmarTrak Event Conversion",
+        "function": "convert",
+        "dependency": "GtfsApi",
+        "operation": "getStopInfoByStopCode",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 16,
+          "line_end": 16
+        }
+      },
+      {
+        "flow": "R9K to SmarTrak Event Conversion",
+        "function": "convert",
+        "dependency": "BlockMgtApi",
+        "operation": "getVehiclesByExternalRefId",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 22,
+          "line_end": 22
+        }
+      },
+      {
+        "flow": "R9K to SmarTrak Event Conversion",
+        "function": "getVehiclesByExternalRefId",
+        "dependency": "HTTP",
+        "operation": "GET /allocations/trips",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 11,
+          "line_end": 16
+        }
+      },
+      {
+        "flow": "R9K to SmarTrak Event Conversion",
+        "function": "getVehiclesByExternalRefId",
+        "dependency": "Identity",
+        "operation": "retrieve token",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 14,
+          "line_end": 14
+        }
+      }
+    ]
+  },
+  "context": {
+    "purpose": "Converts R9K train position updates from KiwiRail track sensors into SmarTrak location events by enriching with GTFS stop data and block management vehicle allocations, then publishing to Kafka for downstream consumption",
+    "data_flow": [
+      {
+        "from": "Kafka R9K topic",
+        "to": "TrainUpdate",
+        "via": "XML deserialization",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/main.ts",
+          "line_start": 66,
+          "line_end": 66
+        }
+      },
+      {
+        "from": "TrainUpdate",
+        "to": "SmarTrakEvent[]",
+        "via": "R9kToSmartrak.convert",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 12,
+          "line_end": 27
+        }
+      },
+      {
+        "from": "SmarTrakEvent",
+        "to": "Kafka SmarTrak topic",
+        "via": "JSON serialization and publish",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/main.ts",
+          "line_start": 93,
+          "line_end": 93
+        }
+      },
+      {
+        "from": "GTFS Static API",
+        "to": "GtfsApi.stops",
+        "via": "HTTP GET /gtfs/stops",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 18,
+          "line_end": 30
+        }
+      },
+      {
+        "from": "Block Management API",
+        "to": "vehicle labels",
+        "via": "HTTP GET /allocations/trips",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 11,
+          "line_end": 28
+        }
+      }
+    ],
+    "domain_rules": [
+      {
+        "rule": "Only process train updates that indicate trip progress (filter out MovementType.OTHER when only one change)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 14,
+          "line_end": 16
+        }
+      },
+      {
+        "rule": "Only process updates for configured relevant stations (filterStations)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 18,
+          "line_end": 21
+        }
+      },
+      {
+        "rule": "Use departure location overwrite for non-arrival movements at specific stations (133, 134, 9218)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 23,
+          "line_end": 24
+        }
+      },
+      {
+        "rule": "Map station IDs to GTFS stop codes using STATION_ID_TO_STOP_CODE_MAP",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/config.ts",
+          "line_start": 37,
+          "line_end": 85
+        }
+      },
+      {
+        "rule": "Remove spaces from vehicle label when creating external ID",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 59,
+          "line_end": 59
+        }
+      },
+      {
+        "rule": "Set GPS accuracy and speed to 0 for station-based location events",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 63,
+          "line_end": 67
+        }
+      },
+      {
+        "rule": "ChangeType determines MovementType: 1,4,5=DEPARTURE; 2,3=ARRIVAL; 11=PREDICTION; others=OTHER",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 33,
+          "line_end": 46
+        }
+      }
+    ],
+    "interactions": [
+      {
+        "with": "Block Management API",
+        "type": "http",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 11,
+          "line_end": 16
+        }
+      },
+      {
+        "with": "GTFS Static API",
+        "type": "http",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 18,
+          "line_end": 19
+        }
+      },
+      {
+        "with": "Azure AD Token Service",
+        "type": "identity",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 14,
+          "line_end": 14
+        }
+      }
+    ],
+    "io_operations": [
+      {
+        "operation": "HTTP GET",
+        "dependency": "Block Management API",
+        "raw_call": "await Config.axios.get(url, { headers: { Authorization: `Bearer ${await this.authTokenRetriever.retrieve()}` } })",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 12,
+          "line_end": 16
+        }
+      },
+      {
+        "operation": "HTTP GET",
+        "dependency": "GTFS Static API",
+        "raw_call": "await Config.axios.get(url)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 19,
+          "line_end": 19
+        }
+      },
+      {
+        "operation": "State Store Read",
+        "dependency": "GtfsApi.stops",
+        "raw_call": "this.stops.find((stop: { stop_code: string, stop_lat: number, stop_lon: number }) => stop.stop_code === stopCode)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/gtfs-api.ts",
+          "line_start": 14,
+          "line_end": 14
+        }
+      },
+      {
+        "operation": "Identity Token Retrieval",
+        "dependency": "Azure AD",
+        "raw_call": "await this.authTokenRetriever.retrieve()",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 14,
+          "line_end": 14
+        }
+      }
+    ],
+    "async_patterns": [
+      {
+        "pattern": "retry with exponential backoff for HTTP requests (UtilsCommon.retry)",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 16,
+          "line_end": 22
+        }
+      },
+      {
+        "pattern": "await multiple async operations: getVehiclesByExternalRefId then map over results",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/r9k-to-smartrak.ts",
+          "line_start": 22,
+          "line_end": 27
+        }
+      }
+    ],
+    "error_flow": [
+      {
+        "from": "HTTP request failure (status < 500)",
+        "to": "immediate throw",
+        "trigger": "err.response?.status && err.response.status < 500",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 17,
+          "line_end": 19
+        }
+      },
+      {
+        "from": "HTTP request failure (status >= 500 or network error)",
+        "to": "retry with logging",
+        "trigger": "retry pattern in UtilsCommon.retry",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 16,
+          "line_end": 22
+        }
+      },
+      {
+        "from": "All retries exhausted",
+        "to": "log error and return empty array",
+        "trigger": "catch block after retry",
+        "source_location": {
+          "file": "legacy/at_r9k_position_adapter/src/services/block-mgt-api.ts",
+          "line_start": 23,
+          "line_end": 26
+        }
+      }
+    ]
+  }
+}

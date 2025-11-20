@@ -1,0 +1,106 @@
+{
+  "module": "at_r9k_position_adapter",
+  "functions": [
+    {
+      "name": "convert",
+      "kind": "effectful",
+      "description": "Transforms an incoming TrainUpdate into an array of SmarTrakEvent objects, filtering out non-progress updates and non-relevant stations, then mapping allocated vehicle labels to events.",
+      "inputs": "trainUpdate: TrainUpdate",
+      "outputs": "Array of SmarTrakEvent (may be empty when filtered)",
+      "errors": []
+    },
+    {
+      "name": "isR9KRelevantStation",
+      "kind": "pure",
+      "description": "Checks whether the provided station (by stop_code) is among the configured filterStations mapping via STATION_ID_TO_STOP_CODE_MAP.",
+      "inputs": "trainStation: { stop_code: string }",
+      "outputs": "boolean indicating relevance",
+      "errors": []
+    },
+    {
+      "name": "getMovementType",
+      "kind": "pure",
+      "description": "Maps a ChangeType numeric value to a MovementType classification (ARRIVAL, DEPARTURE, PREDICTION, OTHER).",
+      "inputs": "changeType: ChangeType",
+      "outputs": "MovementType enum value",
+      "errors": []
+    },
+    {
+      "name": "toSmartrakEvent",
+      "kind": "pure",
+      "description": "Constructs a SmarTrakEvent Location payload from vehicle label, station coordinates, and train update creation date, populating event, message, remote and location data fields.",
+      "inputs": "vehicleLabel: string, station: { stop_lat: number, stop_lon: number }, trainUpdateCreationDate: string",
+      "outputs": "SmarTrakEvent instance",
+      "errors": []
+    },
+    {
+      "name": "ChangeTypeConverter.serialize",
+      "kind": "pure",
+      "description": "Serialises a ChangeType enum value to a number forcing numeric representation.",
+      "inputs": "property: ChangeType",
+      "outputs": "number",
+      "errors": []
+    },
+    {
+      "name": "ChangeTypeConverter.deserialize",
+      "kind": "pure",
+      "description": "Deserialises a number into a ChangeType enum value by numeric coercion.",
+      "inputs": "value: number",
+      "outputs": "ChangeType",
+      "errors": []
+    },
+    {
+      "name": "BooleanConverter.serialize",
+      "kind": "pure",
+      "description": "Serialises a boolean to its string representation 'true' or 'false'.",
+      "inputs": "property: boolean",
+      "outputs": "string ('true' | 'false')",
+      "errors": []
+    },
+    {
+      "name": "BooleanConverter.deserialize",
+      "kind": "pure",
+      "description": "Deserialises a string 'true' or other into a boolean (strict equality to 'true').",
+      "inputs": "value: string",
+      "outputs": "boolean",
+      "errors": []
+    },
+    {
+      "name": "NumberConverter.serialize",
+      "kind": "pure",
+      "description": "Serialises a number to its string form.",
+      "inputs": "property: number",
+      "outputs": "string",
+      "errors": []
+    },
+    {
+      "name": "NumberConverter.deserialize",
+      "kind": "pure",
+      "description": "Deserialises a numeric string to a number via Number().",
+      "inputs": "value: string",
+      "outputs": "number",
+      "errors": []
+    },
+    {
+      "name": "getStopInfoByStopCode",
+      "kind": "pure",
+      "description": "Finds stop information (code, latitude, longitude) matching the provided stop code within the cached stops array.",
+      "inputs": "stopCode: string",
+      "outputs": "{ stop_code: string, stop_lat: number, stop_lon: number } | undefined",
+      "errors": []
+    },
+    {
+      "name": "deserializeAndValidate",
+      "kind": "effectful",
+      "description": "Deserialises an XML message string into a Message object and validates presence of train update changes, actual arrival/departure time, and acceptable delay bounds against configured thresholds.",
+      "inputs": "messageStr: string",
+      "outputs": "Message",
+      "errors": [
+        "Received invalid message, reason:  no_update ${messageStr}",
+        "Received invalid message, reason:  no_actual_update ${messageStr}",
+        "Received invalid message, reason: outdated, delay in seconds: ${messageDelay} ${messageStr}",
+        "Received invalid message, reason: wrong time, delay in seconds: ${messageDelay} ${messageStr}"
+      ]
+    }
+  ]
+}

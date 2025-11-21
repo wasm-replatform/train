@@ -1,0 +1,124 @@
+
+PROMPT V8 — Clean, Simple, High-Clarity Extraction Prompt
+
+You are performing FULL EXTRACTION for a legacy TypeScript/JavaScript component that will be migrated to Rust. Your task is to generate a complete IR that describes the component’s structure, semantics, execution behavior, dependencies, and domain business logic, using the schema at the end of this prompt.
+
+========================
+COMMENT HANDLING
+========================
+You MUST read all code AND comments.
+
+- If a comment contradicts code → code wins.
+- If a comment is vague, outdated, or unhelpful → ignore it.
+- If a comment clarifies intent AND matches the code → include it.
+- If a comment describes behavior not implemented → record in `notes` as "comment-claimed-but-not-implemented".
+
+========================
+EXTRACTION STEPS
+========================
+
+1. STATIC CONTEXT (extract everything that exists)
+Extract the full structural surface of the component:
+- imports / exports
+- types, interfaces, enums
+- classes and their methods
+- functions
+- constants
+- external libraries / service dependencies
+- deprecated or legacy references (from comments)
+
+Do NOT filter anything here. This is a full lexical extraction.
+
+2. SEMANTIC CONTEXT (meaning & intent)
+Extract:
+- component purpose
+- data flow
+- invariants
+- domain-relevant rules described in comments
+- how types and modules interact
+
+If a comment expresses intent not implemented in code:
+→ add to `notes` as "comment-claimed-but-not-implemented".
+
+3. EXECUTION CONTEXT (runtime behavior)
+Extract:
+- I/O operations (HTTP, Kafka, filesystem, KeyKeyVault, etc.)
+- async patterns (promises, retries, intervals)
+- timers, scheduling, concurrency
+- error propagation
+- other implementation/runtime mechanics
+
+This is execution behavior, not business logic.
+
+4. BUSINESS LOGIC (domain rules only)
+Extract only domain transformations and domain decisions, such as:
+- how a TrainUpdate becomes a SmarTrakEvent
+- how movement types are interpreted
+- delay validation rules
+- station relevance rules
+- domain-specific error conditions
+- domain invariants
+
+Business logic EXCLUDES:
+- startup/shutdown flows
+- secret retrieval
+- retry wrappers
+- Kafka/HTTP/Express mechanics
+- logging, metrics, counters
+- timers or scheduling logic
+- environment/config setup
+- infrastructure or orchestration code
+
+These go under `structures` or `context`, NOT `business_logic`.
+
+========================
+GENERAL RULES
+========================
+- Comments may guide but never override code.
+- Keep business logic separate from structural context.
+- Tag all external dependencies.
+- Do not omit any fields in the IR.
+- Output valid JSON only, matching the schema exactly.
+- Minimal inference allowed only when implied by usage.
+- No invented logic.
+- If something is unclear or missing → record in `notes`.
+
+========================
+IR SCHEMA
+========================
+
+{
+  "component_name": "",
+  "source_paths": [],
+  "step": "extract_all",
+  "inputs": "Full source code of the component",
+  "analysis": "",
+  "ir_output": {
+    "structures": {
+      "imports": [],
+      "exports": [],
+      "types": [],
+      "classes": [],
+      "functions": [],
+      "external_dependencies": [],
+      "constants": []
+    },
+    "business_logic": {
+      "flows": [],
+      "rules": [],
+      "state_transitions": [],
+      "external_dependency_usage": []
+    },
+    "context": {
+      "purpose": "",
+      "data_flow": [],
+      "domain_rules": [],
+      "interactions": [],
+      "io_operations": [],
+      "async_patterns": [],
+      "error_flow": [],
+      "performance_sensitive_areas": []
+    },
+    "notes": ""
+  }
+}

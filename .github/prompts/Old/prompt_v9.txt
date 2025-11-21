@@ -1,0 +1,200 @@
+PROMPT V9 — Full-Fidelity Legacy Extraction Prompt (Enhanced Contracts & Domain-Coupled Behaviors)
+
+You are performing FULL EXTRACTION for a legacy TypeScript/JavaScript component that will be migrated to Rust. Your task is to generate a COMPLETE IR that preserves all domain AND domain-coupled operational semantics (including output message contracts, timing, duplication, error taxonomy, instrumentation, and configuration influences).
+
+=================================
+GOALS (What MUST be captured)
+=================================
+1. Public API surface (externally callable functions, classes, handlers, exported symbols) with signatures.
+2. Output message/event contracts (every published/returned structure) with exact field set, types, optionality, transforms, serialization nuances, and duplication/ordering semantics.
+3. Full error taxonomy (variants, codes, description patterns, mapping from underlying errors, propagation paths).
+4. Domain logic AND domain-coupled operational behaviors that influence business outcomes (e.g. duplicate publish for schedule adherence, header setting affecting partitioning, sleep-based timing).
+5. Observability contract (metrics, tracing identifiers, log markers) with trigger conditions and semantic intent.
+6. Configuration & environment variable influence (variable → behavior impact).
+7. Timing behaviors (sleep, interval, retry cadence, duplication loops) that affect interpretation, ordering, or downstream processing.
+8. Test-derived invariants (assertions describing required outcomes—event counts, field transforms, filtering decisions, timing, ordering).
+9. Precise type integrity: do NOT weaken types or make fields optional unless code already does.
+10. Ambiguities: always include item, classify, and note—never omit due to uncertainty.
+
+=================================
+COMMENT HANDLING
+=================================
+Read ALL code AND comments.
+- Contradiction: code wins.
+- Vague/outdated/unhelpful: ignore.
+- Clarifying + matches code: include.
+- Describes unimplemented behavior: add to notes as "comment-claimed-but-not-implemented".
+- Suggests incomplete enum: record existing variants; note possible incompleteness—DO NOT generalize type.
+
+=================================
+EXTRACTION STEPS
+=================================
+1. STATIC CONTEXT (Full lexical surface)
+   - imports, exports
+   - types, interfaces, enums
+   - classes (methods, properties, static members)
+   - functions (names, signatures)
+   - constants
+   - external libraries / service dependencies
+   - deprecated or legacy references (from comments)
+   - message headers used in publishing
+
+2. SEMANTIC CONTEXT (Meaning & intent)
+   - component purpose
+   - data flow through modules
+   - invariants & domain rules
+   - interactions among types/modules
+   - transforms applied to data (e.g. trimming, normalization)
+
+3. EXECUTION CONTEXT (Runtime mechanics)
+   - I/O operations (HTTP, Kafka, filesystem, key vault, identity, redis, etc.)
+   - async patterns (promises, awaits, intervals, retries)
+   - timers, scheduling, concurrency, locking
+   - error propagation paths & wrapping logic
+   - resource usage and lifecycle hooks
+
+4. BUSINESS LOGIC (Domain decisions ONLY)
+   Include rules that map input domain entities to output domain entities, validation predicates, filtering logic, movement classification, enrichment steps, field derivations.
+   EXCLUDE pure infra (transport setup, generic HTTP adapter code) UNLESS its behavior alters domain interpretation (duplicate publish timing, header key strategy). Those become domain-coupled and MUST be captured under business_logic AND timing/observability contracts.
+
+=================================
+RETENTION RULES (Do NOT violate)
+=================================
+1. Preserve every output/event/message field exactly (name, type, optionality).
+2. Preserve strong types/enums—do NOT widen to string/Option unless code does.
+3. Preserve publish ordering, duplication loops, and sleep/timing semantics verbatim.
+4. Preserve error codes and variant names—no renaming or grouping.
+5. Preserve metric/tracing/log identifiers and increment/emission conditions.
+6. Preserve environment variable influence; list defaults and behavioral effect.
+7. Preserve transport headers that affect partitioning/routing (e.g. message key).
+8. If uncertain classification (domain vs infra), include and mark classification=domain-coupled.
+9. Do NOT invent logic; only minimal inference when directly implied by code & usage.
+10. If unclear/missing, log in notes; DO NOT omit the reference.
+
+=================================
+AMBIGUITY HANDLING
+=================================
+If unsure whether a behavior influences business outcomes (e.g., duplicate publish, delay sleep, key header insertion): INCLUDE it under both timing_behaviors and domain_vs_infra_classification with classification=domain-coupled.
+
+=================================
+TEST-DERIVED INVARIANTS
+=================================
+Extract assertions that enforce outcomes (event count, field equality, filtering decisions, error variants). Translate each into a concise invariant. Treat as part of required domain behavior.
+
+=================================
+INSTRUMENTATION
+=================================
+Capture metrics/tracing calls (names, counters, gauges, attributes) and log markers. Record semantic purpose (e.g., "irrelevant station filter applied") and domain relevance (monitoring schedule adherence, data quality).
+
+=================================
+CONFIGURATION & ENV
+=================================
+List each env/config variable: name, default, source, usage effect (filtering, timing, topic naming, authentication). Link variables to flows/rules they affect.
+
+=================================
+IR SCHEMA (V9)
+=================================
+{
+  "component_name": "",
+  "source_paths": [],
+  "step": "extract_all",
+  "inputs": "Full source code of the component",
+  "analysis": "",
+  "ir_output": {
+    "structures": {
+      "imports": [],
+      "exports": [],
+      "types": [],
+      "classes": [],
+      "functions": [],
+      "external_dependencies": [],
+      "constants": []
+    },
+    "business_logic": {
+      "flows": [],
+      "rules": [],
+      "state_transitions": [],
+      "external_dependency_usage": []
+    },
+    "message_contracts": [
+      {
+        "name": "",
+        "produced_by": "",
+        "fields": [
+          { "field": "", "type": "", "optional": false, "semantics": "", "source_enum": "", "transforms": [] }
+        ],
+        "transport_headers": [ { "name": "", "value_strategy": "static|derived|normalized" } ],
+        "serialization_notes": "",
+        "duplication_or_ordering_behavior": ""
+      }
+    ],
+    "public_api": [
+      { "symbol": "", "kind": "function|class|handler|trait", "signature": "", "description": "", "stability": "stable|internal|deprecated" }
+    ],
+    "error_contract": [
+      { "variant": "", "code": "", "description_pattern": "", "origin_conditions": [], "maps_from": [] }
+    ],
+    "observability_contract": [
+      { "instrument": "metric|tracing|log", "name": "", "trigger": "", "attributes": [], "domain_relevance": "" }
+    ],
+    "config_variables": [
+      { "name": "", "default": "", "source": "env|file|code", "description": "", "affects": ["publishing|timing|filtering|validation|routing"] }
+    ],
+    "timing_behaviors": [
+      { "pattern": "sleep|interval|duplicate_publish|retry_loop", "location": "", "duration_seconds": 0, "purpose": "", "domain_effect": "" }
+    ],
+    "test_invariants": [
+      { "source_test": "", "assertion": "", "invariant": "", "domain_classification": "domain|domain-coupled" }
+    ],
+    "domain_vs_infra_classification": [
+      { "item": "", "reason_included": "", "classification": "domain|infra|domain-coupled", "notes": "" }
+    ],
+    "context": {
+      "purpose": "",
+      "data_flow": [],
+      "domain_rules": [],
+      "interactions": [],
+      "io_operations": [],
+      "async_patterns": [],
+      "error_flow": [],
+      "performance_sensitive_areas": []
+    },
+    "notes": ""
+  }
+}
+
+=================================
+VALIDATION CHECKLIST BEFORE OUTPUT
+=================================
+- All published message/event structures listed in message_contracts.
+- All error variants preserved with exact codes.
+- All metrics/tracing/log identifiers present.
+- All config/env vars with influence captured.
+- All duplication/timing behaviors recorded.
+- No field optionality added beyond code.
+- Test assertions converted to invariants.
+- Any ambiguity marked domain-coupled and not omitted.
+- notes contains unresolved or speculative items only.
+
+=================================
+OUTPUT RULES
+=================================
+- Output MUST be valid JSON matching schema.
+- Empty arrays if category absent; do NOT omit keys.
+- No invented logic; minimal inference only when code use directly implies.
+- Preserve ordering: structures first, then business_logic, then added sections.
+
+=================================
+FAILURE MODES TO AVOID
+=================================
+- Dropping fields from events.
+- Renaming error codes.
+- Omitting duplication timing semantics.
+- Collapsing metrics to generic descriptions.
+- Generalizing enums to strings.
+- Ignoring header usage.
+
+=================================
+FINAL NOTE
+=================================
+If in doubt: INCLUDE and annotate—never silently discard.

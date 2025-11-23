@@ -6,9 +6,5 @@
     "rust-analyzer.cargo.cfgs": [
         "!miri"
     ],
-    "rust-analyzer.cargo.target": "wasm32-wasip2",
-    "yaml.schemas": {
-        "file:///Users/andreibiriukov/.vscode/extensions/atlassian.atlascode-4.0.4/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
-        "https://www.artillery.io/schema.json": []
-    }
+    "rust-analyzer.cargo.target": "wasm32-wasip2"
 }

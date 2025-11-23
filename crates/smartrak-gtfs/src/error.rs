@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// `OpenID` error codes for  for Verifiable Credential Issuance and
-/// Presentation.
+/// Domain-specific error codes for SmarTrak GTFS adapter processing.
+/// Includes data format, missing field, timestamp, caching, server, and update errors.
 #[derive(Error, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Error {
     #[error("code: processing_error, description: {0}")]

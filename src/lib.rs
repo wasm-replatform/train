@@ -186,7 +186,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                 }
             }
         } else {
-            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = "train");
+            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = SERVICE);
         }
 
         Ok(())

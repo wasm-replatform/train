@@ -1,7 +1,7 @@
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
 use crate::god_mode::god_mode;
 use crate::models::{TripInstance, VehicleInfo};
@@ -52,6 +52,7 @@ pub enum GodModeOutcome {
 }
 
 /// Logs information about the root endpoint invocation.
+#[instrument(level = "info", name = "log_root")]
 pub fn log_root(user_agent: Option<&str>) {
     if let Some(agent) = user_agent {
         info!(user_agent = agent, "root endpoint invoked");

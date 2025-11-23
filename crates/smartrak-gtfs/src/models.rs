@@ -2,9 +2,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
 pub enum EventType {
+    #[serde(alias = "serialData", alias = "SERIAL_DATA")]
     SerialData,
+    #[serde(alias = "location", alias = "LOCATION")]
     Location,
     #[serde(other)]
     Unknown,

@@ -32,6 +32,7 @@ use crate::provider::Provider;
 const SERVICE: &str = "train";
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const DILAX_TOPIC: &str = "realtime-dilax-adapter-apc.v1";
+const SMARTRAK_TOPIC: &str = "realtime-smartrak-bus-avl.v1,realtime-smartrak-bus-avl.v2,realtime-smartrak-train-avl.v1,realtime-r9k-to-smartrak.v1,realtime-passenger-count.v1,realtime-caf-avl.v1";
 
 static ENV: LazyLock<String> =
     LazyLock::new(|| env::var("ENV").unwrap_or_else(|_| "dev".to_string()));
@@ -46,9 +47,9 @@ impl Guest for Http {
             .route("/jobs/detector", get(detector))
             .route("/inbound/xml", post(receive_message))
             .route("/", get(index))
-            .route("/info/:vehicle_id", get(vehicle_info))
-            .route("/god-mode/set-trip/:vehicle_id/:trip_id", get(god_mode_set_trip))
-            .route("/god-mode/reset/:vehicle_id", get(god_mode_reset));
+            .route("/info/{vehicle_id}", get(vehicle_info))
+            .route("/god-mode/set-trip/{vehicle_id}/{trip_id}", get(god_mode_set_trip))
+            .route("/god-mode/reset/{vehicle_id}", get(god_mode_reset));
         wasi_http::serve(router, request).await
     }
 }
@@ -132,6 +133,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     async fn handle(message: Message) -> Result<(), types::Error> {
         let topic = message.topic().unwrap_or_default();
         debug!("received message on topic: {topic}");
+        let smartrak_topics_list = SMARTRAK_TOPIC.split(',').collect::<Vec<&str>>();
 
         if topic == format!("{}-{R9K_TOPIC}", ENV.as_str()) {
             if let Err(e) = process_r9k(&message.data()).await {
@@ -151,13 +153,18 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     service = SERVICE
                 );
             }
-        } else {
-            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = SERVICE);
+        } else if smartrak_topics_list.iter().any(|t| topic == format!("{}-{t}", ENV.as_str())) {
             let payload = message.data();
             let provider = Provider;
             match workflow::process(&provider, &topic, &payload).await {
-                Ok(workflow::WorkflowOutcome::NoOp) => {}
+                Ok(workflow::WorkflowOutcome::NoOp) => {
+                    debug!(topic = %topic, "no operation from smartrak workflow");
+                }
                 Ok(workflow::WorkflowOutcome::Messages(messages)) => {
+                    debug!(
+                        "Publishing Smartrak messages for topic: {}",
+                        message.topic().unwrap_or_default()
+                    );
                     if let Err(err) = publish_smartrak_messages(messages).await {
                         error!(
                             monotonic_counter.processing_errors = 1,
@@ -178,6 +185,8 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     );
                 }
             }
+        } else {
+            warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = "train");
         }
 
         Ok(())

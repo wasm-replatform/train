@@ -21,18 +21,6 @@ fn env_i64(key: &str, default: i64) -> i64 {
     env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
 }
 
-fn push_unique(attempts: &mut Vec<String>, candidate: &str) {
-    if candidate.is_empty() {
-        return;
-    }
-
-    if attempts.iter().any(|value| value == candidate) {
-        return;
-    }
-
-    attempts.push(candidate.to_string());
-}
-
 const fn duration_secs(duration: Duration) -> u64 {
     duration.num_seconds().unsigned_abs()
 }
@@ -50,24 +38,13 @@ pub enum LocationOutcome {
 pub async fn resolve_vehicle(
     provider: &impl Provider, vehicle_id_or_label: &str,
 ) -> Result<Option<VehicleInfo>> {
-    if vehicle_id_or_label.is_empty() {
+    let candidate = vehicle_id_or_label.trim();
+
+    if candidate.is_empty() {
         return Ok(None);
     }
 
-    let mut attempts: Vec<String> = Vec::new();
-
-    push_unique(&mut attempts, vehicle_id_or_label);
-    push_unique(&mut attempts, vehicle_id_or_label.trim());
-    push_unique(&mut attempts, &vehicle_id_or_label.to_ascii_uppercase());
-    push_unique(&mut attempts, &vehicle_id_or_label.trim().to_ascii_uppercase());
-
-    for candidate in attempts {
-        if let Some(vehicle) = fleet::get_vehicle_by_id_or_label(provider, &candidate).await? {
-            return Ok(Some(vehicle));
-        }
-    }
-
-    Ok(None)
+    fleet::get_vehicle_by_id_or_label(provider, candidate).await.map_err(Error::from)
 }
 
 /// Processes a Smartrak Kafka payload and emits outbound messages when applicable.
@@ -101,7 +78,6 @@ pub async fn process_location(
             block_mgt::get_allocation_by_vehicle(provider, &vehicle.id, event_timestamp).await?;
         assign_train_to_trip(provider, vehicle, allocation, event_timestamp).await?;
     }
-
     let trip_instance = current_trip_instance(provider, &vehicle.id, event_timestamp).await?;
     let trip_descriptor = trip_instance.as_ref().map(TripInstance::to_trip_descriptor);
     let odometer = event.location_data.odometer.or(event.event_data.odometer);

@@ -21,7 +21,6 @@ pub async fn process(
     if topic.contains("realtime-passenger-count") {
         let event: PassengerCountEvent = serde_json::from_slice(payload)?;
         process_passenger_count(provider, &event).await?;
-        debug!(topic, "processed passenger count event");
         return Ok(WorkflowOutcome::NoOp);
     }
 
@@ -48,7 +47,7 @@ pub async fn process(
 
     let vehicle_info = resolve_vehicle(provider, vehicle_id).await?;
     let Some(vehicle) = vehicle_info else {
-        warn!(vehicle_id, topic, "vehicle info not found, skipping event");
+        debug!(vehicle_id, topic, "vehicle info not found, skipping event");
         return Ok(WorkflowOutcome::NoOp);
     };
 
@@ -58,6 +57,7 @@ pub async fn process(
     }
 
     let outcome = process_location(provider, &event, &vehicle).await?;
+
     let Some(result) = outcome else {
         return Ok(WorkflowOutcome::NoOp);
     };
@@ -65,11 +65,11 @@ pub async fn process(
     let mut messages = Vec::new();
     match result {
         LocationOutcome::VehiclePosition(feed) => {
-            let topic = "realtime-gtfs-vp".to_string();
+            let topic = "realtime-gtfs-vp.v1".to_string();
             messages.push(SerializedMessage::new(topic, feed.id.clone(), feed)?);
         }
         LocationOutcome::DeadReckoning(dr) => {
-            let topic = "realtime-dead-reckoning".to_string();
+            let topic = "realtime-dead-reckoning.v1".to_string();
             messages.push(SerializedMessage::new(topic, dr.vehicle.id.clone(), dr)?);
         }
     }

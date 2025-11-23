@@ -147,8 +147,7 @@ async fn persist_trip(
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
 
-    let trip_bytes =
-        serde_json::to_vec(&trip).map_err(|e| Error::InvalidFormat(e.to_string()))?;
+    let trip_bytes = serde_json::to_vec(&trip).map_err(|e| Error::InvalidFormat(e.to_string()))?;
     StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL_SECS)).await?;
 
     let timestamp_bytes =

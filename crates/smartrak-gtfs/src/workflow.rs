@@ -98,8 +98,7 @@ fn should_process_topic(topic: &str, vehicle: &VehicleInfo) -> bool {
         return true;
     }
 
-    if topic.contains("realtime-smartrak-bus-avl")
-        || topic.contains("realtime-smartrak-train-avl")
+    if topic.contains("realtime-smartrak-bus-avl") || topic.contains("realtime-smartrak-train-avl")
     {
         return matches!(tag.as_deref(), Some("smartrak"));
     }

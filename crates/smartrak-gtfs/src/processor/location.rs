@@ -190,8 +190,7 @@ async fn assign_train_to_trip(
         return Ok(());
     }
 
-    let trip_bytes =
-        serde_json::to_vec(&trip).map_err(|e| Error::InvalidFormat(e.to_string()))?;
+    let trip_bytes = serde_json::to_vec(&trip).map_err(|e| Error::InvalidFormat(e.to_string()))?;
     StateStore::set(provider, &trip_key, &trip_bytes, Some(duration_secs(TTL_TRIP_TRAIN))).await?;
 
     let timestamp_bytes =

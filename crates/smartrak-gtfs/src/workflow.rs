@@ -83,6 +83,7 @@ pub async fn process(
 }
 
 fn should_process_topic(topic: &str, vehicle: &VehicleInfo) -> bool {
+    let topic = topic.to_ascii_lowercase();
     let tag = vehicle.tag.as_deref().map(str::to_ascii_lowercase);
 
     if topic.contains("realtime-passenger-count") {
@@ -93,20 +94,17 @@ fn should_process_topic(topic: &str, vehicle: &VehicleInfo) -> bool {
         return matches!(tag.as_deref(), Some("caf"));
     }
 
-    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak"
-        .contains(topic)
-    {
+    if topic.contains("realtime-r9k-to-smartrak") {
         return true;
     }
 
-    if "realtime-smartrak-bus-avl,realtime-smartrak-train-avl,realtime-r9k-to-smartrak"
-        .contains(topic)
+    if topic.contains("realtime-smartrak-bus-avl")
+        || topic.contains("realtime-smartrak-train-avl")
     {
         return matches!(tag.as_deref(), Some("smartrak"));
     }
 
-    // default to processing when no rules match (legacy behaviour)
-    true
+    false
 }
 
 pub enum WorkflowOutcome {
@@ -132,5 +130,58 @@ impl SerializedMessage {
     {
         let payload = serde_json::to_vec(&value)?;
         Ok(Self { topic, key, payload })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{VehicleCapacity, VehicleType};
+
+    fn vehicle_with_tag(tag: Option<&str>) -> VehicleInfo {
+        VehicleInfo {
+            id: "veh".to_string(),
+            label: None,
+            registration: None,
+            capacity: VehicleCapacity::default(),
+            vehicle_type: VehicleType::default(),
+            tag: tag.map(std::string::ToString::to_string),
+        }
+    }
+
+    #[test]
+    fn allows_passenger_count_topic() {
+        let vehicle = vehicle_with_tag(None);
+        assert!(should_process_topic("realtime-passenger-count.v1", &vehicle));
+    }
+
+    #[test]
+    fn allows_r9k_topic_without_tag() {
+        let vehicle = vehicle_with_tag(None);
+        assert!(should_process_topic("realtime-r9k-to-smartrak.v1", &vehicle));
+    }
+
+    #[test]
+    fn requires_smartrak_tag_for_bus_and_train_topics() {
+        let no_tag = vehicle_with_tag(None);
+        assert!(!should_process_topic("realtime-smartrak-bus-avl.v1", &no_tag));
+
+        let smartrak_tag = vehicle_with_tag(Some("SmArTrAk"));
+        assert!(should_process_topic("realtime-smartrak-train-avl.v1", &smartrak_tag));
+    }
+
+    #[test]
+    fn requires_caf_tag_for_caf_topic() {
+        let non_caf = vehicle_with_tag(Some("smartrak"));
+        assert!(!should_process_topic("realtime-caf-avl.v1", &non_caf));
+
+        let caf_tag = vehicle_with_tag(Some("CAF"));
+        assert!(should_process_topic("realtime-caf-avl.v1", &caf_tag));
+    }
+
+    #[test]
+    fn rejects_unknown_topics() {
+        let vehicle = vehicle_with_tag(Some("smartrak"));
+        assert!(!should_process_topic("realtime-unknown-topic", &vehicle));
     }
 }

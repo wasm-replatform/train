@@ -514,6 +514,22 @@ criteria = "safe-to-deploy"
 version = "1.0.4"
 criteria = "safe-to-deploy"
 
+[[exemptions.wit-bindgen]]
+version = "0.48.1"
+criteria = "safe-to-deploy"
+
+[[exemptions.wit-bindgen-core]]
+version = "0.48.1"
+criteria = "safe-to-deploy"
+
+[[exemptions.wit-bindgen-rust]]
+version = "0.48.1"
+criteria = "safe-to-deploy"
+
+[[exemptions.wit-bindgen-rust-macro]]
+version = "0.48.1"
+criteria = "safe-to-deploy"
+
 [[exemptions.yansi]]
 version = "1.0.1"
 criteria = "safe-to-run"

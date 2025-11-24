@@ -4,6 +4,9 @@ services:
   train:
     image: ghcr.io/credibil/realtime:latest
     env_file: .env
+    environment:
+      - OTEL_GRPC_URL=http://otelcol:4317
+      - OTEL_HTTP_URL=http://otelcol:4318
     ports:
       - 8080:8080
     command: ["/train.wasm"]

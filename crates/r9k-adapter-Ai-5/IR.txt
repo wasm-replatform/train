@@ -1,0 +1,589 @@
+Module: config.ts
+Description: n/a
+Functions:
+- (class Config static methods & static properties) -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Define static configuration values accessing process.env or literal defaults 2) Provide mapping station id -> stop code 3) Provide overwrite coordinates for certain departure stop_codes 4) Provide kafka configuration object with consumer & producer endpoints, topics, groups derived from environment and addConfluentPrefix 5) Provide getAzureAccessTokenRetrieverConfig returning object with Azure identity parameters 6) Provide addConfluentPrefix that prefixes value with KAFKA_ENVIRONMENT_PREFIX if value present
+- [infrastructure] Preconditions: Environment variables may be set for STATIONS, GTFS_CC_STATIC_URL, BLOCK_MANAGEMENT_URL, MAX_MESSAGE_DELAY_IN_SECONDS, MIN_MESSAGE_DELAY_IN_SECONDS, IS_LOCAL, KAFKA_HOSTS, KAFKA_SOURCE_TOPIC, KAFKA_CONSUMER_GROUP, KAFKA_DEST_VP_TOPIC, APP_MANIFEST_CLIENT_ID, KEY_VAULT, KEY_VAULT_SECRET_NAME_SYSTEM_CLIENT_SECRET, AUTH_LOGGING, KAFKA_ENVIRONMENT_PREFIX
+- [domain] Postconditions: Static configuration accessible for other modules; mappings and constants available
+- [domain] Edge cases & failure modes: If env values absent defaults used; no explicit error handling inside this file
+- [mechanical] Complexity / cost notes: Constant property access O(1); map lookups O(1) average
+Logic Shape:
+- Inputs: process.env.* variables (multiple); station ids for mapping external usage
+-  - STATION_ID_TO_STOP_CODE_MAP — constant referenced; semantics: defined-in-source
+-  - DEPARTURE_LOCATION_OVERWRITE — constant referenced; semantics: defined-in-source
+-  - UNMAPPED_STATION_ID — constant referenced; semantics: defined-in-source
+Outputs: Configuration static properties and objects
+Errors: - unknown
+Unknowns: - Purpose of some station IDs mapping beyond code comments; semantics of r9kDateFormat outside usage
+Methods:
+- .getAzureAccessTokenRetrieverConfig() -> AzureAccessTokenRetrieverConfig
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): 1) Return object with clientId from env or default 2) Set domain literal 3) Compose keyVault host using KEY_VAULT env or default 4) Set secretNameSystemClientSecret from env or default 5) Provide loggerConfig with logger and logAsInfo flag from AUTH_LOGGING 6) Provide localDevEnv accessToken empty string
+- [infrastructure] Preconditions: Config.logger exists; process.env may define overrides
+- [infrastructure] Postconditions: Returned object structured for Azure token retrieval usage
+- [unknown] Edge cases & failure modes: No internal validation; unknown
+- [mechanical] Complexity / cost notes: O(1) object construction
+Logic Shape:
+- Inputs: multiple environment variables
+- Outputs: object literal
+- Errors: none thrown
+- Unknowns: Domain-specific meaning of domain string value
+- .addConfluentPrefix(value) -> string | undefined
+Business Logic:
+- [mechanical] Algorithm (pseudocode): 1) If value falsy return value 2) Else return concatenation of process.env.KAFKA_ENVIRONMENT_PREFIX and value
+- [mechanical] Preconditions: value may be undefined; env KAFKA_ENVIRONMENT_PREFIX may be defined
+- [mechanical] Postconditions: Returns possibly prefixed string
+- [unknown] Edge cases & failure modes: If prefix undefined result may be 'undefined<value>' implicitly; not guarded
+- [mechanical] Complexity / cost notes: O(n) for string length concatenation
+Logic Shape:
+- Inputs: value string | undefined; KAFKA_ENVIRONMENT_PREFIX env
+- Outputs: string or undefined
+- Errors: none thrown
+- Unknowns: Guarantee of prefix presence; not documented
+Dependencies:
+- at-realtime-common; semantics: unknown (external)
+- at-auth-common; semantics: unknown (external)
+Errors: - n/a
+
+Module: confluent-secret-retriever.ts
+Description: n/a
+Functions:
+- (class ConfluentSecretRetriever static methods) -> unknown
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): 1) retrieve(): if username/password already set return 2) Instantiate KeyVault with vault host 3) getSecret by confluentKeyName 4) If secret empty throw Error("No valid kafka keys") 5) Parse JSON secret into { key, secret } 6) Assign username/password fields 7) watch(closeApp): Instantiate KeyVault 8) get latest secret 9) If differs and exists invoke closeApp() 10) Schedule next watch via setTimeout minutes interval
+- [infrastructure] Preconditions: process.env KEY_VAULT, KEY_VAULT_SECRET_NAME_CONFLUENT_KEY may exist; KeyVault.getSecret resolves; secret JSON contains key and secret properties
+- [infrastructure] Postconditions: ConfluentSecretRetriever.confluentKafkaSecret populated after retrieve when successful; watch may trigger closeApp on secret change
+- [infrastructure] Edge cases & failure modes: retrieve throws if secret missing; watch silently continues if no change; JSON.parse may throw (not caught); closeApp invoked on change
+- [mechanical] Complexity / cost notes: Secret retrieval network call cost external; watch recursion linear over time
+Logic Shape:
+- Inputs: environment variables; closeApp callback
+- Outputs: side effects on confluentKafkaSecret; scheduled timeout
+- Errors: Error("No valid kafka keys") thrown; potential JSON.parse error uncaught
+Unknowns: - Format of secret JSON beyond key/secret fields
+Methods:
+- .retrieve() -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): (as above steps 1-6)
+- [infrastructure] Preconditions: KeyVault secret exists and JSON parseable with key, secret
+- [infrastructure] Postconditions: confluentKafkaSecret fields updated
+- [infrastructure] Edge cases & failure modes: Throws if secret missing; leaves existing values if already set
+- [mechanical] Complexity / cost notes: O(1) local operations plus external call
+Logic Shape:
+- Inputs: none
+- Outputs: void
+- Errors: Error("No valid kafka keys")
+- Unknowns: JSON structure guarantee
+- .watch(closeApp) -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): (as above steps 7-10)
+- [infrastructure] Preconditions: closeApp function provided; KeyVault reachable
+- [infrastructure] Postconditions: Timeout scheduled; application may be closed on secret change
+- [infrastructure] Edge cases & failure modes: If getSecret fails promise rejects (uncaught); if secret unchanged no action
+- [mechanical] Complexity / cost notes: O(1) per invocation plus external call; repeated indefinitely
+Logic Shape:
+- Inputs: closeApp callback
+- Outputs: void; side effect scheduling
+- Errors: potential rejection from getSecret; not handled
+- Unknowns: Interval correctness if ENV invalid
+Dependencies:
+- KeyVault (internal); semantics: defined-in-repo
+Errors: - "No valid kafka keys"
+
+Module: key-vault.ts
+Description: n/a
+Functions:
+- (class KeyVault methods) -> unknown
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): 1) getSecret(secretName): create SecretClient with kvHost and DefaultAzureCredential 2) call getSecret(secretName) 3) if value absent throw Error 4) return value
+- [infrastructure] Preconditions: Azure credentials configured; secret exists
+- [infrastructure] Postconditions: Returns secret string if present
+- [infrastructure] Edge cases & failure modes: Throws Error if secret missing
+- [mechanical] Complexity / cost notes: O(1) local plus network call cost external
+Logic Shape:
+- Inputs: secretName string
+- Outputs: secret value string
+- Errors: Error(`Could not find secret under secretName=${secretName} from Azure Key Vault`)
+Unknowns: - Credential acquisition details
+Methods:
+- .getSecret(secretName) -> Promise<string>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): (same as above)
+- [infrastructure] Preconditions: secret exists in Key Vault
+- [infrastructure] Postconditions: returns secret string
+- [infrastructure] Edge cases & failure modes: throws when value missing
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: secretName
+- Outputs: secret string
+- Errors: Error("Could not find secret under secretName=...")
+- Unknowns: Format of secret content
+Dependencies:
+- @azure/keyvault-secrets external; semantics: unknown
+- @azure/identity external; semantics: unknown
+Errors: - Error("Could not find secret under secretName=... from Azure Key Vault")
+
+Module: main.ts
+Description: n/a
+Functions:
+- (class Main methods) -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) start(): configure consumer onMessage to process messages with background transaction 2) fetch auth token and stops data 3) start producer then consumer (unless slot) 4) configure status checks 5) schedule status logging 6) stop(): stop web app consumer producer clear timer 7) processMessage: increment received counter deserialize and validate message; if invalid log and metric; else convert to SmarTrak events; for each event run twoTap sequence adjusting timestamps and publishing twice with delays 8) deserializeAndValidate: xml2js into object; typed deserialize; validate presence of changes; determine eventSeconds from arrival/departure; compute messageDelay; validate against max/min thresholds; record metrics; return message 9) sleep: Promise wrapper with setTimeout 10) publish: increment sent counter; publish JSON string key from externalId or remoteName handle errors 11) scheduleStatusLog: every 60s log elapsed metrics reset counters and reschedule
+- [infrastructure] Preconditions: consumer, producer, webApp constructed; Config.logger available; external services accessible; XML conforms to expected schema; NewRelic client available
+- [domain] Postconditions: Messages processed into SmarTrak events published; periodic status logs; metrics recorded
+- [domain] Edge cases & failure modes: Invalid message triggers ValidationError and metrics increment; publish errors logged; conversion may produce empty events; twoTap not awaited (fire-and-forget) potential unhandled rejection not addressed; sleep always resolves
+- [mechanical] Complexity / cost notes: processMessage complexity O(E) for number of events; publish each event twice sequentially with delays; scheduleStatusLog constant time per interval
+Logic Shape:
+- Inputs: inbound Kafka message value string; environment-driven Config values; remote services data
+-  - Config.maxMessageDelay — constant referenced; semantics: defined-in-source
+-  - Config.minMessageDelay — constant referenced; semantics: defined-in-source
+-  - Config.r9kDateFormat — constant referenced; semantics: defined-in-source
+Outputs: Published SmarTrak events; metrics; logs
+Errors: - ValidationError("no_update"), ValidationError("no_actual_update"), ValidationError("outdated"), ValidationError("wrong_time")
+Unknowns: - Effect of not awaiting twoTap; semantics of NewRelic metric prefixes
+Methods:
+- .start() -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): as step 1-5 of class algorithm
+- [infrastructure] Preconditions: network reachable; blockMgtApi & gtfsApi succeed
+- [infrastructure] Postconditions: consumer and producer running; status log scheduled
+- [infrastructure] Edge cases & failure modes: fetch methods may reject causing start to fail; not caught
+- [mechanical] Complexity / cost notes: O(1) setup plus network calls
+Logic Shape:
+- Inputs: none
+- Outputs: void
+- Errors: propagation from fetchAuthToken/fetchStops/start calls
+- Unknowns: Behavior when Config.isSlot true beyond skipping consumer start
+- .stop() -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): stop webApp consumer producer clear timer log
+- [infrastructure] Preconditions: components instantiated
+- [infrastructure] Postconditions: services stopped timer cleared
+- [mechanical] Edge cases & failure modes: ignore errors if any (not caught)
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: none
+- Outputs: void
+- Errors: underlying stop method errors propagate
+- Unknowns: Guarantee of clearTimeout success
+- .processMessage({value,topic}) -> Promise<void>
+Business Logic:
+- [domain] Algorithm (pseudocode): increment received; deserialize & validate; if invalid handle metrics; else convert trainUpdate to events; map each event into twoTap function invocation
+- [domain] Preconditions: message.value is XML string; r9kToSmartrak.convert returns array
+- [domain] Postconditions: Potential publication of each event twice
+- [domain] Edge cases & failure modes: Deserialization errors; events empty; twoTap unawaited
+- [mechanical] Complexity / cost notes: O(E) with E events
+Logic Shape:
+- Inputs: value string
+- Outputs: void
+- Errors: ValidationError variants; other errors caught and logged in start onMessage wrapper
+- Unknowns: Intention behind twoTap delay
+- .deserializeAndValidate(messageStr) -> Message
+Business Logic:
+- [domain] Algorithm (pseudocode): parse XML; deserialize to Message; validate changes length >0; pick first change; determine eventSeconds depending on hasDeparted/hasArrived; if eventSeconds <=0 throw; compute eventDate; compute messageDelay; record metric; compare delay against max/min thresholds throw if out of bounds; return message
+- [domain] Preconditions: XML matches expected structure root element Config.rootElement; arrival/departure times numeric
+- [domain] Postconditions: Valid Message object returned
+- [domain] Edge cases & failure modes: missing changes -> no_update; missing actual event -> no_actual_update; outdated delay > max -> outdated; wrong time delay < min -> wrong_time
+- [mechanical] Complexity / cost notes: O(1) operations
+Logic Shape:
+- Inputs: messageStr XML string
+- Outputs: Message object
+- Errors: ValidationError variants
+- Unknowns: Reason for selecting only first change not documented here
+- .sleep(milliseconds) -> Promise<unknown>
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return Promise resolved after setTimeout(milliseconds)
+- [mechanical] Preconditions: milliseconds number
+- [mechanical] Postconditions: resolves after delay
+- [mechanical] Edge cases & failure modes: none
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: milliseconds
+- Outputs: Promise resolves undefined
+- Errors: none
+- Unknowns: none
+- .publish(smartrakEvent) -> Promise<void | unknown>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): increment sent; call producer.publish with JSON string and key deriving externalId or remoteName; catch error log and noticeError
+- [infrastructure] Preconditions: producer started; smartrakEvent has remoteData
+- [infrastructure] Postconditions: event attempted publish; errors logged
+- [infrastructure] Edge cases & failure modes: publish rejection logs; remoteName fallback if externalId absent
+- [mechanical] Complexity / cost notes: O(1) serialization
+Logic Shape:
+- Inputs: smartrakEvent
+- Outputs: Promise
+- Errors: publish errors logged not propagated after catch
+- Unknowns: remoteName presence
+- .scheduleStatusLog() -> void
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): store startTime; setTimeout 60s -> compute queueSize partitions; log metrics; reset counters; recursively reschedule
+- [infrastructure] Preconditions: producer and consumer provide queueSize & getAssignedPartitions
+- [infrastructure] Postconditions: periodic logging
+- [infrastructure] Edge cases & failure modes: recursion continues indefinitely; timer cleared by stop
+- [mechanical] Complexity / cost notes: O(1) per interval
+Logic Shape:
+- Inputs: none
+- Outputs: void (side effects scheduling)
+- Errors: none handled
+- Unknowns: Partition data format
+Dependencies:
+- newrelic external; semantics: unknown
+- x2js external; semantics: unknown
+- moment-timezone external; semantics: unknown
+- ta-json external; semantics: unknown
+- at-connector-common external; semantics: unknown
+- at-realtime-common external; semantics: unknown
+- r9k-to-smartrak internal; semantics: defined-in-repo
+- services/gtfs-api internal
+- services/block-mgt-api internal
+- config internal
+- types internal
+Errors: - ValidationError variants
+
+Module: r9k-to-smartrak.ts
+Description: n/a
+Functions:
+- (class R9kToSmartrak methods) -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) convert(trainUpdate): if single change and movement type OTHER return [] 2) get first change station mapping to stop code via Config.STATION_ID_TO_STOP_CODE_MAP 3) validate station relevance via isR9KRelevantStation else return [] 4) fetch allocated vehicles via blockMgtApi.getVehiclesByExternalRefId 5) map each vehicle label to eventLocation possibly overwritten if not arrival and overwrite exists 6) return array of SmarTrakEvent via toSmartrakEvent 7) isR9KRelevantStation: check configured filterStations after mapping 8) getMovementType: switch on numeric changeType returning MovementType variant or OTHER 9) toSmartrakEvent: construct SmarTrakEvent with eventType Location, receivedAt from creationDate, messageData timestamp now, remoteData externalId sanitized, locationData from station with zero speed and accuracy
+- [domain] Preconditions: trainUpdate.changes length >=1; stop mapping exists for station; blockMgtApi returns array; overwrite location keys numeric; creationDate parsable by moment
+- [domain] Postconditions: Returns array of SmarTrakEvent possibly empty
+- [domain] Edge cases & failure modes: Missing stopInfo or relevance returns empty; allocation retrieval may return empty -> empty array; no arrival and overwrite used else station; MovementType OTHER filtering
+- [mechanical] Complexity / cost notes: O(V) where V number of allocated vehicles
+Logic Shape:
+- Inputs: trainUpdate object; Config mappings; external block management vehicle labels; stop data
+-  - Config.STATION_ID_TO_STOP_CODE_MAP — constant referenced; semantics: defined-in-source
+-  - Config.DEPARTURE_LOCATION_OVERWRITE — constant referenced; semantics: defined-in-source
+-  - Config.filterStations — constant referenced; semantics: defined-in-source
+Outputs: SmarTrakEvent[]
+Errors: - none thrown explicitly inside methods
+Unknowns: - Semantics of movement type OTHER beyond filtering; meaning of vehicle label sanitation
+Methods:
+- .convert(trainUpdate) -> Promise<SmarTrakEvent[]>
+Business Logic:
+- [domain] Algorithm (pseudocode): as above steps 1-6
+- [domain] Preconditions: trainUpdate.changes array provided
+- [domain] Postconditions: returns events array
+- [domain] Edge cases & failure modes: conditions leading to empty array
+- [mechanical] Complexity / cost notes: O(V)
+Logic Shape:
+- Inputs: trainUpdate
+- Outputs: SmarTrakEvent[]
+- Errors: none
+- Unknowns: Criteria for filterStations selection
+- .isR9KRelevantStation(trainStation) -> boolean
+Business Logic:
+- [domain] Algorithm (pseudocode): iterate Config.filterStations mapping to stop codes compare with trainStation.stop_code
+- [domain] Preconditions: trainStation.stop_code present
+- [domain] Postconditions: boolean relevance
+- [mechanical] Edge cases & failure modes: none
+- [mechanical] Complexity / cost notes: O(F) with F filterStations length
+Logic Shape:
+- Inputs: trainStation
+- Outputs: boolean
+- Errors: none
+- Unknowns: Business rationale for relevance list
+- .getMovementType(changeType) -> MovementType
+Business Logic:
+- [domain] Algorithm (pseudocode): switch numeric changeType returning ARRIVAL/DEPARTURE/PREDICTION/OTHER based on enumeration values
+- [domain] Preconditions: changeType numeric corresponds to enum
+- [domain] Postconditions: MovementType returned
+- [domain] Edge cases & failure modes: default OTHER
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: changeType
+- Outputs: MovementType
+- Errors: none
+- Unknowns: Semantics for each MovementType not fully described
+- .toSmartrakEvent(vehicleLabel, station, trainUpdateCreationDate) -> SmarTrakEvent
+Business Logic:
+- [domain] Algorithm (pseudocode): create SmarTrakEvent set type Location receivedAt parsed date; create MessageData timestamp now; set EventData empty; remoteData externalId replace spaces; locationData lat lon speed 0 accuracy 0; return event
+- [domain] Preconditions: station stop_lat stop_lon numeric; creationDate parsable
+- [domain] Postconditions: SmarTrakEvent ready for publication
+- [domain] Edge cases & failure modes: vehicleLabel spaces removed; no error handling
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: vehicleLabel station trainUpdateCreationDate
+- Outputs: SmarTrakEvent
+- Errors: none
+- Unknowns: Reason for speed set 0
+Dependencies:
+- newrelic external; semantics: unknown
+- moment-timezone external; semantics: unknown
+- at-connector-common external; semantics: unknown
+- services gtfs-api block-mgt-api internal
+Errors: - n/a
+
+Module: start.ts
+Description: n/a
+Functions:
+- run() -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): 1) If Config.useConfluentKafkaConfig retrieve Confluent secret 2) Instantiate webApp start status endpoint 3) Instantiate KafkaConsumer with config including possible SASL 4) Instantiate KafkaProducer similarly 5) Create Main instance 6) If using Confluent config call watch to restart app on secret change 7) Call main.start() 8) Setup process event handlers for unhandledRejection uncaughtException to log error noticeError stop main exit after timeout 9) Invoke run()
+- [infrastructure] Preconditions: Config values defined; ConfluentSecretRetriever provides credentials; consumer/producer constructors succeed
+- [infrastructure] Postconditions: Application running consuming and producing; error handlers installed
+- [infrastructure] Edge cases & failure modes: watch triggers restart logic; stop in error handler not awaited; process exits after delay
+- [mechanical] Complexity / cost notes: O(1) setup operations; watchers periodic
+Logic Shape:
+- Inputs: environment config
+- Outputs: running application side effects
+- Errors: runtime errors logged then process exit scheduled
+Unknowns: - Behavior of Config.isSlot referenced elsewhere but not here
+Dependencies:
+- newrelic external; semantics: unknown
+- at-realtime-common external; semantics: unknown
+- ConfluentSecretRetriever internal defined-in-repo
+- Main internal
+- Config internal
+Errors: - Error handling generic; message structure unknown
+
+Module: train-update.ts
+Description: n/a
+Functions:
+- (Enums MovementType ChangeType; Classes Change TrainUpdate Message) -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Enumerations define numeric codes 2) Change class maps XML properties to typed fields with converters (numbers booleans) 3) TrainUpdate class maps XML root properties including array of Change objects 4) Message class wraps TrainUpdate under ActualizarDatosTren key
+- [domain] Preconditions: XML fields present; converters invoked by deserialization library
+- [domain] Postconditions: Deserialized objects with typed fields
+- [domain] Edge cases & failure modes: Converters cast all values; absence of fields leads to defaults (changes empty array) no errors thrown in this file
+- [mechanical] Complexity / cost notes: O(N) for number of changes during deserialization
+Logic Shape:
+- Inputs: XML object structure
+- Outputs: instances of Change TrainUpdate Message
+- Errors: none here
+Unknowns: - Full semantics of many fields (e.g., trainDirection parity stopType) partial comments
+Methods:
+- ChangeTypeConverter.serialize(property) -> number
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return Number(property.valueOf())
+- [mechanical] Preconditions: property is ChangeType enum
+- [mechanical] Postconditions: numeric representation
+- [mechanical] Edge cases & failure modes: none
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: property
+- Outputs: number
+- Errors: none
+- Unknowns: none
+- ChangeTypeConverter.deserialize(value) -> ChangeType
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return Number(value)
+- [mechanical] Preconditions: value number
+- [mechanical] Postconditions: numeric cast
+- [unknown] Edge cases & failure modes: enum validation not performed
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: value
+- Outputs: number (used as ChangeType)
+- Errors: none
+- Unknowns: Guarantee value in enum range
+- BooleanConverter.serialize(property) -> string
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return 'true' if property true else 'false'
+- [mechanical] Preconditions: property boolean
+- [mechanical] Postconditions: string form
+- [mechanical] Edge cases & failure modes: none
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: property
+- Outputs: string
+- Errors: none
+- Unknowns: none
+- BooleanConverter.deserialize(value) -> boolean
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return value === 'true'
+- [mechanical] Preconditions: value string
+- [mechanical] Postconditions: boolean
+- [mechanical] Edge cases & failure modes: any non 'true' yields false
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: value
+- Outputs: boolean
+- Errors: none
+- Unknowns: none
+- NumberConverter.serialize(property) -> string
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return String(property)
+- [mechanical] Preconditions: property number
+- [mechanical] Postconditions: string
+- [mechanical] Edge cases & failure modes: NaN converts to 'NaN'
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: property
+- Outputs: string
+- Errors: none
+- Unknowns: none
+- NumberConverter.deserialize(value) -> number
+Business Logic:
+- [mechanical] Algorithm (pseudocode): return Number(value)
+- [mechanical] Preconditions: value string numeric
+- [mechanical] Postconditions: number
+- [unknown] Edge cases & failure modes: invalid string becomes NaN
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: value
+- Outputs: number
+- Errors: none
+- Unknowns: validation not performed
+Dependencies:
+- ta-json external; semantics: unknown
+Errors: - n/a
+
+Module: types.ts
+Description: n/a
+Functions:
+- (class ValidationError) -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): constructor sets errorType sets message calls Error super and adjusts prototype
+- [domain] Preconditions: errorType string msg string
+- [domain] Postconditions: ValidationError instance with errorType accessible
+- [mechanical] Edge cases & failure modes: none visible
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: errorType msg
+- Outputs: ValidationError instance
+- Errors: none
+Unknowns: - Additional semantics of errorType string classification
+Methods:
+- .constructor(errorType,msg) -> ValidationError
+Business Logic:
+- [mechanical] Algorithm (pseudocode): super(msg); set public errorType; set prototype
+- [mechanical] Preconditions: invoked with parameters
+- [mechanical] Postconditions: instance ready
+- [mechanical] Edge cases & failure modes: none
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: errorType msg
+- Outputs: instance
+- Errors: none
+- Unknowns: none
+Dependencies:
+- none
+Errors: - n/a
+
+Module: services/block-mgt-api.ts
+Description: n/a
+Functions:
+- (class BlockMgtApi methods) -> unknown
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): 1) getVehiclesByExternalRefId: build url with externalRefId and closestTrip=true 2) define request with bearer token from authTokenRetriever.retrieve 3) call UtilsCommon.retry with onRetry logging warnings for 5xx or network errors else throw for <500 4) catch errors log and noticeError 5) return array of vehicleLabel from response.data.all or [] 6) fetchAuthToken: obtain retriever via AzureSystemAccessTokenRetriever.provide with Config.getAzureAccessTokenRetrieverConfig
+- [infrastructure] Preconditions: authTokenRetriever initialized before getVehiclesByExternalRefId else retrieve fails; Config.axios available
+- [domain] Postconditions: vehicle labels list returned; auth token retriever stored
+- [infrastructure] Edge cases & failure modes: If response undefined returns []; non-5xx errors throw out of retry; token retrieval may fail propagate
+- [mechanical] Complexity / cost notes: O(A) where A allocations count
+Logic Shape:
+- Inputs: externalRefId string
+-  - Config.blockMgtUrl — constant referenced; semantics: defined-in-source
+Outputs: string[] vehicle labels
+Errors: - Potential thrown Axios errors from retry; none explicitly thrown here aside from propagate
+Unknowns: - Structure of allocation object beyond vehicleLabel
+Methods:
+- .getVehiclesByExternalRefId(externalRefId) -> Promise<string[]>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): as above steps 1-5
+- [infrastructure] Preconditions: authTokenRetriever populated
+- [infrastructure] Postconditions: returns vehicle labels array
+- [infrastructure] Edge cases & failure modes: returns [] on error
+- [mechanical] Complexity / cost notes: O(A)
+Logic Shape:
+- Inputs: externalRefId
+- Outputs: string[]
+- Errors: network errors propagate or handled
+- Unknowns: meaning of closestTrip parameter
+- .fetchAuthToken() -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): call provider to get token retriever assign to instance
+- [infrastructure] Preconditions: Azure provider accessible
+- [infrastructure] Postconditions: authTokenRetriever set
+- [unknown] Edge cases & failure modes: retrieval failure handling not present
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: none
+- Outputs: void
+- Errors: provider errors propagate
+- Unknowns: token lifetime
+Dependencies:
+- at-auth-common external; semantics: unknown
+- at-realtime-common external; semantics: unknown
+Errors: - n/a
+
+Module: services/gtfs-api.ts
+Description: n/a
+Functions:
+- (class GtfsApi methods) -> unknown
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): 1) constructor calls scheduleStopsFetch 2) getStopInfoByStopCode finds stop in stops array 3) fetchStops builds URL /gtfs/stops?fields=stop_code,stop_lon,stop_lat performs axios get inside retry with warning logs for retries ignoring <500 statuses 4) on success if response has data array assign to stops 5) scheduleStopsFetch sets timeout 1h to fetch stops then reschedule
+- [infrastructure] Preconditions: Config.staticCCUrl defined; Config.axios available
+- [domain] Postconditions: stops array periodically refreshed; ability to query stop info by code
+- [infrastructure] Edge cases & failure modes: fetchStops error logged; stops unchanged on failure; getStopInfo may return undefined
+- [mechanical] Complexity / cost notes: getStopInfo linear O(S); fetchStops network cost external
+Logic Shape:
+- Inputs: stopCode string; external HTTP response
+-  - Config.staticCCUrl — constant referenced; semantics: defined-in-source
+Outputs: stop info object or undefined
+Errors: - network errors caught and logged
+Unknowns: - Size of stops array; retention policy
+Methods:
+- .getStopInfoByStopCode(stopCode) -> { stop_code: string, stop_lat: number, stop_lon: number } | undefined
+Business Logic:
+- [mechanical] Algorithm (pseudocode): linear search in stops array
+- [mechanical] Preconditions: stops array may be empty
+- [mechanical] Postconditions: returns matched stop or undefined
+- [mechanical] Edge cases & failure modes: undefined when not found
+- [mechanical] Complexity / cost notes: O(S)
+Logic Shape:
+- Inputs: stopCode
+- Outputs: stop object or undefined
+- Errors: none
+- Unknowns: none
+- .fetchStops() -> Promise<void>
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): as above fetch sequence
+- [infrastructure] Preconditions: network reachable
+- [infrastructure] Postconditions: stops array updated if response has data length
+- [infrastructure] Edge cases & failure modes: logs errors; no throw inside catch
+- [mechanical] Complexity / cost notes: O(R) to assign response size
+Logic Shape:
+- Inputs: none
+- Outputs: void
+- Errors: retry may throw for client errors
+- Unknowns: data schema beyond required fields
+- .scheduleStopsFetch() -> void
+Business Logic:
+- [infrastructure] Algorithm (pseudocode): setTimeout 1h to call fetchStops then recursively schedule
+- [infrastructure] Preconditions: none
+- [infrastructure] Postconditions: periodic refresh scheduling
+- [infrastructure] Edge cases & failure modes: timer continues indefinitely; no cancellation method here
+- [mechanical] Complexity / cost notes: O(1)
+Logic Shape:
+- Inputs: none
+- Outputs: void
+- Errors: none
+- Unknowns: potential memory growth
+Dependencies:
+- at-realtime-common external; semantics: unknown
+- newrelic external; semantics: unknown
+Errors: - n/a
+
+Dependencies:
+- config.ts — internal module; semantics: defined-in-repo
+- confluent-secret-retriever.ts — internal module; semantics: defined-in-repo
+- key-vault.ts — internal module; semantics: defined-in-repo
+- main.ts — internal module; semantics: defined-in-repo
+- r9k-to-smartrak.ts — internal module; semantics: defined-in-repo
+- start.ts — internal module; semantics: defined-in-repo
+- train-update.ts — internal module; semantics: defined-in-repo
+- types.ts — internal module; semantics: defined-in-repo
+- services/block-mgt-api.ts — internal module; semantics: defined-in-repo
+- services/gtfs-api.ts — internal module; semantics: defined-in-repo
+- External libraries: moment-timezone, newrelic, x2js, ta-json, @azure/keyvault-secrets, @azure/identity, at-realtime-common, at-auth-common, at-connector-common; semantics: unknown
+
+Errors:
+- ValidationError("no_update")
+- ValidationError("no_actual_update")
+- ValidationError("outdated")
+- ValidationError("wrong_time")
+- Error("No valid kafka keys")
+- Error("Could not find secret under secretName=... from Azure Key Vault")
+
+END OF TEXT IR

@@ -3,7 +3,8 @@ use chrono::{NaiveDate, TimeZone, Utc, DateTime};
 use quick_xml::de::from_str;
 use tracing::{debug, info};
 
-use crate::{block_mgt, config, Error, R9kMessage, MovementType, Provider, Result, SmarTrakEvent, TrainUpdate};
+use crate::{block_mgt, config, Error, R9kMessage, Provider, Result, SmarTrakEvent};
+use crate::types::{MovementType, TrainUpdate};
 use crate::gtfs::{self, StopInfo};
 use crate::types::ChangeType;
 use realtime::{Message as OutMessage, Publisher};
@@ -72,7 +73,8 @@ pub async fn process(xml_payload: &str, provider: &impl Provider) -> Result<()> 
 
     let received_at = Utc::now();
     for label in vehicles {
-        let mut event = SmarTrakEvent::new(&label, lat, lon, received_at);
+        let trimmed_label = label.replace(' ', "");
+        let mut event = SmarTrakEvent::new(&trimmed_label, lat, lon, received_at);
         publish_two_tap(&mut event, provider).await?;
     }
 
@@ -121,23 +123,21 @@ fn validate_delay(train_update: &TrainUpdate) -> Result<()> {
 
     let message_delay = now_ts.timestamp() - (event_midnight.timestamp() + event_seconds);
     debug!(delay_seconds = message_delay, now = now_ts.to_rfc3339(), event_midnight = ?event_midnight, event_seconds, "r9k message delay computed");
-    if message_delay > config::max_message_delay() { return Err(Error::Outdated(format!("delay seconds: {message_delay}"))); }
-    if message_delay < config::min_message_delay() { return Err(Error::WrongTime(format!("delay seconds: {message_delay}"))); }
+    if message_delay > config::max_message_delay() { return Err(Error::Outdated(format!("message delayed by {message_delay} seconds"))); }
+    if message_delay < config::min_message_delay() { return Err(Error::WrongTime(format!("message delayed by {message_delay} seconds"))); }
     Ok(())
 }
 
 async fn publish_two_tap(event: &mut SmarTrakEvent, provider: &impl Provider) -> Result<()> {
-    // First publish after configurable delay (default 5000ms), then again after another delay.
-    // Environment override enables fast unit tests: set R9K_TWO_TAP_DELAY_MS to small value.
+    // Use blocking thread sleep for strict event ordering in tests (legacy parity)
     let delay_ms: u64 = std::env::var("R9K_TWO_TAP_DELAY_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(5000);
     let delay = std::time::Duration::from_millis(delay_ms);
-    // Capture base timestamp once to allow legacy-style deterministic increments if needed.
     let base_ts = chrono::Utc::now();
     let delay_ms_i64 = i64::try_from(delay_ms).unwrap_or(5000);
-    tokio::time::sleep(delay).await;
+    std::thread::sleep(delay);
     event.message_data.timestamp = (base_ts + chrono::TimeDelta::milliseconds(delay_ms_i64)).to_rfc3339();
     publish(event, provider).await?;
-    tokio::time::sleep(delay).await;
+    std::thread::sleep(delay);
     event.message_data.timestamp = (base_ts + chrono::TimeDelta::milliseconds(delay_ms_i64 * 2)).to_rfc3339();
     publish(event, provider).await?;
     Ok(())

@@ -62,14 +62,14 @@ async fn filtered_out_station_no_events() {
     assert!(provider.take_published().is_empty(), "no events for filtered-out station");
 }
 
-// Envelope without trainUpdate should produce invalid_format error (legacy: no publish).
+// Envelope without trainUpdate should produce no_update error (legacy: no publish).
 #[tokio::test]
 async fn envelope_without_train_update() {
     set_common_env();
     let provider = MockProvider::new();
     let xml = "<CCO xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" stream=\"abc\" sequence=\"1\" xsi:type=\"CCO\"></CCO>";
     let err = r9k_adapter_ai_5::process(xml, &provider).await.unwrap_err();
-    assert_eq!(err.code(), "invalid_format");
+    assert_eq!(err.code(), "no_update");
 }
 
 // Early (too negative) delay should produce wrong_time (deterministic via fixed now).

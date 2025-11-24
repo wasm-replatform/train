@@ -38,6 +38,9 @@ tokio.workspace = true
 [dev-dependencies]
 pretty_assertions.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
 tokio.workspace = true
 rand = "0.8"
 tempfile = "3.10"
+quick-xml.workspace = true
+serde-xml-rs = "0.8.2"

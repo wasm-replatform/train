@@ -2,10 +2,10 @@ use anyhow::{Context, Result};
 use bytes::Bytes;
 use http::Method;
 use http_body_util::Empty;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use crate::HttpRequest;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StopInfo { #[serde(rename = "stop_code")] pub stop_code: String, #[serde(rename = "stop_lat")] pub stop_lat: f64, #[serde(rename = "stop_lon")] pub stop_lon: f64 }
 
 pub async fn stops(http: &impl HttpRequest) -> Result<Vec<StopInfo>> {

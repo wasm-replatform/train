@@ -8,8 +8,9 @@ mod gtfs;
 mod handlers;
 
 pub use self::error::Error;
-pub use self::types::*;
-pub use self::handlers::processor::*;
+pub use self::types::{R9kMessage, SmarTrakEvent};
+pub use self::gtfs::StopInfo;
+pub use self::handlers::processor::process;
 
 pub use realtime::{HttpRequest, Identity, Message, Publisher, StateStore};
 

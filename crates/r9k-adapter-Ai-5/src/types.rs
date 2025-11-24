@@ -76,7 +76,7 @@ pub struct TrainUpdate {
     pub full_train: Option<String>,
     #[serde(rename = "origenActualizaTren")]
     pub train_update_source: Option<String>,
-    #[serde(rename = "pasoTren")]
+    #[serde(rename = "pasoTren", default)]
     pub changes: Vec<Change>,
 }
 

@@ -2205,6 +2205,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "r9k-adapter-ai-5"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "chrono",
+ "chrono-tz",
+ "credibil-api",
+ "http",
+ "http-body",
+ "http-body-util",
+ "pretty_assertions",
+ "quick-xml",
+ "rand 0.8.5",
+ "realtime",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.17",
+ "tokio",
+ "tracing",
+ "urlencoding",
+]
+
+[[package]]
 name = "r9k-connector"
 version = "0.3.0"
 dependencies = [

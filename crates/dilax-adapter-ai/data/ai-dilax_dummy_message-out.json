@@ -1,0 +1,79 @@
+{
+  "device": {
+    "operator": "ABCDEFGHIJKLMNOPQRSTUVWXYZAB",
+    "site": "AM1005",
+    "model": "train",
+    "serial": "ABCDEFGHIJKLMNOPQRSTUVWX"
+  },
+  "clock": {
+    "utc": "1762469343"
+  },
+  "wpt": {
+    "sat": "ABCDEFGHIJKL",
+    "lat": "-36.862813838151354",
+    "lon": "174.81012224180958",
+    "speed": 0
+  },
+  "doors": [
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZA",
+      "in": 10,
+      "out": 20,
+      "art": 10,
+      "st": "ABCDEFGHIJKLMN"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRS",
+      "in": 12,
+      "out": 23,
+      "art": 0,
+      "st": "ABCDEFGHIJKL"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTU",
+      "in": 15,
+      "out": 25,
+      "art": 0,
+      "st": "ABCDEFGHIJKLMNOPQRSTU"
+    },
+    {
+      "name": "ABCDE",
+      "in": 32,
+      "out": 10,
+      "art": 0,
+      "st": "ABCDEFGHIJKLMNO"
+    },
+    {
+      "name": "ABCDEFGHI",
+      "in": 12,
+      "out": 2,
+      "art": 0,
+      "st": "ABCDEFGHIJK"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXY",
+      "in": 30,
+      "out": 30,
+      "art": 0,
+      "st": "ABCDEFGHIJKLMNOPQRSTU"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZABC",
+      "in": 0,
+      "out": 0,
+      "art": 0,
+      "st": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    },
+    {
+      "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZABC",
+      "in": 0,
+      "out": 200,
+      "art": 0,
+      "st": "ABCDE"
+    }
+  ],
+  "stop_id": "STOP1",
+  "trip_id": "trip-123",
+  "start_date": "20250101",
+  "start_time": "08:00:00"
+}

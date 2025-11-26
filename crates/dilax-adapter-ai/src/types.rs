@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::Pacific::Auckland;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 macro_rules! string_newtype {
     ($name:ident) => {
@@ -209,6 +209,7 @@ pub struct GeoWaypoint {
     pub sat: String,
     pub lat: String,
     pub lon: String,
+    #[serde(deserialize_with = "deserialize_i64_flexible")]
     pub speed: i64,
 }
 
@@ -226,6 +227,7 @@ pub struct DoorEvent {
     pub r#in: u32,
     #[serde(default)]
     pub out: u32,
+    #[serde(default, deserialize_with = "deserialize_option_i64_flexible")]
     pub art: Option<i64>,
     pub st: Option<String>,
 }
@@ -239,6 +241,56 @@ pub struct DilaxEvent {
     pub wpt: Option<GeoWaypoint>,
     #[serde(default)]
     pub doors: Vec<DoorEvent>,
+}
+
+// Accept numbers encoded as integers or floats, or numeric strings
+fn deserialize_i64_flexible<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v = serde_json::Value::deserialize(deserializer)?;
+    match v {
+        serde_json::Value::Number(n) => {
+            n.as_i64().map_or_else(
+                || {
+                    #[allow(clippy::cast_possible_truncation)]
+                    { n.as_f64().map(|f| f as i64).ok_or_else(|| serde::de::Error::custom("invalid number")) }
+                },
+                Ok,
+            )
+        }
+        serde_json::Value::String(s) => s
+            .parse::<f64>()
+            .map(|f| {
+                #[allow(clippy::cast_possible_truncation)]
+                { f as i64 }
+            })
+            .or_else(|_| s.parse::<i64>())
+            .map_err(|e| serde::de::Error::custom(format!("parse error: {e}"))),
+        _ => Err(serde::de::Error::custom("expected number or string")),
+    }
+}
+
+fn deserialize_option_i64_flexible<'de, D>(deserializer: D) -> Result<Option<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(opt.map(|v| match v {
+        serde_json::Value::Number(n) => {
+            #[allow(clippy::cast_possible_truncation)]
+            n.as_i64().or_else(|| n.as_f64().map(|f| f as i64)).unwrap_or(0)
+        },
+        serde_json::Value::String(s) => s
+            .parse::<f64>()
+            .map(|f| {
+                #[allow(clippy::cast_possible_truncation)]
+                { f as i64 }
+            })
+            .or_else(|_| s.parse::<i64>())
+            .unwrap_or(0),
+        _ => 0,
+    }))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

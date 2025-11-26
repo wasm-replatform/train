@@ -13,24 +13,11 @@ services:
     volumes:
       - ./target/wasm32-wasip2/release/train.wasm:/train.wasm
     depends_on:
-      - kafka-topics
+      - kafka
       - redis
       - otelcol
 
-  kafka-topics:
-    extends:
-      file: oci://ghcr.io/credibil/compose-resources:latest
-      service: kafka-topics
-
-  kafka:
-    extends:
-      file: oci://ghcr.io/credibil/compose-resources:latest
-      service: kafka
-
-  redis:
-    extends:
-      file: oci://ghcr.io/credibil/compose-resources:latest
-      service: redis
-
 include:
-  - oci://ghcr.io/credibil/compose-opentelemetry:latest
+  - oci://ghcr.io/credibil/compose-kafka:latest
+  - oci://ghcr.io/credibil/compose-redis:latest
+  - oci://ghcr.io/credibil/compose-otelcol:latest

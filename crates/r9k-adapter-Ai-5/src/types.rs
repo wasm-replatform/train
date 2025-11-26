@@ -1,7 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
-pub enum MovementType { Arrival, Departure, Prediction, Other }
+pub enum MovementType {
+    Arrival,
+    Departure,
+    Prediction,
+    Other,
+}
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum ChangeType {
@@ -103,26 +108,49 @@ pub struct SmarTrakEvent {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MessageData { #[serde(rename = "timestamp")] pub timestamp: String }
+pub struct MessageData {
+    #[serde(rename = "timestamp")]
+    pub timestamp: String,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EventData;
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct RemoteData { #[serde(rename = "externalId", skip_serializing_if="Option::is_none")] pub external_id: Option<String>, #[serde(rename = "remoteName", skip_serializing_if="Option::is_none")] pub remote_name: Option<String> }
+pub struct RemoteData {
+    #[serde(rename = "externalId", skip_serializing_if = "Option::is_none")]
+    pub external_id: Option<String>,
+    #[serde(rename = "remoteName", skip_serializing_if = "Option::is_none")]
+    pub remote_name: Option<String>,
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct LocationData { pub gps_accuracy: i32, pub latitude: f64, pub longitude: f64, pub speed: i32 }
+pub struct LocationData {
+    pub gps_accuracy: i32,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub speed: i32,
+}
 
 impl SmarTrakEvent {
     #[allow(clippy::cast_possible_truncation)]
     #[must_use]
-    pub fn new(label: &str, lat: f64, lon: f64, received_at: chrono::DateTime<chrono::Utc>) -> Self {
+    pub fn new(
+        label: &str, lat: f64, lon: f64, received_at: chrono::DateTime<chrono::Utc>,
+    ) -> Self {
         let now = chrono::Utc::now();
         Self {
             event_type: "Location".to_string(),
             received_at: received_at.to_rfc3339(),
             message_data: MessageData { timestamp: now.to_rfc3339() },
             event_data: EventData {},
-            remote_data: RemoteData { external_id: Some(label.replace(' ', "")), remote_name: None },
-            location_data: LocationData { gps_accuracy: 0, latitude: lat, longitude: lon, speed: 0 },
+            remote_data: RemoteData {
+                external_id: Some(label.replace(' ', "")),
+                remote_name: None,
+            },
+            location_data: LocationData {
+                gps_accuracy: 0,
+                latitude: lat,
+                longitude: lon,
+                speed: 0,
+            },
         }
     }
 }

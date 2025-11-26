@@ -11,7 +11,7 @@ use anyhow::{Context, Result};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use credibil_api::Client;
-use dilax_adapter::{DetectionRequest, DilaxMessage};
+use dilax_adapter_ai::{DetectionRequest, DilaxMessage};
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
 use serde_json::{Value, json};

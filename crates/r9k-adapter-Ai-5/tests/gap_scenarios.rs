@@ -4,19 +4,19 @@ mod provider_mock;
 use provider_mock::MockProvider;
 
 #[inline]
-fn set_env(key: &str, val: &str) { unsafe { std::env::set_var(key, val); } }
+fn set_env(key: &str, val: &str) {
+    unsafe {
+        std::env::set_var(key, val);
+    }
+}
 
 // Build a minimal XML payload allowing custom movement fields.
 fn xml_change(
-    change_type: i32,
-    station: i32,
-    created_date: &str,
-    actual_arrival: i64,
-    actual_departure: i64,
-    has_arrived: bool,
-    has_departed: bool,
+    change_type: i32, station: i32, created_date: &str, actual_arrival: i64, actual_departure: i64,
+    has_arrived: bool, has_departed: bool,
 ) -> String {
-    format!(r#"<ActualizarDatosTren><trenPar>EMU-TRIP</trenPar><trenImpar></trenImpar><fechaCreacion>{}</fechaCreacion><numeroRegistro>REG</numeroRegistro><operadorComercial>METRO</operadorComercial><codigoOperadorComercial>MT</codigoOperadorComercial><trenCompleto>YES</trenCompleto><origenActualizaTren>SYSTEM</origenActualizaTren><pasoTren><tipoCambio>{}</tipoCambio><estacion>{}</estacion><idPaso>entry</idPaso><horaEntrada>{}</horaEntrada><horaEntradaReal>{}</horaEntradaReal><haEntrado>{}</haEntrado><retrasoEntrada>0</retrasoEntrada><horaSalida>{}</horaSalida><horaSalidaReal>{}</horaSalidaReal><haSalido>{}</haSalido><retrasoSalida>0</retrasoSalida><horaInicioDetencion>0</horaInicioDetencion><duracionDetencion>0</duracionDetencion><viaEntradaMallas>P1</viaEntradaMallas><viaCirculacionMallas>L1</viaCirculacionMallas><sentido>0</sentido><tipoParada>4</tipoParada><paridad>even</paridad></pasoTren></ActualizarDatosTren>"#,
+    format!(
+        r#"<ActualizarDatosTren><trenPar>EMU-TRIP</trenPar><trenImpar></trenImpar><fechaCreacion>{}</fechaCreacion><numeroRegistro>REG</numeroRegistro><operadorComercial>METRO</operadorComercial><codigoOperadorComercial>MT</codigoOperadorComercial><trenCompleto>YES</trenCompleto><origenActualizaTren>SYSTEM</origenActualizaTren><pasoTren><tipoCambio>{}</tipoCambio><estacion>{}</estacion><idPaso>entry</idPaso><horaEntrada>{}</horaEntrada><horaEntradaReal>{}</horaEntradaReal><haEntrado>{}</haEntrado><retrasoEntrada>0</retrasoEntrada><horaSalida>{}</horaSalida><horaSalidaReal>{}</horaSalidaReal><haSalido>{}</haSalido><retrasoSalida>0</retrasoSalida><horaInicioDetencion>0</horaInicioDetencion><duracionDetencion>0</duracionDetencion><viaEntradaMallas>P1</viaEntradaMallas><viaCirculacionMallas>L1</viaCirculacionMallas><sentido>0</sentido><tipoParada>4</tipoParada><paridad>even</paridad></pasoTren></ActualizarDatosTren>"#,
         created_date,
         change_type,
         station,
@@ -84,7 +84,7 @@ async fn early_time_error() {
     // Ensure validation active
     set_env("R9K_SKIP_DELAY_VALIDATION", "0");
     // Fix 'now' to a stable timestamp earlier than created date 2099
-    set_env("R9K_FIXED_NOW_TIMESTAMP","2025-08-02T00:00:00Z");
+    set_env("R9K_FIXED_NOW_TIMESTAMP", "2025-08-02T00:00:00Z");
     let provider = MockProvider::new();
     // Far future date (2099) with now=2025 means event_time is way in future, so delay will be large negative (< -30s)
     let xml = xml_change(3, 0, "02/08/2099", 10, 10, true, true);

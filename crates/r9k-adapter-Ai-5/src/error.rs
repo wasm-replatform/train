@@ -3,19 +3,19 @@ use thiserror::Error;
 
 #[derive(Error, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Error {
-    #[error("code: processing_error, description: {0}")] 
+    #[error("code: processing_error, description: {0}")]
     ProcessingError(String),
-    #[error("code: invalid_format, description: {0}")] 
+    #[error("code: invalid_format, description: {0}")]
     InvalidFormat(String),
-    #[error("code: outdated, description: {0}")] 
+    #[error("code: outdated, description: {0}")]
     Outdated(String),
-    #[error("code: wrong_time, description: {0}")] 
+    #[error("code: wrong_time, description: {0}")]
     WrongTime(String),
-    #[error("code: server_error, description: {0}")] 
+    #[error("code: server_error, description: {0}")]
     ServerError(String),
-    #[error("code: no_update")] 
+    #[error("code: no_update")]
     NoUpdate,
-    #[error("code: no_actual_update")] 
+    #[error("code: no_actual_update")]
     NoActualUpdate,
 }
 
@@ -33,7 +33,9 @@ impl Error {
         }
     }
     #[must_use]
-    pub fn description(&self) -> String { self.to_string() }
+    pub fn description(&self) -> String {
+        self.to_string()
+    }
 }
 
 impl From<anyhow::Error> for Error {

@@ -13,11 +13,11 @@ This is a WASM-based replatform of legacy TypeScript train services into Rust, t
 The codebase uses a **Provider trait pattern** for dependency injection. Each adapter crate defines domain-specific Provider traits:
 
 ```rust
-// From crates/dilax-adapter/src/lib.rs
+// From crates/dilax-adapter-ai/src/lib.rs
 pub trait Provider: HttpRequest + Publisher + StateStore + Identity {}
 ```
 
-- **Domain crates** (`crates/dilax-adapter`, `crates/r9k-adapter`) define `Provider` traits with required capabilities
+- **Domain crates** (`crates/dilax-adapter-ai`, `crates/r9k-adapter`) define `Provider` traits with required capabilities
 - **Host application** (`src/provider.rs`) implements these traits using WASI interfaces
 - **Tests** (`tests/provider.rs`) implement mock providers for unit testing
 
@@ -41,7 +41,7 @@ Domain crates (`crates/*`) compile as `lib` and are linked into the main compone
 ```
 ├── r9k-connector/    # Receives R9K XML from track sensors → publishes to Kafka
 ├── r9k-adapter/      # Transforms R9K data → SmarTrak location events
-├── dilax-adapter/    # Enriches Dilax APC data with GTFS/block allocation
+├── dilax-adapter-ai/    # Enriches Dilax APC data with GTFS/block allocation (AI generated)
 └── realtime/         # Shared Provider traits (imported by all adapters)
 ```
 

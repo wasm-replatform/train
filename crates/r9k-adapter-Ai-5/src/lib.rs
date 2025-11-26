@@ -1,15 +1,15 @@
 //! R9K position adapter domain library
 
-mod error;
-mod types;
-mod config;
 mod block_mgt;
+mod config;
+mod error;
 mod gtfs;
 mod handlers;
+mod types;
 
 pub use self::error::Error;
-pub use self::types::*;
 pub use self::handlers::processor::*;
+pub use self::types::*;
 
 pub use realtime::{HttpRequest, Identity, Message, Publisher, StateStore};
 

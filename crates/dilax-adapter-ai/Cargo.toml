@@ -1,0 +1,36 @@
+[package]
+name = "dilax-adapter-ai"
+description = "Dilax passenger counting adapter (AI generated)"
+readme = "README.md"
+publish = false
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+anyhow.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+http.workspace = true
+http-body.workspace = true
+http-body-util.workspace = true
+credibil-api.workspace = true
+regex = "1.11"
+realtime.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_repr.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+urlencoding.workspace = true

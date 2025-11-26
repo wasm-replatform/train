@@ -1,18 +1,35 @@
+use pretty_assertions::assert_eq;
+use serde_json::json;
 use std::process::{Command, Stdio};
 use std::time::Duration;
-use serde_json::json;
-use pretty_assertions::assert_eq;
 use tokio::time;
 
 #[inline]
-fn set_env(key: &str, val: &str) { unsafe { std::env::set_var(key, val); } }
+fn set_env(key: &str, val: &str) {
+    unsafe {
+        std::env::set_var(key, val);
+    }
+}
 
 mod provider_mock;
 use provider_mock::MockProvider;
 // use r9k_adapter_ai_5::process;
 
-fn sample_xml(change_type: i32, station: i32, created_date: &str, arrival: i64, actual_arrival: i64, departed: bool, actual_departure: i64) -> String {
-    format!(r#"<ActualizarDatosTren><trenPar>EMU-TRIP</trenPar><trenImpar></trenImpar><fechaCreacion>{}</fechaCreacion><numeroRegistro>REG</numeroRegistro><operadorComercial>METRO</operadorComercial><codigoOperadorComercial>MT</codigoOperadorComercial><trenCompleto>YES</trenCompleto><origenActualizaTren>SYSTEM</origenActualizaTren><pasoTren><tipoCambio>{}</tipoCambio><estacion>{}</estacion><idPaso>entry</idPaso><horaEntrada>{}</horaEntrada><horaEntradaReal>{}</horaEntradaReal><haEntrado>true</haEntrado><retrasoEntrada>0</retrasoEntrada><horaSalida>{}</horaSalida><horaSalidaReal>{}</horaSalidaReal><haSalido>{}</haSalido><retrasoSalida>0</retrasoSalida><horaInicioDetencion>0</horaInicioDetencion><duracionDetencion>0</duracionDetencion><viaEntradaMallas>P1</viaEntradaMallas><viaCirculacionMallas>L1</viaCirculacionMallas><sentido>0</sentido><tipoParada>4</tipoParada><paridad>even</paridad></pasoTren></ActualizarDatosTren>"#, created_date, change_type, station, arrival, actual_arrival, actual_departure, actual_departure, departed)
+fn sample_xml(
+    change_type: i32, station: i32, created_date: &str, arrival: i64, actual_arrival: i64,
+    departed: bool, actual_departure: i64,
+) -> String {
+    format!(
+        r#"<ActualizarDatosTren><trenPar>EMU-TRIP</trenPar><trenImpar></trenImpar><fechaCreacion>{}</fechaCreacion><numeroRegistro>REG</numeroRegistro><operadorComercial>METRO</operadorComercial><codigoOperadorComercial>MT</codigoOperadorComercial><trenCompleto>YES</trenCompleto><origenActualizaTren>SYSTEM</origenActualizaTren><pasoTren><tipoCambio>{}</tipoCambio><estacion>{}</estacion><idPaso>entry</idPaso><horaEntrada>{}</horaEntrada><horaEntradaReal>{}</horaEntradaReal><haEntrado>true</haEntrado><retrasoEntrada>0</retrasoEntrada><horaSalida>{}</horaSalida><horaSalidaReal>{}</horaSalidaReal><haSalido>{}</haSalido><retrasoSalida>0</retrasoSalida><horaInicioDetencion>0</horaInicioDetencion><duracionDetencion>0</duracionDetencion><viaEntradaMallas>P1</viaEntradaMallas><viaCirculacionMallas>L1</viaCirculacionMallas><sentido>0</sentido><tipoParada>4</tipoParada><paridad>even</paridad></pasoTren></ActualizarDatosTren>"#,
+        created_date,
+        change_type,
+        station,
+        arrival,
+        actual_arrival,
+        actual_departure,
+        actual_departure,
+        departed
+    )
 }
 
 #[tokio::test]
@@ -28,10 +45,15 @@ async fn parity_success_two_tap() {
 
     let provider = MockProvider::new();
     set_env("R9K_TWO_TAP_DELAY_MS", "10");
-    set_env("R9K_SKIP_DELAY_VALIDATION","1");
+    set_env("R9K_SKIP_DELAY_VALIDATION", "1");
     let xml = sample_xml(3, 0, "02/08/2025", 3600, 3620, true, 3700);
 
-    let proc = tokio::spawn({ let p = provider.clone(); async move { r9k_adapter_ai_5::process(&xml, &p).await.unwrap(); }});
+    let proc = tokio::spawn({
+        let p = provider.clone();
+        async move {
+            r9k_adapter_ai_5::process(&xml, &p).await.unwrap();
+        }
+    });
     // Wait slightly longer than two short test delays
     time::sleep(Duration::from_millis(30)).await;
     proc.await.unwrap();
@@ -40,17 +62,20 @@ async fn parity_success_two_tap() {
     assert_eq!(published.len(), 4, "expected two vehicles x two publications");
 
     // Normalize Rust events
-    let rust_events: Vec<_> = published.iter().map(|e| {
-        let v: serde_json::Value = serde_json::from_slice(&e.payload).unwrap();
-        json!({
-          "eventType": v["eventType"],
-          "receivedAt": v["receivedAt"],
-          "externalId": v["remoteData"]["externalId"],
-          "latitude": v["locationData"]["latitude"],
-          "longitude": v["locationData"]["longitude"],
-          "timestamp": v["messageData"]["timestamp"],
+    let rust_events: Vec<_> = published
+        .iter()
+        .map(|e| {
+            let v: serde_json::Value = serde_json::from_slice(&e.payload).unwrap();
+            json!({
+              "eventType": v["eventType"],
+              "receivedAt": v["receivedAt"],
+              "externalId": v["remoteData"]["externalId"],
+              "latitude": v["locationData"]["latitude"],
+              "longitude": v["locationData"]["longitude"],
+              "timestamp": v["messageData"]["timestamp"],
+            })
         })
-    }).collect();
+        .collect();
 
     // Prepare legacy runner input replicating same train update semantics
     let legacy_input = json!({
@@ -123,7 +148,7 @@ async fn parity_success_two_tap() {
 
 #[tokio::test]
 async fn error_no_update() {
-        set_env("R9K_SKIP_DELAY_VALIDATION","1");
+    set_env("R9K_SKIP_DELAY_VALIDATION", "1");
     set_env("STATIONS", "0,19,40");
     set_env("TIMEZONE", "Pacific/Auckland");
     set_env("GTFS_CC_STATIC_URL", "http://mock-gtfs");
@@ -138,7 +163,7 @@ async fn error_no_update() {
 
 #[tokio::test]
 async fn error_no_actual_update() {
-    set_env("R9K_SKIP_DELAY_VALIDATION","1"); // Skip time validation but NOT actual time check
+    set_env("R9K_SKIP_DELAY_VALIDATION", "1"); // Skip time validation but NOT actual time check
     set_env("STATIONS", "0,19,40");
     set_env("TIMEZONE", "Pacific/Auckland");
     set_env("GTFS_CC_STATIC_URL", "http://mock-gtfs");
@@ -153,7 +178,7 @@ async fn error_no_actual_update() {
 
 #[tokio::test]
 async fn unmapped_station_filtered() {
-        set_env("R9K_SKIP_DELAY_VALIDATION","1");
+    set_env("R9K_SKIP_DELAY_VALIDATION", "1");
     set_env("STATIONS", "0,19,40");
     set_env("TIMEZONE", "Pacific/Auckland");
     set_env("GTFS_CC_STATIC_URL", "http://mock-gtfs");
@@ -174,9 +199,9 @@ async fn outdated_error() {
     set_env("MIN_MESSAGE_DELAY_IN_SECONDS", "-30");
     set_env("GTFS_CC_STATIC_URL", "http://mock-gtfs");
     set_env("BLOCK_MANAGEMENT_URL", "http://mock-block");
-    set_env("R9K_SKIP_DELAY_VALIDATION","0");
+    set_env("R9K_SKIP_DELAY_VALIDATION", "0");
     // Deterministic time: fix 'now' to 2025-08-02 so past date (2000) produces large positive delay (> 60s)
-    set_env("R9K_FIXED_NOW_TIMESTAMP","2025-08-02T00:00:00Z");
+    set_env("R9K_FIXED_NOW_TIMESTAMP", "2025-08-02T00:00:00Z");
     let provider = MockProvider::new();
     // Use far past date (year 2000) - delay will be ~25 years = way more than 60s max
     let xml = sample_xml(3, 0, "01/01/2000", 10, 10, true, 10);

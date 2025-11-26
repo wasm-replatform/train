@@ -837,6 +837,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "dilax-adapter-ai"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "chrono",
+ "chrono-tz",
+ "credibil-api",
+ "http",
+ "http-body",
+ "http-body-util",
+ "realtime",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "thiserror 2.0.17",
+ "tracing",
+ "urlencoding",
+]
+
+[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3310,7 +3332,7 @@ dependencies = [
  "axum",
  "bytes",
  "credibil-api",
- "dilax-adapter",
+ "dilax-adapter-ai",
  "http",
  "http-body",
  "r9k-adapter",

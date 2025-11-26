@@ -1,0 +1,540 @@
+Module: dilax-processor.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode):
+1) [domain] Define interface DilaxState with count token lastTripId occupancyStatus.
+2) [domain] Class DilaxProcessor constructed with redisClient fleetApi ccStaticApi gtfsStaticApi blockMgtClientApi.
+3) [mechanical] Initialize REDIS_TTL constant = 3 * 30 * 60.
+4) [infrastructure] Create logger from Config.logger and AsyncLock with maxPending 30000.
+5) [domain] process(event): Extract vehicle label via getVehicleLabel; if absent log warn and skip vehicle enrichment.
+6) [domain] If vehicleLabel present call fleetApi.trainByLabel to obtain vehicleInfo; if null log warn; else extract vehicleId capacity (seating total) and log.
+7) [domain] If capacity missing log warn and return early without further processing.
+8) [domain] Call blockMgtClientApi.getAllocationByVehicleId(vehicleId) to retrieve allocation; if present set tripId startDate startTime else log warn.
+9) [domain] Call getTrainStopId(vehicleId, event) to compute stopId; if null log warn.
+10) [mechanical] Compose dilaxEventEnriched by shallow copying event and adding stop_id trip_id start_date start_time.
+11) [domain] If vehicleId absent log warn and return dilaxEventEnriched without passenger count processing.
+12) [infrastructure] Acquire lock named `vehicleId-${vehicleId}` to ensure serialized state updates.
+13) [infrastructure] Inside lock: Build dilaxStateKey from Config.redis.apcVehicleIdStateKey and vehicleId; read previous state string from Redis.
+14) [mechanical] If no previous state string initialize dilaxState with default zeros/nulls.
+15) [domain] Perform backward-compatibility migration: read migrated flag key; if absent read tripIdOldVersion and countOldVersion from legacy keys; if present set dilaxState.lastTripId and dilaxState.count accordingly; set migrated flag.
+16) [mechanical] Else parse previous state JSON into dilaxState.
+17) [mechanical] Parse token from dilaxEvent.clock.utc as integer.
+18) [domain] If token <= dilaxState.token log warn and skip updating counts (duplicate message condition).
+19) [domain] Else set dilaxState.token to token and evaluate tripId change logic.
+20) [domain] If tripId present and dilaxState.lastTripId null set lastTripId to current tripId (prevent reset on first run).
+21) [domain] If lastTripId exists and differs from current tripId set hasTripIdChanged true and update lastTripId.
+22) [domain] If no tripId OR hasTripIdChanged then reset dilaxState.count to 0 and call updateRunningCount with skipOut=true else call updateRunningCount skipOut=false.
+23) [domain] Call updateOccupancyStatus with current dilaxState and capacity numbers to derive occupancyStatus.
+24) [infrastructure] Write updated dilaxState to Redis using getset; set expiry Config.APC_TTL_SECS; compare lastValue with previous string to detect dirty write; log warn if mismatch.
+25) [infrastructure] Backward-compatibility: If occupancyStatus set write to legacy keyOccupancy with TTL REDIS_TTL; catch errors report to newrelic and log.
+26) [infrastructure] Backward-compatibility: Write passenger count to legacy apcVehicleIdKey with TTL Config.APC_TTL_SECS; catch errors similarly.
+27) [infrastructure] Catch any processing errors within lock block and log / report newrelic.
+28) [domain] After lock call saveVehicleTripInfo(vehicleId, vehicleLabel, tripId, stopId, event).
+29) [mechanical] Return dilaxEventEnriched.
+30) [domain] updateRunningCount: Iterate each door in dilaxEvent.doors summing in and conditionally out; compute currentCount = max(previousCount - outTotal,0)+inTotal; set dilaxState.count; log.
+31) [domain] updateOccupancyStatus: Compare dilaxState.count against seating and total thresholds (5%, 40%, 90% seating; 90% total) assign OccupancyStatus enum or FULL; store string form.
+32) [domain] isTrainStation: Find entry in trainStops where parent_stop_code equals stopCode; if found compare route_type to STOP_TYPE.TRAINSTOP to determine boolean.
+33) [domain] getVehicleLabel: Extract device.site; if absent return null; regex split site into alphanumeric segments; map first segment via vehicleLabelMap (AM->AMP AD->ADL); pad spaces to form label of length 14 (model + spaces + number). Return formatted label.
+34) [domain] getTrainStopId: If dilaxEvent lacks wpt log warn and return null; else extract lon lat; call ccStaticApi.getStopsInfoByLongLat(lat, lon, 150); if result present call gtfsStaticApi.getTrainStopTypes(); if message property exists log error; else iterate stopsInfo and for each compute foundTransStation via isTrainStation; on first true log info and return stopId; if none return null.
+35) [domain] saveVehicleTripInfo: If vehicleId null return; build VehicleTripInfo object with vehicleId label tripId stopId dilaxEvent lastReceivedTimestamp; write to Redis keyVehicleTripInfo with TTL 2 days; catch errors log and newrelic.
+- [domain] Preconditions:
+- [domain] process: Requires dilaxEvent with clock.utc string; device.site may be needed for vehicle label; Redis client operational; external APIs reachable for enrichment; absence leads to logged warnings and partial output.
+- [domain] updateRunningCount: Requires dilaxEvent.doors array with numeric in/out counts; dilaxState.count numeric.
+- [domain] updateOccupancyStatus: Requires valid vehicleSeatingSpace vehicleTotalSpace integers >=0.
+- [domain] getTrainStopId: Requires dilaxEvent.wpt.lat lon if present; external APIs must respond with stops and train stop types.
+- [domain] saveVehicleTripInfo: Requires vehicleId non-null to cache info.
+- [mechanical] Lock acquisition requires lock object available.
+- [unknown] No explicit validation of inputs beyond presence checks.
+- [domain] Postconditions:
+- [domain] process: Returns enriched dilax event object including stop_id trip_id start_date start_time possibly null values; Redis state updated for vehicle occupancy and count when vehicleId present and token accepted.
+- [domain] State migration performed once per vehicle if legacy keys exist.
+- [domain] Occupancy status stored as string in dilaxState and optionally legacy Redis key.
+- [domain] saveVehicleTripInfo caches vehicle trip info for later retrieval.
+- [mechanical] updateRunningCount updates dilaxState.count consistent with algorithm.
+- [mechanical] updateOccupancyStatus sets dilaxState.occupancyStatus based on thresholds.
+- [unknown] No guarantee of atomicity across multiple Redis writes beyond lock scope.
+- [domain] Edge cases & failure modes:
+- [domain] Missing vehicleLabel leads to skip of vehicle enrichment and passenger counting (only returns enriched with nulls).
+- [domain] Missing capacity triggers early return.
+- [domain] Duplicate or out-of-order token (<= previous token) causes skip of state update.
+- [domain] TripId change resets count and skips OUT values (skipOut=true) per comment ATR-2379.
+- [domain] Redis dirty write detection: if lastValue differs logs warning but proceeds.
+- [domain] Negative computed currentCount triggers warning and clamped via Math.max call.
+- [domain] Missing wpt (GPS) prevents stopId detection and logs warning.
+- [infrastructure] External API failures caught and logged returning null or empty values (fleet, block, static APIs).
+- [infrastructure] Redis failures in compatibility write blocks caught and logged without halting processing.
+- [domain] getTrainStopId stopsInfo iteration may yield none resulting in null stopId.
+- [unknown] Behavior on extremely large doors arrays not specified.
+- [domain] Complexity / cost notes:
+- [mechanical] process: O(d + s) where d=doors length s=stopsInfo length (conditional) plus constant external API calls latency dominated by network.
+- [mechanical] updateRunningCount: O(d) linear in number of doors.
+- [mechanical] updateOccupancyStatus: O(1) constant comparisons.
+- [mechanical] getVehicleLabel: O(k) where k segments from regex match.
+- [mechanical] getTrainStopId: O(s) iteration over stopsInfo after external queries.
+- [mechanical] saveVehicleTripInfo: O(1) aside from Redis IO.
+- [unknown] No explicit performance constraints documented.
+Logic Shape:
+- Inputs:
+- [domain] dilaxEvent (structure with device clock doors optional wpt) used for enrichment and counting.
+- [domain] vehicleLabel derived from dilaxEvent.device.site via mapping.
+- [domain] vehicleInfo capacity retrieved via FleetApi.trainByLabel.
+- [domain] vehicleAllocation from BlockMgtClientApi.getAllocationByVehicleId.
+- [domain] stopsInfo from CcStaticApi.getStopsInfoByLongLat.
+- [domain] trainStopTypes from GtfsStaticApi.getTrainStopTypes.
+- [mechanical] Redis stored previous dilaxState JSON string.
+- [mechanical] token integer parsed from clock.utc.
+- [mechanical] doors array counts used for running total.
+- [domain] Constants referenced: REDIS_TTL (defined-in-source), vehicleLabelMap (defined-in-source), threshold multipliers 0.05 0.4 0.9 (defined-in-source), 150 distance (defined-in-source), Config.redis.* keys (unknown semantics), Config.APC_TTL_SECS (unknown semantics), OccupancyStatus enum values (defined-in-source), STOP_TYPE.TRAINSTOP (defined-in-source).
+Outputs:
+- [domain] dilaxEventEnriched object with added stop_id trip_id start_date start_time.
+- [domain] Redis dilaxState entry with count token lastTripId occupancyStatus and expiry.
+- [domain] Redis occupancy legacy keys when enabled.
+- [domain] VehicleTripInfo cached per vehicle for 2 days.
+Errors:
+- [infrastructure] Logged warnings/errors via this.log methods; newrelic.noticeError captures caught exceptions; returns null for certain API calls; no thrown domain-specific Error objects.
+- [unknown] Error variants not defined in code.
+Unknowns:
+- unknown — semantics not documented in source comments or code for redis key meanings.
+- unknown — not present in source for validation rules on input ranges.
+- unknown — referenced symbol defined outside repo for Config object internals.
+
+Methods:
+-.process(dilaxEvent) -> Promise<any>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Initialize enrichment variables; 2) Derive vehicleLabel; 3) If label present fetch vehicleInfo; 4) If vehicleInfo absent warn; else extract capacity; 5) If capacity absent warn and return; 6) Fetch allocation and set trip details; 7) Fetch stopId; 8) Compose enriched event; 9) If no vehicleId return enriched; 10) Acquire lock per vehicle; 11) Load or migrate dilaxState; 12) Parse token; 13) If token duplicate warn skip; else update token; 14) Handle tripId change reset count; 15) Update running count; 16) Update occupancy; 17) Persist state with expiry; 18) Write compatibility keys; 19) Save vehicle trip info outside lock; 20) Return enriched event.
+- [domain] Preconditions: Must receive dilaxEvent with clock.utc string and doors array; external services reachable for enrichment.
+- [domain] Postconditions: Enriched event returned; vehicle state updated in Redis when vehicleId present.
+- [domain] Edge cases & failure modes: Duplicate token skip; missing vehicle info skip occupancy logic; API failures yield null tripId/stopId; dirty write logged.
+- [mechanical] Complexity / cost notes: See module-level complexity; dominated by external IO.
+Logic Shape:
+- Inputs: dilaxEvent; Redis state; external APIs responses.
+- Outputs: enriched event; Redis state entries.
+- Errors: Logged warnings not thrown.
+- Unknowns: Downstream consumers of Redis keys unknown.
+
+-.updateRunningCount(dilaxEvent, dilaxState, vehicleId, skipOut) -> void
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Initialize totals; 2) Iterate doors summing in and out conditionally; 3) Compute currentCount = max(prev - outTotal,0)+inTotal; 4) Warn if negative; 5) Assign dilaxState.count; 6) Log result.
+- [domain] Preconditions: dilaxState.count numeric; dilaxEvent.doors present.
+- [domain] Postconditions: dilaxState.count updated.
+- [domain] Edge cases & failure modes: skipOut true excludes outTotal; negative count warning; empty doors yields currentCount = previousCount.
+- [mechanical] Complexity / cost notes: O(d) with d=doors length.
+Logic Shape:
+- Inputs: doors array; previous count; skipOut flag.
+- Outputs: updated count.
+- Errors: none thrown; warnings logged.
+- Unknowns: Valid ranges for door counts unknown.
+
+-.updateOccupancyStatus(dilaxState, vehicleId, vehicleSeatingSpace, vehicleTotalSpace) -> void
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Initialize occupancyStatus null; 2) Compare count vs seating*0.05 0.4 0.9 then total*0.9; 3) Assign appropriate enum; 4) Log; 5) Store string.
+- [domain] Preconditions: vehicleSeatingSpace vehicleTotalSpace >0.
+- [domain] Postconditions: dilaxState.occupancyStatus set.
+- [domain] Edge cases & failure modes: Count >= vehicleTotalSpace*0.9 leads FULL; all comparisons inclusive of less-than; count negative previously warned.
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: count seating total.
+- Outputs: occupancyStatus string.
+- Errors: none thrown.
+- Unknowns: Threshold rationale unknown.
+
+-.isTrainStation(trainStops, stopCode) -> boolean
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Find entry with parent_stop_code==stopCode; 2) If found compare route_type to TRAINSTOP; 3) Return result or false.
+- [domain] Preconditions: trainStops iterable; stopCode value.
+- [domain] Postconditions: Boolean returned.
+- [domain] Edge cases & failure modes: No matching entry returns false.
+- [mechanical] Complexity / cost notes: O(n) search.
+Logic Shape:
+- Inputs: trainStops array; stopCode.
+- Outputs: boolean.
+- Errors: none.
+- Unknowns: Structure of trainStops entries beyond fields used unknown.
+
+-.getVehicleLabel(dilaxEvent) -> string | null
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Extract site from device; 2) If absent return null; 3) Regex split site into alpha and numeric parts; 4) Map alpha via vehicleLabelMap; 5) Pad spaces to length 14; 6) Return formatted label.
+- [domain] Preconditions: dilaxEvent.device.site string.
+- [domain] Postconditions: Returns formatted label or null.
+- [domain] Edge cases & failure modes: Empty labelParts returns null; mapping fallback to original alpha.
+- [mechanical] Complexity / cost notes: O(k) with k parts.
+Logic Shape:
+- Inputs: device.site.
+- Outputs: label string.
+- Errors: none.
+- Unknowns: Justification for padding length 14 unknown.
+
+-.getTrainStopId(vehicleId, dilaxEvent) -> Promise<string | null>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) If no wpt warn and return null; 2) Extract lat lon; 3) Fetch stopsInfo from ccStaticApi; 4) If stopsInfo exists fetch trainStopTypes; 5) If trainStopTypes.message exists log error skip loop; 6) For each stopInfo compute isTrainStation; 7) On first true log and return stopId; 8) If none return null.
+- [domain] Preconditions: dilaxEvent.wpt lat lon optional; APIs reachable.
+- [domain] Postconditions: stopId or null.
+- [domain] Edge cases & failure modes: API failure yields undefined stopsInfo leading to null; trainStopTypes.message indicates failure.
+- [mechanical] Complexity / cost notes: O(s) loop.
+Logic Shape:
+- Inputs: vehicleId; dilaxEvent wpt; external API data.
+- Outputs: stopId or null.
+- Errors: logged only.
+- Unknowns: Meaning of trainStopTypes.message field unknown.
+
+-.saveVehicleTripInfo(vehicleId, vehicleLabel, tripId, stopId, dilaxEvent) -> Promise<void>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) If vehicleId null return; 2) Build VehicleTripInfo object; 3) Redis setex with TTL 2 days; 4) Catch errors log.
+- [domain] Preconditions: vehicleId non-null; redis operational.
+- [domain] Postconditions: VehicleTripInfo cached.
+- [domain] Edge cases & failure modes: Redis failure logs error; object not cached.
+- [mechanical] Complexity / cost notes: O(1) aside from IO.
+Logic Shape:
+- Inputs: vehicle and trip identifiers event.
+- Outputs: Redis entry.
+- Errors: Logged.
+- Unknowns: Use by other modules unknown.
+
+Dependencies:
+- BlockMgtClientApi — external dependency; semantics unknown
+- FleetApi — external dependency; semantics unknown
+- GtfsStaticApi — external dependency; semantics unknown
+- CcStaticApi — external dependency; semantics unknown
+- Redis — external dependency; semantics unknown
+- Config — internal module; semantics unknown
+- AsyncLock — external dependency; semantics unknown
+- newrelic — external dependency; semantics unknown
+- lodash — external dependency; semantics unknown
+Errors:
+- n/a
+
+Module: dilax-lost-connections-detector.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode):
+1) [domain] Class DilaxLostConnectionsDetector holds redisClient blockManagementClientAPI and in-memory cache (NodeCache).
+2) [domain] init calls startFetchingAllocations.
+3) [domain] stop clears timers if defined.
+4) [domain] startFetchingAllocations fetches all allocations via API; filters by current service date timezone and excludes labels starting with DIESEL_TRAIN_PREFIX; caches filtered list; schedules next fetch after 60000ms.
+5) [domain] startDetectingLostConnections retrieves candidates via detectCandidates; for each candidate builds vehicleTripKey; checks if already sent (membership in Redis set); if not logs warning message and stores candidate and sets expiration 7 days; schedules next detection after 10000ms.
+6) [domain] detectCandidates: Compute detectionTime (unix now); Load allocations from cache; Filter running trips (startDatetime <= detectionTime <= endDatetime); For each running trip attempt to load VehicleTripInfo from Redis key; if present call detectForExistingVehicleTripInfo otherwise detectForAllocation; filter out undefined; return array.
+7) [domain] detectForExistingVehicleTripInfo: Parse JSON; if allocation.tripId equals stored tripId and connection lost per isDilaxConnectionLost return candidate; else delegate to detectForAllocation with oldVehicleInfoPayload.
+8) [domain] detectForAllocation: If connection lost since allocation.startDatetime build vehicleTripInfo (either provided or synthesized) and return candidate else undefined.
+9) [domain] isDilaxConnectionLost: Add threshold minutes to timestamp and compare before detectionTime moment.
+- [domain] Preconditions:
+- [domain] startFetchingAllocations requires blockManagementClientAPI reachable and returns allocation objects with serviceDate start/end times vehicleLabel vehicleId.
+- [domain] startDetectingLostConnections requires allocations cache populated; redisClient operational.
+- [domain] detectCandidates requires allocations with numeric startDatetime endDatetime tripId vehicleId vehicleLabel.
+- [domain] isDilaxConnectionLost requires timestamp number and Config.dilaxConnectionLostThreshold numeric.
+- [unknown] No explicit validation on allocation fields.
+- [domain] Postconditions:
+- [domain] Allocations cached under allocationsCacheKey with those meeting filter criteria.
+- [domain] Lost connection detections stored in Redis set and individual keys with candidate payload.
+- [domain] Timers scheduled for future fetch/detect cycles.
+- [domain] Edge cases & failure modes:
+- [domain] API fetch errors logged and metric noticeError; cache not updated on failure still schedules retry.
+- [domain] Candidate already sent -> logged info and skipped.
+- [domain] Missing VehicleTripInfo stored triggers detection based solely on allocation.startDatetime.
+- [domain] TripId mismatch triggers detectForAllocation fallback.
+- [domain] Redis or API errors in detection loop logged and continue.
+- [domain] Complexity / cost notes:
+- [mechanical] startFetchingAllocations: O(n) filtering with n=allAllocations length.
+- [mechanical] detectCandidates: O(r) where r=runningTrips; each includes Redis get; total cost includes network IO.
+- [mechanical] isDilaxConnectionLost: O(1).
+- [unknown] Frequency implications of timers beyond configured intervals unknown.
+Logic Shape:
+- Inputs:
+- [domain] allAllocations from API.
+- [domain] serviceDate from moment.tz(Config.timezone).
+- [domain] Config.dilaxConnectionLostThreshold minutes.
+- [domain] VehicleTripInfo JSON from Redis.
+- [domain] NodeCache stored allocations list.
+- [domain] Constant DIESEL_TRAIN_PREFIX="ADL" (defined-in-source).
+Outputs:
+- [domain] Cached filtered allocations.
+- [domain] Redis set of lost connections keys.
+- [domain] Warning log for lost connection event.
+Errors:
+- [infrastructure] Logged via Config.logger.error and newrelic.noticeError; no thrown errors.
+Unknowns:
+- unknown — semantics not documented in source comments or code for detection thresholds rationale.
+- unknown — not present in source for structure of allocation beyond used fields.
+
+Methods:
+-.init() -> Promise<void>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Invoke startFetchingAllocations.
+- [domain] Preconditions: blockManagementClientAPI operational.
+- [domain] Postconditions: Allocations fetching initiated and timer scheduled.
+- [domain] Edge cases & failure modes: API failure handled in startFetchingAllocations.
+- [mechanical] Complexity / cost notes: O(1) plus delegated work.
+Logic Shape:
+- Inputs: none.
+- Outputs: none.
+- Errors: none thrown.
+- Unknowns: none beyond module unknowns.
+
+-.startFetchingAllocations() -> Promise<void>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Fetch allocations; 2) Log count; 3) Compute serviceDate; 4) Filter by date vehicleId present label not starting prefix; 5) Cache filtered; 6) Metric increment; 7) Schedule timeout for next call.
+- [domain] Preconditions: API reachable; Config.timezone valid.
+- [domain] Postconditions: Cache updated; timer scheduled.
+- [domain] Edge cases & failure modes: Fetch error logs and still schedules next attempt.
+- [mechanical] Complexity / cost notes: O(n) filter.
+Logic Shape:
+- Inputs: allocations list.
+- Outputs: cached filtered list.
+- Errors: logged.
+- Unknowns: Allocation fields beyond used unknown.
+
+-.startDetectingLostConnections() -> Promise<void>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Detect candidates; 2) For each candidate check Redis set membership; 3) If new format log lost connection message; 4) Update Redis set and individual key with expiry; 5) Schedule next detection.
+- [domain] Preconditions: allocations cached; Redis accessible.
+- [domain] Postconditions: Lost connection events recorded.
+- [domain] Edge cases & failure modes: Redis errors per candidate caught and logged without halting others.
+- [mechanical] Complexity / cost notes: O(c) with c candidates plus Redis operations.
+Logic Shape:
+- Inputs: runningTrips; Redis state.
+- Outputs: Redis set entries.
+- Errors: logged.
+- Unknowns: Criteria for message formatting beyond available data unknown.
+
+-.detectCandidates() -> Promise<candidate[]>
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Get detectionTime; 2) Load cached allocations; 3) Filter runningTrips; 4) Map each to candidate by checking Redis VehicleTripInfo; 5) Filter undefined; 6) Return list.
+- [domain] Preconditions: allocations cached; fields startDatetime endDatetime numeric.
+- [domain] Postconditions: Candidate list produced.
+- [domain] Edge cases & failure modes: Missing cache returns empty list; missing VehicleTripInfo triggers detectForAllocation path.
+- [mechanical] Complexity / cost notes: O(r) with r runningTrips plus Redis IO.
+Logic Shape:
+- Inputs: allocations list; Redis entries.
+- Outputs: candidates array.
+- Errors: logged upstream.
+- Unknowns: Candidate object additional fields unknown beyond used.
+
+-.detectForExistingVehicleTripInfo(detectionTime, vehicleTripInfoAsString, allocation) -> candidate | undefined
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Parse JSON; 2) If allocation.tripId equals stored tripId and connection lost return candidate; 3) Else call detectForAllocation.
+- [domain] Preconditions: JSON parse succeeds; allocation.tripId defined; lastReceivedTimestamp parseable.
+- [domain] Postconditions: Candidate maybe returned.
+- [domain] Edge cases & failure modes: JSON parse error not handled (implicit throw risk not caught locally).
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: detectionTime; vehicleTripInfo; allocation.
+- Outputs: candidate or undefined.
+- Errors: potential parse errors.
+- Unknowns: None extra.
+
+-.detectForAllocation(detectionTime, allocation, oldVehicleInfoPayload?) -> candidate | undefined
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) If connection lost based on allocation.startDatetime build vehicleTripInfo (old or synthesized) return candidate; 2) Else return undefined.
+- [domain] Preconditions: allocation.startDatetime numeric.
+- [domain] Postconditions: Candidate maybe produced.
+- [domain] Edge cases & failure modes: If oldVehicleInfoPayload omitted synthesized object lacks lastReceivedTimestamp.
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: detectionTime; allocation; optional oldVehicleInfoPayload.
+- Outputs: candidate or undefined.
+- Errors: none.
+- Unknowns: Additional fields in allocation not used unknown.
+
+-.isDilaxConnectionLost(detectionTime, timestamp) -> boolean
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Add threshold minutes to timestamp; 2) Compare result moment with detectionTime moment; 3) Return true if before.
+- [domain] Preconditions: detectionTime timestamp numeric seconds.
+- [domain] Postconditions: boolean.
+- [domain] Edge cases & failure modes: Negative timestamp behavior unspecified.
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: detectionTime; timestamp.
+- Outputs: boolean.
+- Errors: none.
+- Unknowns: None.
+
+Dependencies:
+- BlockMgtClientAPI — external dependency; semantics unknown
+- Redis — external dependency; semantics unknown
+- NodeCache — external dependency; semantics unknown
+- moment-timezone — external dependency; semantics unknown
+- lodash — external dependency; semantics unknown
+- newrelic — external dependency; semantics unknown
+- Config — internal module; semantics unknown
+Errors:
+- n/a
+
+Module: block-mgt-client-api.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) getAllocationByVehicleId: Acquire access token; perform HTTP GET to /allocations/vehicles/{vehicleId}?currentTrip=true; return current.[0] or null on error.
+- [domain] getAllAllocations: Acquire access token; HTTP GET /allocations; return response.data.all or empty array on error.
+- [domain] Preconditions: Valid vehicleId string; token retriever operational; httpClient operational; Config.blockMgtClientApiUrl set.
+- [domain] Postconditions: Allocation data returned or null/empty fallback.
+- [domain] Edge cases & failure modes: Token retrieval failure or HTTP failure logs error and returns null/empty; lodash _.get may return undefined leading to null result.
+- [mechanical] Complexity / cost notes: O(1) network calls.
+Logic Shape:
+- Inputs: vehicleId; access token; API base URL.
+- Outputs: VehicleAllocation object or array.
+- Errors: logged via newrelic and this.log.
+- Unknowns: Shape of response beyond used fields unknown.
+Dependencies:
+- AuthTokenRetriever — external dependency; semantics unknown
+- HttpClient — external dependency; semantics unknown
+- Config — internal module; semantics unknown
+- lodash — external dependency; semantics unknown
+- newrelic — external dependency; semantics unknown
+Errors:
+- n/a
+
+Module: fleet-api.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) trainByLabel: Build redisKey; try get cached JSON; if present parse and return; else set nullTimeout; perform HTTP GET /vehicles?label={label}; on error set nullTimeout short and log; if response present find vehicle with type.type == 'train'; cache for 24h; return vehicle or null; if no response cache 'null' for nullTimeout and return null.
+- [domain] Preconditions: label string; Redis operational; fleet API reachable.
+- [domain] Postconditions: Vehicle info cached and returned or null placeholder cached.
+- [domain] Edge cases & failure modes: Cache parse failure logged; HTTP failure logs and caches null with shorter TTL; multiple matching vehicles only first train (?) returned by find logic.
+- [mechanical] Complexity / cost notes: O(n) search in response list.
+Logic Shape:
+- Inputs: label; cached vehicleString; API response list.
+- Outputs: vehicle object or null.
+- Errors: logged newrelic.noticeError.
+- Unknowns: Exact structure of vehicle object beyond capacity used elsewhere unknown.
+Dependencies:
+- Redis — external dependency; semantics unknown
+- HttpClient — external dependency; semantics unknown
+- Config — internal module; semantics unknown
+- newrelic — external dependency; semantics unknown
+Errors:
+- n/a
+
+Module: gtfs-static-api.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) getStopTypes: Check cache key 'stops'; if present return; else HTTP GET /stopstypes/; extract data list; cache success for 1 day else failure for 60s; return stops or error object.
+- [domain] getTrainStopTypes: Check cache key 'trainStops'; if present return; else call getStopTypes; filter by route_type == STOP_TYPE.TRAINSTOP; cache for 1 day; return filtered list.
+- [domain] Preconditions: API reachable; Config.gtfsStaticApiUrl set.
+- [domain] Postconditions: Lists returned and cached.
+- [domain] Edge cases & failure modes: HTTP failure logs and returns error object; filtering assumes route_type field exists.
+- [mechanical] Complexity / cost notes: O(n) filtering.
+Logic Shape:
+- Inputs: Cache entries; HTTP response.
+- Outputs: stops list; trainStops list.
+- Errors: logged.
+- Unknowns: Structure of stop objects outside used fields unknown.
+Dependencies:
+- HttpClient — external dependency; semantics unknown
+- node-cache — external dependency; semantics unknown
+- Config — internal module; semantics unknown
+- newrelic — external dependency; semantics unknown
+- STOP_TYPE — internal module; semantics unknown
+Errors:
+- n/a
+
+Module: cc-static-api.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) getStopsInfoByLongLat: HTTP GET geosearch with lat lng distance; log stops; if >0 map each to object {stopId stopCode}; log additional info when multiple; return array or undefined on failure.
+- [domain] Preconditions: lat lng distance present; API reachable; headers configured.
+- [domain] Postconditions: Array of stop info objects or undefined.
+- [domain] Edge cases & failure modes: Multiple stops triggers detailed logging; HTTP failure logs and returns undefined.
+- [mechanical] Complexity / cost notes: O(n) mapping.
+Logic Shape:
+- Inputs: lat lng distance; API response stops.
+- Outputs: stopsInfo array.
+- Errors: logged newrelic.noticeError.
+- Unknowns: Additional stop fields omitted unknown.
+Dependencies:
+- HttpClient — external dependency; semantics unknown
+- Config — internal module; semantics unknown
+- newrelic — external dependency; semantics unknown
+Errors:
+- n/a
+
+Module: occupancy.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Define enum OccupancyStatus with numeric values (EMPTY=0 MANY_SEATS_AVAILABLE=1 FEW_SEATS_AVAILABLE=2 STANDING_ROOM_ONLY=3 CRUSHED_STANDING_ROOM_ONLY=4 FULL=5 NOT_ACCEPTING_PASSENGERS=6).
+- [domain] Preconditions: n/a enumeration definition.
+- [domain] Postconditions: Enum available for occupancy status mapping.
+- [domain] Edge cases & failure modes: n/a no runtime logic.
+- [mechanical] Complexity / cost notes: O(1) definition.
+Logic Shape:
+- Inputs: none.
+- Outputs: OccupancyStatus enum.
+- Errors: n/a.
+- Unknowns: Semantic meaning of numeric codes unspecified.
+Dependencies:
+- none
+Errors:
+- n/a
+
+Module: stop-types.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Export object with TRAINSTOP:2 BUSSTOP:3 FERRYSTOP:4.
+- [domain] Preconditions: n/a constant definition.
+- [domain] Postconditions: STOP_TYPE constants available.
+- [domain] Edge cases & failure modes: n/a.
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: none.
+- Outputs: STOP_TYPE object.
+- Errors: n/a.
+- Unknowns: Semantic meaning of numeric values beyond names unknown.
+Dependencies:
+- none
+Errors:
+- n/a
+
+Module: vehicle-allocation.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Define VehicleAllocation type with listed fields.
+- [domain] Preconditions: n/a type alias.
+- [domain] Postconditions: Type available for static checking.
+- [domain] Edge cases & failure modes: n/a runtime absence.
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: none.
+- Outputs: VehicleAllocation type.
+- Errors: n/a.
+- Unknowns: Semantics of each field not described.
+Dependencies:
+- none
+Errors:
+- n/a
+
+Module: vehicle-trip-info.ts
+Description: n/a
+Functions:
+- () -> unknown
+Business Logic:
+- [domain] Algorithm (pseudocode): 1) Define interfaces VehicleTripInfo (fields: lastReceivedTimestamp? dilaxMessage? tripId stopId? vehicleInfo{label vehicleId}) and DilaxEvent (device wpt? clock doors[] structure).
+- [domain] Preconditions: n/a interface declarations.
+- [domain] Postconditions: Interfaces available.
+- [domain] Edge cases & failure modes: Doors array may be empty; optional fields may be undefined; no runtime checks here.
+- [mechanical] Complexity / cost notes: O(1).
+Logic Shape:
+- Inputs: none.
+- Outputs: Types/interfaces.
+- Errors: n/a.
+- Unknowns: Extended semantics for fields not documented.
+Dependencies:
+- none
+Errors:
+- n/a
+
+END OF TEXT IR

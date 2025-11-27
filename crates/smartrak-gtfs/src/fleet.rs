@@ -72,7 +72,7 @@ pub async fn get_vehicle_by_id_or_label(
 }
 
 async fn fetch_vehicle(provider: &impl Provider, query: String) -> Result<Option<VehicleInfo>> {
-    let base_url = env::var("FLEET_API_URL").context("getting `FLEET_API_URL`")?;
+    let base_url = env::var("FLEET_URL").context("getting `FLEET_URL`")?;
     let endpoint = format!("{}/vehicles?{}", base_url.trim_end_matches('/'), query);
 
     let request = http::Request::builder()

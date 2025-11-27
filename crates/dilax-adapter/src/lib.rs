@@ -16,8 +16,8 @@ pub use self::types::*;
 /// Result type for handlers.
 pub type Result<T> = anyhow::Result<T, Error>;
 
-pub use realtime::{HttpRequest, Identity, Message, Publisher, StateStore};
+pub use realtime::{Config, HttpRequest, Identity, Message, Publisher, StateStore};
 
 /// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + Publisher + StateStore + Identity {}
-impl<T> Provider for T where T: HttpRequest + Publisher + StateStore + Identity {}
+pub trait Provider: Config + HttpRequest + Publisher + StateStore + Identity {}
+impl<T> Provider for T where T: Config + HttpRequest + Publisher + StateStore + Identity {}

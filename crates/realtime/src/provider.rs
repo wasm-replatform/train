@@ -11,11 +11,6 @@ use bytes::Bytes;
 use http::{Request, Response};
 use http_body::Body;
 
-/// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + Identity + Publisher {}
-
-impl<T> Provider for T where T: HttpRequest + Identity + Publisher {}
-
 /// The `HttpRequest` trait defines the behavior for fetching data from a source.
 pub trait HttpRequest: Send + Sync {
     /// Make outbound HTTP request.
@@ -26,6 +21,14 @@ pub trait HttpRequest: Send + Sync {
         T::Error: Into<Box<dyn Error + Send + Sync + 'static>>;
 }
 
+/// The `Config` trait is used by implementers to provide configuration from
+/// WASI-guest to dependent crates.
+pub trait Config: Send + Sync {
+    /// Request configuration setting.
+    fn get(&self, key: &str) -> impl Future<Output = Result<String>> + Send;
+}
+
+/// Message represents a message to be published.
 #[derive(Clone, Debug)]
 pub struct Message {
     pub payload: Vec<u8>,

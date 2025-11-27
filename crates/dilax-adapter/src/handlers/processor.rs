@@ -7,7 +7,7 @@ use crate::error::Error;
 use crate::gtfs::{self, StopType, StopTypeEntry};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
-use crate::{HttpRequest, Message, Provider, Publisher, Result, trip_state};
+use crate::{Message, Provider, Publisher, Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const VEHICLE_LABEL_WIDTH: usize = 14;
@@ -195,7 +195,7 @@ fn vehicle_capacity(vehicle: &FleetVehicle) -> Option<(i64, i64)> {
 /// Returns an error when the waypoint is missing, provider requests fail, or no stop
 /// matching the Dilax waypoint can be determined.
 async fn stop_id(
-    vehicle_id: &str, event: &DilaxMessage, http: &impl HttpRequest,
+    vehicle_id: &str, event: &DilaxMessage, provider: &impl Provider,
 ) -> Result<String> {
     let vehicle_id_owned = vehicle_id.to_string();
 
@@ -206,7 +206,7 @@ async fn stop_id(
     };
 
     let stops =
-        gtfs::location_stops(&waypoint.lat, &waypoint.lon, STOP_SEARCH_DISTANCE_METERS, http)
+        gtfs::location_stops(&waypoint.lat, &waypoint.lon, STOP_SEARCH_DISTANCE_METERS, provider)
             .await
             .map_err(|err| {
                 Error::ProcessingError(format!(
@@ -219,7 +219,7 @@ async fn stop_id(
         )));
     }
 
-    let stop_types = gtfs::stop_types(http).await.map_err(|err| {
+    let stop_types = gtfs::stop_types(provider).await.map_err(|err| {
         Error::ProcessingError(format!(
             "failed to look up stop types for vehicle {vehicle_id_owned}: {err}"
         ))

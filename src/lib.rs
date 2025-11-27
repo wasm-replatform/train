@@ -63,9 +63,8 @@ async fn index(headers: HeaderMap) -> HttpResult<&'static str> {
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Json<Value>> {
-    let api = Client::new(provider::Provider);
+    let api = Client::new(Provider::new());
     let router = api.request(DetectionRequest).owner("owner");
-
     let response = router.await.context("Issue running connection detector")?;
 
     Ok(Json(json!({
@@ -78,7 +77,7 @@ async fn detector() -> HttpResult<Json<Value>> {
 async fn receive_message(req: String) -> HttpResult<String> {
     info!(monotonic_counter.message_counter = 1, service = SERVICE);
 
-    let api_client = Client::new(Provider);
+    let api_client = Client::new(Provider::new());
     let request = R9kRequest::from_str(&req).context("parsing envelope")?;
     let result = api_client.request(request).owner("owner").await;
 
@@ -99,7 +98,7 @@ async fn receive_message(req: String) -> HttpResult<String> {
 
 #[axum::debug_handler]
 async fn vehicle_info(Path(vehicle_id): Path<String>) -> HttpResult<Json<VehicleInfoResponse>> {
-    let provider = Provider;
+    let provider = Provider::new();
     let response = rest::vehicle_info(&provider, &vehicle_id).await;
     Ok(Json(response))
 }
@@ -135,7 +134,9 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
         debug!("received message on topic: {topic}");
         let smartrak_topics_list = SMARTRAK_TOPIC.split(',').collect::<Vec<&str>>();
 
-        if topic == format!("{}-{R9K_TOPIC}", ENV.as_str()) {
+        let env = Provider::new().config.environment.clone();
+
+        if topic == format!("{env}-{R9K_TOPIC}") {
             if let Err(e) = process_r9k(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
@@ -144,7 +145,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                     service = SERVICE
                 );
             }
-        } else if topic == format!("{}-{DILAX_TOPIC}", ENV.as_str()) {
+        } else if topic == format!("{env}-{DILAX_TOPIC}") {
             if let Err(e) = process_dilax(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
@@ -155,7 +156,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
             }
         } else if smartrak_topics_list.iter().any(|t| topic == format!("{}-{t}", ENV.as_str())) {
             let payload = message.data();
-            let provider = Provider;
+            let provider = Provider::new();
             match workflow::process(&provider, &topic, &payload).await {
                 Ok(workflow::WorkflowOutcome::NoOp) => {
                     debug!(topic = %topic, "no operation from smartrak workflow");
@@ -195,7 +196,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 
 #[wasi_otel::instrument]
 async fn process_r9k(message: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider);
+    let api_client = Client::new(Provider::new());
     let request = R9kMessage::try_from(message).context("parsing message")?;
     api_client.request(request).owner("owner").await?;
     Ok(())
@@ -203,7 +204,7 @@ async fn process_r9k(message: &[u8]) -> Result<()> {
 
 #[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider);
+    let api_client = Client::new(Provider::new());
     let request: DilaxMessage = serde_json::from_slice(payload).context("deserializing event")?;
     api_client.request(request).owner("owner").await?;
     Ok(())

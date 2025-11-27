@@ -2,8 +2,6 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use std::env;
-
 use anyhow::Context;
 use bytes::Bytes;
 use chrono::Utc;
@@ -14,7 +12,7 @@ use http_body_util::Empty;
 use crate::error::Error;
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
-use crate::{HttpRequest, Identity, Message, Provider, Publisher, Result, stops};
+use crate::{Config, HttpRequest, Identity, Message, Provider, Publisher, Result, stops};
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 
@@ -89,7 +87,8 @@ impl TrainUpdate {
         };
 
         // get train allocations for this trip
-        let url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+        let url =
+            Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
         let token = Identity::access_token(provider).await?;
 
         let request = http::Request::builder()

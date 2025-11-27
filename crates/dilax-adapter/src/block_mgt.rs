@@ -1,5 +1,3 @@
-use std::env;
-
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use http::Method;
@@ -8,13 +6,13 @@ use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
-use crate::{HttpRequest, Identity, Provider};
+use crate::{Config, HttpRequest, Identity, Provider};
 
 // const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
 // const TTL_FLEET_FAILURE: Duration = Duration::from_secs(3 * 60);
 
-pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<FleetVehicle>> {
-    let fleet_api_url = env::var("FLEET_URL").context("getting `FLEET_URL`")?;
+pub async fn vehicle(label: &str, provider: &impl Provider) -> Result<Option<FleetVehicle>> {
+    let fleet_api_url = Config::get(provider, "FLEET_URL").await.context("getting `FLEET_URL`")?;
     let url = format!("{fleet_api_url}/vehicles?label={}", urlencoding::encode(label));
 
     let request = http::Request::builder()
@@ -26,7 +24,8 @@ pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<Flee
         .body(Empty::<Bytes>::new())
         .context("building train_by_label request")?;
 
-    let response = http.fetch(request).await.context("Fleet API request failed")?;
+    let response =
+        HttpRequest::fetch(provider, request).await.context("Fleet API request failed")?;
 
     let body = response.into_body();
     let records: Vec<FleetVehicleRecord> =
@@ -43,7 +42,8 @@ pub async fn vehicle(label: &str, http: &impl HttpRequest) -> Result<Option<Flee
 pub async fn vehicle_allocation(
     vehicle_id: &str, provider: &impl Provider,
 ) -> Result<Option<VehicleAllocation>> {
-    let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+    let block_mgt_url =
+        Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
     let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
     let token = Identity::access_token(provider).await?;
 
@@ -69,7 +69,9 @@ pub async fn vehicle_allocation(
 }
 
 pub async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
-    let block_mgt_url = env::var("BLOCK_MGT_URL").context("getting `BLOCK_MGT_URL`")?;
+    let block_mgt_url =
+        Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
+
     let url = format!("{block_mgt_url}/allocations");
     let token = Identity::access_token(provider).await?;
 

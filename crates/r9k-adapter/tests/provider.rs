@@ -1,14 +1,14 @@
 #![allow(missing_docs)]
 
 use std::any::Any;
-use std::env;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_adapter::{HttpRequest, Identity, Publisher, SmarTrakEvent, StopInfo};
+// use quick_xml::reader::Config;
+use r9k_adapter::{Config, HttpRequest, Identity, Publisher, SmarTrakEvent, StopInfo};
 
 #[derive(Clone, Default)]
 pub struct MockProvider {
@@ -21,12 +21,6 @@ impl MockProvider {
     #[allow(unused)]
     #[must_use]
     pub fn new() -> Self {
-        // SAFETY: This is safe in a test context as tests are run sequentially.
-        unsafe {
-            env::set_var("BLOCK_MGT_URL", "http://localhost:8080");
-            env::set_var("CC_STATIC_URL", "http://localhost:8080");
-        };
-
         let stops = vec![
             StopInfo { stop_code: "133".to_string(), stop_lat: -36.12345, stop_lon: 174.12345 },
             StopInfo { stop_code: "134".to_string(), stop_lat: -36.54321, stop_lon: 174.54321 },
@@ -41,6 +35,13 @@ impl MockProvider {
     #[must_use]
     pub fn events(&self) -> Vec<SmarTrakEvent> {
         self.events.lock().expect("should lock").clone()
+    }
+}
+
+impl Config for MockProvider {
+    async fn get(&self, _key: &str) -> Result<String> {
+        // BLOCK_MGT_URL, CC_STATIC_URL
+        Ok("http://localhost:8080".to_string())
     }
 }
 

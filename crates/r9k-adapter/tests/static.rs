@@ -28,7 +28,7 @@ async fn deserialize_xml() {
 // Should create an arrival event with a normal stop location.
 #[tokio::test]
 async fn arrival_event() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider.clone());
 
     let xml = XmlBuilder::new().xml();
@@ -51,7 +51,7 @@ async fn arrival_event() {
 // Should create a departure event with an stop location updated.
 #[tokio::test]
 async fn departure_event() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider.clone());
 
     let xml = XmlBuilder::new().arrival(false).xml();
@@ -72,7 +72,7 @@ async fn departure_event() {
 // Should return no events for an unmapped station.
 #[tokio::test]
 async fn unmapped_station() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider.clone());
 
     let xml = XmlBuilder::new().station(5).xml();
@@ -86,7 +86,7 @@ async fn unmapped_station() {
 // Should return no events when there are no vehicles found for the train id.
 #[tokio::test]
 async fn no_matching_vehicle() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider.clone());
 
     let xml = XmlBuilder::new().vehicle("445").xml();
@@ -100,7 +100,7 @@ async fn no_matching_vehicle() {
 // Should return no events when there are no stop is found for the station.
 #[tokio::test]
 async fn no_matching_stop() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider.clone());
 
     let xml = XmlBuilder::new().station(80).xml();
@@ -114,7 +114,7 @@ async fn no_matching_stop() {
 // Should return no events when there is no train update.
 #[tokio::test]
 async fn no_train_update() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::None).xml();
@@ -129,7 +129,7 @@ async fn no_train_update() {
 // changes.
 #[tokio::test]
 async fn no_changes() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
@@ -144,7 +144,7 @@ async fn no_changes() {
 // actual changes.
 #[tokio::test]
 async fn no_actual_changes() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
@@ -159,7 +159,7 @@ async fn no_actual_changes() {
 // the current time.
 #[tokio::test]
 async fn too_late() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider);
 
     let xml = XmlBuilder::new().delay_secs(61).xml();
@@ -175,7 +175,7 @@ async fn too_late() {
 // the current time.
 #[tokio::test]
 async fn too_early() {
-    let provider = MockProvider::new();
+    let provider = MockProvider::new_static();
     let client = Client::new(provider);
 
     let xml = XmlBuilder::new().delay_secs(-32).xml();

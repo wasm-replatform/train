@@ -517,9 +517,13 @@ where
     let state_key = format!("{}:{}", config.redis.apc_vehicle_id_state_key, vehicle_id.as_str());
     if let Some(bytes) = wrapper.state_get(&state_key).await.context("reading dilax state")? {
         let previous = String::from_utf8(bytes.clone()).context("utf8 decoding dilax state")?;
-        let record: DilaxStateRecord =
-            serde_json::from_str(&previous).context("deserializing dilax state")?;
-        Ok((record.into(), Some(previous)))
+        match serde_json::from_str::<DilaxStateRecord>(&previous) {
+            Ok(record) => Ok((record.into(), Some(previous))),
+            Err(e) => {
+                error!("[Dilax] deserializing dilax state failed: {}\nstate json: {}", e, previous);
+                Err(anyhow!("deserializing dilax state: {e}"))
+            }
+        }
     } else {
         let mut state = DilaxState::from(DilaxStateRecord::default());
         perform_backward_compatibility_migration(wrapper, config, vehicle_id, &mut state).await?;

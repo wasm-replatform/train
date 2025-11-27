@@ -2,6 +2,7 @@
 #![allow(clippy::future_not_send)]
 
 mod provider;
+mod identity;
 
 use std::env;
 use std::str::FromStr;
@@ -38,17 +39,22 @@ impl Guest for Http {
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
         let router = Router::new()
             .route("/jobs/detector", get(detector))
-            .route("/inbound/xml", post(receive_message));
+            .route("/inbound/xml", post(receive_message))
+            .route("/inbound/dilax", post(dilax_intake));
         wasi_http::serve(router, request).await
     }
 }
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Json<Value>> {
+    tracing::info!("[Intake] /jobs/detector: handler triggered");
     let api = Client::new(provider::Provider);
+    tracing::info!("[Intake] /jobs/detector: Client constructed");
     let router = api.request(DetectionRequest).owner("owner");
+    tracing::info!("[Intake] /jobs/detector: Router built");
 
     let response = router.await.context("Issue running connection detector")?;
+    tracing::info!("[Intake] /jobs/detector: Response received: detections={}", response.detections.len());
 
     Ok(Json(json!({
         "status": "job detection triggered",
@@ -78,6 +84,24 @@ async fn receive_message(req: String) -> HttpResult<String> {
 
     Ok(response.body.to_string())
 }
+
+#[axum::debug_handler]
+async fn dilax_intake(Json(payload): Json<Value>) -> HttpResult<Json<Value>> {
+    let api_client = Client::new(Provider);
+    // Try to deserialize the incoming JSON into DilaxMessage
+    let dilax_message: DilaxMessage = serde_json::from_value(payload)
+        .context("deserializing DilaxMessage")?;
+    // Call the enrichment logic
+    let result = api_client.request(dilax_message).owner("owner").await;
+    match result {
+        Ok(_) => Ok(Json(json!({ "status": "dilax event processed" }))),
+        Err(err) => {
+            error!("[Intake] /inbound/dilax: error: {err}");
+            Ok(Json(json!({ "status": "error", "error": err.to_string() })))
+        }
+    }
+}
+
 
 pub struct Messaging;
 

@@ -13,12 +13,38 @@ const KEY_TRAIN_STOPS: &str = "gtfs:trainStops";
 
 type StopTypesResponse = Vec<StopTypeEntry>;
 
-#[derive(Deserialize)]
-struct CcStopResponse {
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CcStopResponse {
     #[serde(rename = "stop_id")]
-    stop_id: String,
+    pub stop_id: String,
     #[serde(rename = "stop_code")]
-    stop_code: Option<String>,
+    pub stop_code: Option<String>,
+    #[serde(rename = "platform_code")]
+    pub platform_code: Option<String>,
+    #[serde(rename = "stop_name")]
+    pub stop_name: Option<String>,
+    #[serde(rename = "stop_desc")]
+    pub stop_desc: Option<String>,
+    #[serde(rename = "stop_lat")]
+    pub stop_lat: Option<f64>,
+    #[serde(rename = "stop_lon")]
+    pub stop_lon: Option<f64>,
+    #[serde(rename = "zone_id")]
+    pub zone_id: Option<String>,
+    #[serde(rename = "stop_url")]
+    pub stop_url: Option<String>,
+    #[serde(rename = "location_type")]
+    pub location_type: Option<u8>,
+    #[serde(rename = "parent_station")]
+    pub parent_station: Option<String>,
+    #[serde(rename = "stop_timezone")]
+    pub stop_timezone: Option<String>,
+    #[serde(rename = "wheelchair_boarding")]
+    pub wheelchair_boarding: Option<u8>,
+    #[serde(rename = "start_date")]
+    pub start_date: Option<String>,
+    #[serde(rename = "end_date")]
+    pub end_date: Option<String>,
 }
 
 pub async fn location_stops(

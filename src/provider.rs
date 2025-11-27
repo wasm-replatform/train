@@ -1,15 +1,13 @@
 use std::any::Any;
-use std::env;
 use std::error::Error;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use http::{Request, Response};
-use wasi_identity::credentials::get_identity;
+use crate::identity;
 use wasi_keyvalue::cache;
 use wasi_messaging::producer;
 use wasi_messaging::types::{Client, Message};
-use wit_bindgen::block_on;
 
 use crate::ENV;
 
@@ -57,10 +55,7 @@ impl realtime::HttpRequest for Provider {
 
 impl realtime::Identity for Provider {
     async fn access_token(&self) -> Result<String> {
-        let identity = env::var("AZURE_IDENTITY")?;
-        let identity = block_on(get_identity(identity))?;
-        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
-        Ok(access_token.token)
+        identity::access_token(self).await
     }
 }
 

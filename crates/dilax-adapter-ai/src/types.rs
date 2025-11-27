@@ -435,7 +435,9 @@ pub struct VehicleAllocation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StopInfoRecord {
+    #[serde(rename = "stop_id")]
     pub stop_id: String,
+    #[serde(rename = "stop_code")]
     pub stop_code: String,
 }
 

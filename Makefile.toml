@@ -29,7 +29,7 @@ command = "cargo"
 args = ["nextest", "run", "--all", "--no-fail-fast", "--all-features"]
 env = { RUSTFLAGS = "-Dwarnings" }
 
-[tasks.testdocs]
+[tasks.test-doc]
 command = "cargo"
 args = ["test", "doc"]
 env = { RUSTFLAGS = "-Dwarnings" }
@@ -43,7 +43,7 @@ script = "cargo +nightly fmt --all"
 
 [tasks.lint]
 command = "cargo"
-args = ["clippy", "--all-features"]
+args = ["clippy", "--all-features", "--target", "wasm32-wasip2"]
 install_crate = { rustup_component_name = "clippy" }
 
 [tasks.update]
@@ -59,6 +59,32 @@ install_crate = "cargo-edit"
 command = "cargo"
 args = ["audit"]
 
+[tasks.vet-imports]
+command = "cargo"
+args = ["vet", "regenerate", "imports"]
+install_crate = "cargo-vet"
+
+[tasks.vet-exempt]
+command = "cargo"
+args = ["vet", "regenerate", "exemptions"]
+install_crate = "cargo-vet"
+
+[tasks.vet-unpub]
+command = "cargo"
+args = ["vet", "regenerate", "unpublished"]
+install_crate = "cargo-vet"
+
+[tasks.vet]
+command = "cargo"
+args = ["vet", "--locked"]
+install_crate = "cargo-vet"
+dependencies = ["vet-imports", "vet-exempt", "vet-unpub"]
+
+[tasks.deny]
+command = "cargo"
+args = ["deny", "--workspace", "check"]
+install_crate = "cargo-deny"
+
 [tasks.unused]
 command = "cargo"
 args = ["machete", "--skip-target-dir"]
@@ -71,6 +97,10 @@ install_crate = "cargo-outdated"
 
 [tasks.check]
 dependencies = ["audit", "fmt", "lint", "unused"]
+
+# Emulate CI (mostly - miri and outdated are missing)
+[tasks.ci]
+dependencies = ["lint", "test", "test-doc", "vet", "deny", "fmt"]
 
 # -----------------------------------------------------------------------------
 # Publishing

@@ -12,6 +12,7 @@ In Copilot chat, set to `Agent` mode and use the `GPT-5-Codex` model with the fo
 #file:copilot-instructions.md
 Convert #file:legacy/at_dilax_adapter to Rust
 Use #file:crates/r9k-adapter as a reference implementation
+Use #file:crates/r9k-position and #file:crates/dilax as a reference implementation
 Use code guidelines #fetch https://microsoft.github.io/rust-guidelines/index.html
 ```
 

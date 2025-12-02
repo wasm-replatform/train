@@ -9,10 +9,9 @@ use credibil_api::{Handler, Request, Response};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
 
-use crate::error::Error;
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
-use crate::{Config, HttpRequest, Identity, Message, Provider, Publisher, Result, stops};
+use crate::{Config, Error, HttpRequest, Identity, Message, Provider, Publisher, Result, stops};
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 

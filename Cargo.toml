@@ -25,6 +25,7 @@ axum = { workspace = true, features = ["json", "macros", "query"] }
 bytes.workspace = true
 credibil-api.workspace = true
 dilax-adapter = { path = "crates/dilax-adapter" }
+dilax-apc-connector = { path = "crates/dilax-apc-connector" }
 fromenv = "0.1.0"
 http.workspace = true
 http-body.workspace = true
@@ -119,7 +120,7 @@ serde_repr = "0.1"
 serde_yaml = "0.9"
 thiserror = "2.0"
 tokio = { version = "1.47.1", default-features = false, features = ["io-util", "macros", "rt", "sync", "time"] }
-tracing = "0.1.41"
+tracing = "0.1.43"
 urlencoding = "2.1.3"
 uuid = { version = "1.10.0", features = ["serde", "v4"] }
 wasip3 = { version = "0.3.0", features = ["http-compat"] }

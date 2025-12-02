@@ -1,0 +1,36 @@
+node_modules
+
+# Transpiled files
+/src/**/*.d.ts
+/src/**/*.js.map
+/test/**/*.d.ts
+/test/**/*.js.map
+
+# Intellij
+*.iml
+*.ipr
+*.iws
+.idea
+
+# Vscode
+.vscode
+
+# Tests and coverage
+.sonar
+.nyc_output
+test-reports
+coverage
+
+# Generated Folders
+dist
+artifact
+parameters
+exclude
+
+# Logs
+*.log
+
+# Other
+.env
+.scannerwork
+.DS_Store

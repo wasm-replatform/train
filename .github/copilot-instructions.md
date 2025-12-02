@@ -22,6 +22,7 @@ pub trait Provider: HttpRequest + Publisher + StateStore + Identity {}
 - **Tests** (`tests/provider.rs`) implement mock providers for unit testing
 
 **Key trait capabilities**:
+
 - `HttpRequest`: Make HTTP calls via `wasi-http` (block management, GTFS data)
 - `Publisher`: Send messages to Kafka topics via `wasi-messaging`
 - `StateStore`: Redis key-value operations via `wasi-keyvalue`
@@ -129,8 +130,8 @@ See `MIGRATE.md` for detailed conversion workflow with AI coding agents.
 - **Block Management API**: `/allocations/trips` endpoint for vehicle-to-trip mapping
 - **GTFS Static Data**: `/gtfs/stops` endpoint for stop location data
 - **Kafka Topics**:
-  - Input: `{ENV}-realtime-r9k.v1`, `{ENV}-realtime-dilax-adapter-apc.v1`
-  - Output: `{ENV}-realtime-r9k-to-smartrak.v1`, `{ENV}-realtime-dilax-adapter-apc-enriched.v1`
+  - Input: `{ENV}-realtime-r9k.v1`, `{ENV}-realtime-dilax-apc.v2`
+  - Output: `{ENV}-realtime-r9k-to-smartrak.v1`, `{ENV}-realtime-dilax-apc-enriched.v2`
 
 ## Key Files
 

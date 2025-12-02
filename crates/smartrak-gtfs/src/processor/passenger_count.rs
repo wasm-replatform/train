@@ -1,6 +1,5 @@
-use crate::error::Result;
 use crate::models::PassengerCountEvent;
-use crate::{Provider, StateStore};
+use crate::{Provider, Result, StateStore};
 
 const TTL_PASSENGER_COUNT: u64 = 3 * 60 * 60; // 3 hours
 

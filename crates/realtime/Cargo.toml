@@ -15,9 +15,16 @@ workspace = true
 
 [dependencies]
 anyhow.workspace = true
+axum.workspace = true
 bytes.workspace = true
 http.workspace = true
 http-body.workspace = true
+quick-xml.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
 
-# [dev-dependencies]
+[dev-dependencies]
 # tokio.workspace = true
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }

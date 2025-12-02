@@ -1,13 +1,12 @@
 use serde::Serialize;
 use tracing::{debug, info, warn};
 
-use crate::Provider;
-use crate::error::Result;
 use crate::god_mode::god_mode;
 use crate::models::{EventType, PassengerCountEvent, SmartrakEvent, VehicleInfo};
 use crate::processor::location::{LocationOutcome, process_location, resolve_vehicle};
 use crate::processor::passenger_count::process_passenger_count;
 use crate::processor::serial_data::process_serial_data;
+use crate::{Provider, Result};
 
 /// Processes a Smartrak Kafka payload and emits outbound messages when applicable.
 ///

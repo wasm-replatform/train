@@ -1,0 +1,533 @@
+{
+    "_environments": ["dev", "vnet-test", "vnet-preprod", "vnet-prod"],
+    "_unused": {
+        "hybrid_connection_relay_name_cluster": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node1": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node2": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node3": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_connection_relay_name_node4": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_resource_group": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hybrid_service_bus_namespace": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "use_confluent_hybrid_connection": {
+            "type": "bool",
+            "defaultValue": false
+        },
+        "use_schema_registry_producer": {
+            "type": "bool",
+            "defaultValue": false
+        }
+    },
+    "site_name": {
+        "dev": "www-dev-at-dilax-apc-connector-01",
+        "vnet-test": "www-test-at-dilax-apc-connector-02",
+        "vnet-preprod": "www-pp-at-dilax-apc-connector-02",
+        "vnet-prod": "www-prod-at-dilax-apc-connector-02"
+    },
+    "node_version": {
+        "all": "~18"
+    },
+    "new_relic_license_key": {
+        "all": "758ab64ebebbf5ccad30b3096226ecba9269ddf3",
+        "vnet-prod": "2c87f05915642d7adddacff8fa122b0448c90180"
+    },
+    "new_relic_app_name": {
+        "dev": "AT DILAX APC Connector Dev",
+        "vnet-test": "AT DILAX APC Test",
+        "vnet-preprod": "AT DILAX APC PreProd",
+        "vnet-prod": "AT DILAX APC Prod"
+    },
+    "papertrail_system": {
+        "dev": "at-realtime-dev",
+        "vnet-test": "at-realtime-test",
+        "vnet-preprod": "at-realtime-preprod",
+        "vnet-prod": "at-realtime"
+    },
+    "server_farm_id": {
+        "dev": "/subscriptions/551d0817-4f8a-4d2a-bd7e-0ece5094771d/resourceGroups/rg-ae-RealtimeIntegration-d01/providers/Microsoft.Web/serverfarms/sp-ae-RealTimeIntegration-d01",
+        "vnet-test": "/subscriptions/90cf5550-b841-4d76-8c87-60f309fce586/resourceGroups/rg-ae-RealtimeIntegration-t03/providers/Microsoft.Web/serverfarms/sp-ae-RealtimeIntegration-vnet-t01",
+        "vnet-preprod": "/subscriptions/4ef90d2d-2740-44c9-930e-b2799c4350d8/resourceGroups/rg-ae-RealtimeIntegration-u03/providers/Microsoft.Web/serverfarms/sp-ae-RealtimeIntegration-vnet-u01",
+        "vnet-prod": "/subscriptions/220195d9-5240-49da-b1f4-4fbce6833c42/resourceGroups/rg-ae-RealtimeIntegration-p03/providers/Microsoft.Web/serverfarms/sp-ae-RealtimeIntegration-vnet-p01"
+    },
+    "log_level": {
+        "all": "info"
+    },
+    "slot_name": {
+        "all": "staging"
+    },
+    "subnet_name": {
+        "all": "",
+        "vnet-test": "SN-AE-T-Paas-10.24.31.0-27",
+        "vnet-preprod": "SN-AE-PP-Paas-10.24.95.0-27",
+        "vnet-prod": "SN-AE-P-Paas-10.24.112.0-27"
+    },
+    "vnet_name": {
+        "all": "",
+        "vnet-test": "VN-AE-T-PAAS-10.24.24-21",
+        "vnet-preprod": "VN-AE-PP-PAAS-10.24.88.0-21",
+        "vnet-prod": "VN-AE-P-PAAS-10.24.112.0-21"
+    },
+    "vnet_resource_group": {
+        "all": "",
+        "vnet-test": "RG-AE-NETWORKING-T01",
+        "vnet-preprod": "RG-AE-NETWORKING-PP01",
+        "vnet-prod": "RG-AE-NETWORKING-P01"
+    },
+    "key_vault": {
+        "dev": "kv-ae-realtime-d01",
+        "vnet-test": "kv-ae-realtime-t03",
+        "vnet-preprod": "kv-ae-realtime-u03",
+        "vnet-prod": "kv-ae-realtime-p03"
+    },
+    "key_vault_secret_name_confluent_key": {
+        "all": "realtime-confluent-key"
+    },
+    "key_vault_secret_name_schema_registry_key": {
+        "all": "realtime-schema-registry-key"
+    },
+    "secret_watcher_interval": {
+        "all": 5
+    },
+    "kafka_hosts": {
+        "all": "lkc-prx9qk-6meoz4.australiaeast.azure.glb.confluent.cloud:9092",
+        "vnet-prod": "lkc-gqzk21-61kejg.australiaeast.azure.glb.confluent.cloud:9092"
+    },
+    "confluent_kafka_environment": {
+        "dev": "dev",
+        "vnet-test": "test",
+        "vnet-preprod": "preprod",
+        "vnet-prod": "prod"
+    },
+    "schema_registry_url": {
+        "all": "https://psrc-mp377.australiaeast.azure.confluent.cloud"
+    },
+    "permitted_ip_range": {
+        "dev": [
+            {
+                "ipAddress": "127.0.0.1",
+                "subnetMask": "255.255.255.255",
+                "name": "Always On"
+            },
+            {
+                "ipAddress": "103.242.37.165",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Office"
+            },
+            {
+                "ipAddress": "3.105.8.29",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Heartbeat"
+            },
+            {
+                "ipAddress": "20.188.222.233",
+                "subnetMask": "255.255.255.255",
+                "name": "AppGateway"
+            },
+            {
+                "ipAddress": "13.70.71.54",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.73.195.135",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.75.138.224",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.65.114",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.71.83",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.65.145",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.67.84",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.71.54",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.73.195.135",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.162",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.164",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.191",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.91",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.127",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.191",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.249",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.210.145",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.128",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.187",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.217",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.225",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            }
+        ],
+        "vnet-test": [
+            {
+                "ipAddress": "127.0.0.1",
+                "subnetMask": "255.255.255.255",
+                "name": "Always On"
+            },
+            {
+                "ipAddress": "103.242.37.165",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Office"
+            },
+            {
+                "ipAddress": "3.105.8.29",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Heartbeat"
+            },
+            {
+                "ipAddress": "20.43.98.16",
+                "subnetMask": "255.255.255.255",
+                "name": "AppGateway"
+            },
+            {
+                "ipAddress": "13.70.71.54",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.73.195.135",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.75.138.224",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.65.114",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.71.83",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.65.145",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.67.84",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.71.54",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.73.195.135",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.162",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.164",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.191",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.91",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.127",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.191",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.249",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.210.145",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.128",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.187",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.217",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.225",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            }
+        ],
+        "vnet-preprod": [
+            {
+                "ipAddress": "127.0.0.1",
+                "subnetMask": "255.255.255.255",
+                "name": "Always On"
+            },
+            {
+                "ipAddress": "103.242.37.165",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Office"
+            },
+            {
+                "ipAddress": "3.105.8.29",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Heartbeat"
+            },
+            {
+                "ipAddress": "20.193.0.170",
+                "subnetMask": "255.255.255.255",
+                "name": "AppGateway"
+            },
+            {
+                "ipAddress": "13.70.71.54",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.73.195.135",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.75.138.224",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.65.114",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.71.83",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.65.145",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.67.84",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.70.71.54",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "13.73.195.135",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.162",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.164",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.208.191",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.91",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.127",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.191",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.209.249",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.210.145",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.128",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.187",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.217",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            },
+            {
+                "ipAddress": "20.92.211.225",
+                "subnetMask": "255.255.255.255",
+                "name": "Dev Feed Player"
+            }
+        ],
+        "vnet-prod": [
+            {
+                "ipAddress": "127.0.0.1",
+                "subnetMask": "255.255.255.255",
+                "name": "Always On"
+            },
+            {
+                "ipAddress": "103.242.37.165",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Office"
+            },
+            {
+                "ipAddress": "3.105.8.29",
+                "subnetMask": "255.255.255.255",
+                "name": "PHL Heartbeat"
+            },
+            {
+                "ipAddress": "20.43.107.81",
+                "subnetMask": "255.255.255.255",
+                "name": "AppGateway"
+            }
+        ]
+    },
+    "replication_endpoint": {
+        "all": "",
+        "vnet-prod": "https://www-prod-at-message-replicator-01.azurewebsites.net"
+    }
+}

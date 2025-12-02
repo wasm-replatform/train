@@ -731,6 +731,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dilax-apc-connector"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "credibil-api",
+ "realtime",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+ "tokio",
+]
+
+[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2125,9 +2138,16 @@ name = "realtime"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "axum",
  "bytes",
  "http",
  "http-body",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -3050,6 +3070,7 @@ dependencies = [
  "bytes",
  "credibil-api",
  "dilax-adapter",
+ "dilax-apc-connector",
  "fromenv",
  "http",
  "http-body",

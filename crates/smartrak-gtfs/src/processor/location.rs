@@ -5,13 +5,12 @@ use chrono_tz::Tz;
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
-use crate::error::{Error, Result};
 use crate::models::{
     BlockInstance, DeadReckoningMessage, FeedEntity, PassengerCountEvent, Position, PositionDr,
     SmartrakEvent, TripDescriptor, TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo,
     VehiclePosition,
 };
-use crate::{Provider, StateStore, block_mgt, fleet, trip};
+use crate::{Error, Provider, Result, StateStore, block_mgt, fleet, trip};
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);

@@ -5,13 +5,14 @@ use anyhow::{Context, Result};
 use bytes::Bytes;
 use fromenv::FromEnv;
 use http::{Request, Response};
+use tracing::error;
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::cache;
 use wasi_messaging::producer;
 use wasi_messaging::types::{Client, Message};
 use wit_bindgen::block_on;
 
-// const SERVICE: &str = "train";
+const SERVICE: &str = "train";
 
 #[derive(Clone, Default)]
 pub struct Provider {
@@ -77,17 +78,16 @@ impl realtime::Publisher for Provider {
         let topic = format!("{}-{topic}", self.config.environment);
 
         wit_bindgen::block_on(async move {
-            let _ = producer::send(&client, topic, msg).await.context("sending message");
-            // if let Err(e) = producer::send(&client, topic, message).await {
-            //     error!(
-            //         monotonic_counter.processing_errors = 1, error = %e, service = %SERVICE
-            //     );
-            // }
+            if let Err(e) = producer::send(&client, topic.clone(), msg).await {
+                error!(
+                    monotonic_counter.publishing_errors = 1, error = %e, topic = %topic, service = %SERVICE
+                );
+            } else {
+                tracing::info!(
+                    monotonic_counter.messages_sent = 1, topic = %topic, service = %SERVICE
+                );
+            }
         });
-
-        // tracing::info!(
-        //     monotonic_counter.messages_sent = 1, service = %SERVICE
-        // );
 
         Ok(())
     }

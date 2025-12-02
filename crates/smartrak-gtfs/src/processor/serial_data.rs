@@ -3,9 +3,8 @@ use std::env;
 use chrono::Utc;
 use tracing::{debug, warn};
 
-use crate::error::{Error, Result};
 use crate::models::{DecodedSerialData, SmartrakEvent, TripInstance};
-use crate::{Provider, StateStore, trip};
+use crate::{Error, Provider, Result, StateStore, trip};
 
 const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
 const TTL_SIGN_ON_SECS: u64 = 24 * 60 * 60;

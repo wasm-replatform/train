@@ -41,7 +41,7 @@ pub enum Error {
     MissingField(String),
 
     /// A processing error occurred.
-    #[error("code: 500, description: invalid_timestammp {0}")]
+    #[error("code: 500, description: invalid_timestamp {0}")]
     InvalidTimestamp(String),
 
     /// Delayed message arrival.
@@ -89,7 +89,6 @@ impl From<anyhow::Error> for Error {
         let chain = err.chain().map(ToString::to_string).collect::<Vec<_>>().join(" -> ");
 
         // if type is Error, return it with the newly added context
-        println!("Error: {err}");
         if let Some(inner) = err.downcast_ref::<Self>() {
             tracing::debug!("Error: {err}, caused by: {inner}");
 

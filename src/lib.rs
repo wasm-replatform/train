@@ -235,7 +235,7 @@ async fn publish_smartrak_messages(messages: Vec<SerializedMessage>) -> Result<(
         let topic = format!("{env}-{}", message.topic);
         let client = Arc::clone(&client);
         wit_bindgen::spawn(async move {
-            if let Err(err) = producer::send(client.as_ref(), topic, outgoing).await {
+            if let Err(err) = producer::send(&client, topic, outgoing).await {
                 error!(
                     monotonic_counter.processing_errors = 1,
                     error = %err,

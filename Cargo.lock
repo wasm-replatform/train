@@ -2949,7 +2949,7 @@ dependencies = [
  "wasi-keyvalue",
  "wasi-messaging",
  "wasi-otel",
- "wasip3",
+ "wasip3 0.3.1+wasi-0.3.0-rc-2025-09-16",
  "wit-bindgen 0.48.1",
 ]
 
@@ -3083,7 +3083,7 @@ dependencies = [
  "tower",
  "tracing",
  "wasi-keyvalue",
- "wasip3",
+ "wasip3 0.3.0+wasi-0.3.0-rc-2025-09-16",
  "wasmtime",
  "wasmtime-wasi",
  "wasmtime-wasi-http",
@@ -3189,6 +3189,19 @@ dependencies = [
 name = "wasip3"
 version = "0.3.0+wasi-0.3.0-rc-2025-09-16"
 source = "git+https://github.com/credibil/wasi-rs#915fd493a17784f2171d941becb5775103e4246d"
+dependencies = [
+ "bytes",
+ "http",
+ "http-body",
+ "thiserror 2.0.17",
+ "wit-bindgen 0.48.1",
+]
+
+[[package]]
+name = "wasip3"
+version = "0.3.1+wasi-0.3.0-rc-2025-09-16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87ba4be47b1d11244670d11857eee0758a8f2c39aea64d80b78c1ce29b4642cd"
 dependencies = [
  "bytes",
  "http",

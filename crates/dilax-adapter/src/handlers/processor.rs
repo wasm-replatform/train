@@ -19,7 +19,6 @@ pub struct DilaxResponse;
 async fn handle(
     _owner: &str, request: DilaxMessage, provider: &impl Provider,
 ) -> Result<Response<DilaxResponse>> {
-    dbg!("**** processing Dilax message {}", &request);
     process(request, provider).await?;
     Ok(DilaxResponse.into())
 }

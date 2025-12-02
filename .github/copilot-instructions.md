@@ -130,8 +130,8 @@ See `MIGRATE.md` for detailed conversion workflow with AI coding agents.
 - **Block Management API**: `/allocations/trips` endpoint for vehicle-to-trip mapping
 - **GTFS Static Data**: `/gtfs/stops` endpoint for stop location data
 - **Kafka Topics**:
-  - Input: `{ENV}-realtime-r9k.v1`, `{ENV}-realtime-dilax-apc.v1`
-  - Output: `{ENV}-realtime-r9k-to-smartrak.v1`, `{ENV}-realtime-dilax-apc-enriched.v1`
+  - Input: `{ENV}-realtime-r9k.v1`, `{ENV}-realtime-dilax-apc.v2`
+  - Output: `{ENV}-realtime-r9k-to-smartrak.v1`, `{ENV}-realtime-dilax-apc-enriched.v2`
 
 ## Key Files
 

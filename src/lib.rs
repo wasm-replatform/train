@@ -157,7 +157,6 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                 );
             }
         } else if topic == format!("{env}-{DILAX_TOPIC}") {
-            dbg!("Received Dilax message", &message);
             if let Err(e) = process_dilax(&message.data()).await {
                 error!(
                     monotonic_counter.processing_errors = 1,

@@ -99,9 +99,7 @@ impl HttpRequest for MockProvider {
                     Session::Static(Static { vehicles, .. }) => {
                         if query.contains("externalRefId=445") { &vec![] } else { vehicles }
                     }
-                    Session::Replay(Replay { vehicles, .. }) => {
-                        vehicles.as_deref().unwrap_or(&[])
-                    }
+                    Session::Replay(Replay { vehicles, .. }) => vehicles.as_deref().unwrap_or(&[]),
                 };
 
                 serde_json::to_vec(&vehicles).context("failed to serialize")?

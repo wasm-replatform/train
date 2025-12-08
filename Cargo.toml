@@ -41,7 +41,7 @@ wasip3.workspace = true
 wit-bindgen.workspace = true
 
 [dev-dependencies]
-buildgen = { version = "0.19.0", registry = "credibil" }
+buildgen.workspace = true
 
 [workspace]
 members = ["crates/*"]
@@ -125,6 +125,7 @@ wasip3 = { version = "0.3.1", features = ["http-compat"] }
 wit-bindgen = { version = "0.49.0", features = ["async-spawn"] }
 
 # Credibil registry
+buildgen = { version = "0.19.0", registry = "credibil" }
 credibil-api = { version = "0.6.0", registry = "credibil" }
 wasi-http = { version = "0.19.0", registry = "credibil" }
 wasi-identity = { version = "0.19.0", registry = "credibil" }
@@ -135,20 +136,24 @@ wasi-otel = { version = "0.19.0", registry = "credibil" }
 # Internally referenced crates
 realtime = { path = "crates/realtime" }
 
-[patch.crates-io]
-wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", branch = "release-40.0.0" }
-wasmtime-wasi = { git = "https://github.com/bytecodealliance/wasmtime", branch = "release-40.0.0" }
-wasmtime-wasi-http = { git = "https://github.com/bytecodealliance/wasmtime", branch = "release-40.0.0" }
-
 [patch.credibil]
-buildgen = { git = "https://github.com/credibil/wrt" }
-wasi-http = { git = "https://github.com/credibil/wrt" }
-wasi-identity = { git = "https://github.com/credibil/wrt" }
-wasi-keyvalue = { git = "https://github.com/credibil/wrt" }
-wasi-messaging = { git = "https://github.com/credibil/wrt" }
-wasi-otel = { git = "https://github.com/credibil/wrt" }
+buildgen = { git = "https://github.com/credibil/wrt", version = "0.19.0" }
+wasi-http = { git = "https://github.com/credibil/wrt", version = "0.19.0" }
+wasi-identity = { git = "https://github.com/credibil/wrt", version = "0.19.0" }
+wasi-keyvalue = { git = "https://github.com/credibil/wrt", version = "0.19.0" }
+wasi-messaging = { git = "https://github.com/credibil/wrt", version = "0.19.0" }
+wasi-otel = { git = "https://github.com/credibil/wrt", version = "0.19.0" }
+
+[patch.crates-io]
+wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
+wasmtime-wasi = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
+wasmtime-wasi-http = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
 
 [profile.release]
 lto = "thin"
 opt-level = "s"
 strip = "symbols"
+
+# [[bin]]
+# name = "train"
+# path = "examples/train.rs"

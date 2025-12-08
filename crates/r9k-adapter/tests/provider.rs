@@ -100,7 +100,7 @@ impl HttpRequest for MockProvider {
                         if query.contains("externalRefId=445") { &vec![] } else { vehicles }
                     }
                     Session::Replay(Replay { vehicles, .. }) => {
-                        &vehicles.clone().unwrap_or_default()
+                        vehicles.as_deref().unwrap_or(&[])
                     }
                 };
 

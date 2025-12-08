@@ -7,31 +7,62 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-// use quick_xml::reader::Config;
 use r9k_adapter::{Config, HttpRequest, Identity, Publisher, SmarTrakEvent, StopInfo};
+use serde::Deserialize;
 
-#[derive(Clone, Default)]
+#[allow(dead_code)]
+#[derive(Clone)]
+pub enum Session {
+    Static(Static),
+    Replay(Replay),
+}
+
+#[derive(Clone)]
+pub struct Static {
+    pub stops: Vec<StopInfo>,
+    pub vehicles: Vec<String>,
+}
+
+#[allow(dead_code)]
+#[derive(Deserialize, Clone)]
+pub struct Replay {
+    pub input: String,
+    pub output: Option<Vec<String>>,
+    pub error: Option<r9k_adapter::Error>,
+    pub delay: Option<i32>,
+    pub stop_info: Option<StopInfo>,
+    pub vehicles: Option<Vec<String>>,
+}
+
+#[derive(Clone)]
 pub struct MockProvider {
-    stops: Vec<StopInfo>,
-    vehicles: Vec<String>,
+    session: Session,
     events: Arc<Mutex<Vec<SmarTrakEvent>>>,
 }
 
 impl MockProvider {
-    #[allow(unused)]
+    #[allow(dead_code)]
     #[must_use]
-    pub fn new() -> Self {
-        let stops = vec![
-            StopInfo { stop_code: "133".to_string(), stop_lat: -36.12345, stop_lon: 174.12345 },
-            StopInfo { stop_code: "134".to_string(), stop_lat: -36.54321, stop_lon: 174.54321 },
-            StopInfo { stop_code: "9218".to_string(), stop_lat: -36.567, stop_lon: 174.44444 },
-        ];
-        let vehicles = vec!["vehicle 1".to_string()];
+    pub fn new_static() -> Self {
+        let session = Session::Static(Static {
+            stops: vec![
+                StopInfo { stop_code: "133".to_string(), stop_lat: -36.12345, stop_lon: 174.12345 },
+                StopInfo { stop_code: "134".to_string(), stop_lat: -36.54321, stop_lon: 174.54321 },
+                StopInfo { stop_code: "9218".to_string(), stop_lat: -36.567, stop_lon: 174.44444 },
+            ],
+            vehicles: vec!["vehicle 1".to_string()],
+        });
 
-        Self { stops, vehicles, events: Arc::new(Mutex::new(Vec::new())) }
+        Self { session, events: Arc::new(Mutex::new(Vec::new())) }
     }
 
-    #[allow(clippy::missing_panics_doc, unused)]
+    #[allow(dead_code)]
+    #[must_use]
+    pub fn new_replay(replay: Replay) -> Self {
+        Self { session: Session::Replay(replay), events: Arc::new(Mutex::new(Vec::new())) }
+    }
+
+    #[allow(clippy::missing_panics_doc)]
     #[must_use]
     pub fn events(&self) -> Vec<SmarTrakEvent> {
         self.events.lock().expect("should lock").clone()
@@ -54,15 +85,24 @@ impl HttpRequest for MockProvider {
     {
         let data = match request.uri().path() {
             "/gtfs/stops" => {
-                serde_json::to_vec(&self.stops).context("failed to serialize stops")?
+                let stops = match &self.session {
+                    Session::Static(Static { stops, .. }) => stops,
+                    Session::Replay(Replay { stop_info, .. }) => {
+                        &stop_info.as_ref().map(|s| vec![s.clone()]).unwrap_or_default()
+                    }
+                };
+                serde_json::to_vec(stops).context("failed to serialize stops")?
             }
             "/allocations/trips" => {
                 let query = request.uri().query().unwrap_or("");
-                if query.contains("externalRefId=5226") {
-                    serde_json::to_vec(&self.vehicles).context("failed to serialize")?
-                } else {
-                    serde_json::to_vec(&Vec::<String>::new()).context("failed to serialize")?
-                }
+                let vehicles = match &self.session {
+                    Session::Static(Static { vehicles, .. }) => {
+                        if query.contains("externalRefId=445") { &vec![] } else { vehicles }
+                    }
+                    Session::Replay(Replay { vehicles, .. }) => vehicles.as_deref().unwrap_or(&[]),
+                };
+
+                serde_json::to_vec(&vehicles).context("failed to serialize")?
             }
             _ => {
                 return Err(anyhow!("unknown path: {}", request.uri().path()));

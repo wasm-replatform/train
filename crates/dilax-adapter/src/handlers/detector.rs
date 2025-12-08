@@ -6,9 +6,8 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
 use crate::block_mgt::{self, VehicleAllocation};
-use crate::error::Error;
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
-use crate::{Provider, Result, StateStore};
+use crate::{Error, Provider, Result, StateStore};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
 const THRESHOLD: Duration = Duration::hours(1);
@@ -47,7 +46,8 @@ impl<P: Provider> Handler<DetectionResponse, P> for Request<DetectionRequest> {
 async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detection>> {
     info!("Starting Dilax lost connection job");
 
-    let allocs = allocations(provider).await.context("refreshing Dilax allocations")?;
+    let allocs: Vec<VehicleAllocation> =
+        allocations(provider).await.context("refreshing Dilax allocations")?;
     let detections = detect(allocs, provider)
         .await
         .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;
@@ -232,12 +232,11 @@ fn log_detection(detection: &Detection) {
         .vehicle_trip_info
         .dilax_message
         .as_ref()
-        .map(|msg| msg.device.site.clone())
-        .map_or_else(String::new, |site| {
-            let mut value = site;
-            value.push_str(" - ");
-            value
-        });
+        .and_then(|msg| msg.device.as_ref())
+        .map(|device| device.site.trim())
+        .filter(|site| !site.is_empty())
+        .map(|site| format!("{site} - "))
+        .unwrap_or_default();
 
     if let Some(label) = &vehicle_info.label {
         vehicle_label.push_str(label);

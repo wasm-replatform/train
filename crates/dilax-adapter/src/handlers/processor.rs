@@ -3,15 +3,14 @@ use credibil_api::{Handler, Request, Response};
 use tracing::{debug, info};
 
 use crate::block_mgt::{self, FleetVehicle};
-use crate::error::Error;
 use crate::gtfs::{self, StopType, StopTypeEntry};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
-use crate::{Message, Provider, Publisher, Result, trip_state};
+use crate::{Error, Message, Provider, Publisher, Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const VEHICLE_LABEL_WIDTH: usize = 14;
-const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-adapter-apc-enriched.v1";
+const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
 
 /// Dilax empty response.
 #[derive(Debug, Clone)]
@@ -75,7 +74,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
     let start_time_value = allocation.start_time.clone();
     debug!(vehicle_id = %vehicle_id, allocation = ?allocation, trip_id = %trip_id_value);
 
-    let stop_id_value = stop_id(&vehicle_id, &event, provider).await?;
+    let stop_id_value: String = stop_id(&vehicle_id, &event, provider).await?;
 
     trip_state::update_vehicle(
         &vehicle_id,
@@ -130,7 +129,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
 }
 
 fn vehicle_label(event: &DilaxMessage) -> Option<String> {
-    let site = event.device.site.clone();
+    let site = event.device.as_ref().map(|device| device.site.trim()).unwrap_or_default();
     if site.is_empty() {
         return None;
     }

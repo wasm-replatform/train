@@ -262,6 +262,10 @@ criteria = "safe-to-deploy"
 version = "0.20.11"
 criteria = "safe-to-deploy"
 
+[[exemptions.dashmap]]
+version = "5.5.3"
+criteria = "safe-to-deploy"
+
 [[exemptions.deranged]]
 version = "0.5.5"
 criteria = "safe-to-deploy"
@@ -308,6 +312,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.getrandom]]
 version = "0.3.4"
+criteria = "safe-to-deploy"
+
+[[exemptions.hashbrown]]
+version = "0.14.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.hyper-rustls]]

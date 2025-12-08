@@ -20,10 +20,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow.workspace = true
+async-trait.workspace = true
 axum = { workspace = true, features = ["json", "macros", "query"] }
 bytes.workspace = true
 credibil-api.workspace = true
 dilax-adapter = { path = "crates/dilax-adapter" }
+dilax-apc-connector = { path = "crates/dilax-apc-connector" }
 fromenv = "0.1.0"
 http.workspace = true
 http-body.workspace = true
@@ -31,6 +33,7 @@ r9k-adapter = { path = "crates/r9k-adapter" }
 r9k-connector = { path = "crates/r9k-connector" }
 realtime.workspace = true
 serde_json.workspace = true
+smartrak-gtfs = { path = "crates/smartrak-gtfs" }
 tracing.workspace = true
 wasi-http.workspace = true
 wasi-identity.workspace = true
@@ -107,6 +110,7 @@ bytes = "1.10.1"
 cfg-if = "1.0.3"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10.4"
+dashmap = "5.5.3"
 futures = "0.3.31"
 http = "1.3.1"
 http-body = "1.0.1"
@@ -118,8 +122,8 @@ serde_json = "1.0.144"
 serde_repr = "0.1"
 serde_yaml = "0.9"
 thiserror = "2.0"
-tokio = { version = "1.47.1", default-features = false, features = ["io-util", "macros", "rt", "time"] }
-tracing = "0.1.41"
+tokio = { version = "1.47.1", default-features = false, features = ["io-util", "macros", "rt", "sync", "time"] }
+tracing = "0.1.43"
 urlencoding = "2.1.3"
 wasip3 = { version = "0.3.1", features = ["http-compat"] }
 wit-bindgen = { version = "0.49.0", features = ["async-spawn"] }

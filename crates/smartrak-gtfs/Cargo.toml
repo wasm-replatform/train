@@ -1,0 +1,41 @@
+[package]
+name = "smartrak-gtfs"
+description = "SmarTrak GTFS adapter domain logic"
+readme = "README.md"
+publish = false
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+dashmap.workspace = true
+futures.workspace = true
+http.workspace = true
+http-body.workspace = true
+http-body-util.workspace = true
+once_cell = "1.19"
+realtime.workspace = true
+regex = "1.11"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+urlencoding.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+serde_json.workspace = true

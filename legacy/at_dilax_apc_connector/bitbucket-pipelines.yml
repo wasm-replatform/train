@@ -1,0 +1,65 @@
+image:
+  name: propellerhead/node-ci:18
+  username: $DOCKER_USERNAME
+  password: $DOCKER_TOKEN
+
+options:
+    docker: true
+    size: 2x
+    
+clone:
+  depth: full
+
+definitions:
+  caches:
+    # Custom cache definition for the sonar-scanner tool
+    sonar: ~/.sonar/cache
+  services:
+    docker:
+      memory: 3072
+
+stepdefinitions:
+  - gitpushtovsts: &gitpushtovsts
+      name: Git push to vsts
+      script:
+        - git push --force https://foo:$VSTS_TOKEN@aucklandtransport.visualstudio.com/Realtime%20Integration/_git/at_dilax_apc_connector $BITBUCKET_BRANCH
+
+  - install: &install
+      name: Install dependencies
+      caches:
+        - node
+      script:
+        - printf "//`node -p \"require('url').parse('$NPM_REGISTRY_URL').host\"`/:_authToken=$NPM_TOKEN\n_auth=$NPM_TOKEN\nregistry=$NPM_REGISTRY_URL\n" > ~/.npmrc
+        - npm ci
+        
+  - unittest: &unittest
+      name: Test & Analyze with Sonar
+      caches:
+        - sonar
+        - node
+      services:
+        - docker
+      script:
+        - npm run test
+        - |
+            set +e
+            npm run lint -- -f json -o test-reports/eslint/report.json
+            echo $?
+        - pipe: sonarsource/sonarcloud-scan:2.0.0
+          variables:
+            SONAR_TOKEN: ${SONAR_CLOUD_SECURITY_TOKEN}
+            EXTRA_ARGS: -Dsonar.branch.name=${BITBUCKET_BRANCH}
+        - pipe: sonarsource/sonarcloud-quality-gate:0.1.6
+          variables:
+            SONAR_TOKEN: ${SONAR_CLOUD_SECURITY_TOKEN}
+
+pipelines:
+  default:
+    - step: *gitpushtovsts
+    - step: *install
+    - step: *unittest
+  branches: 
+    master:
+      - step: *install
+      - step: *unittest
+      - step: *gitpushtovsts

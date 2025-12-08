@@ -20,7 +20,7 @@ pub struct DilaxMessage {
     /// Trigger source that caused the message to be emitted.
     pub trigger: String,
     /// Hardware metadata describing the emitting device.
-    pub device: Device,
+    pub device: Option<Device>,
     /// Timestamp metadata in UTC plus timezone hint.
     pub clock: Clock,
     /// Passenger information system snapshot included with the message.

@@ -4,3 +4,4 @@ target
 .envrc
 rustc-ice-*
 .DS_Store
+expanded.rs

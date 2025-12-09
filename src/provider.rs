@@ -21,7 +21,7 @@ pub struct Provider {
 
 #[derive(Debug, Clone, FromEnv)]
 pub struct ConfigSettings {
-    #[env(from = "ENVIRONMENT", default = "dev")]
+    #[env(from = "ENV", default = "dev")]
     pub environment: String,
 
     #[env(from = "BLOCK_MGT_URL")]
@@ -57,7 +57,7 @@ impl Provider {
 impl realtime::Config for Provider {
     async fn get(&self, key: &str) -> Result<String> {
         Ok(match key {
-            "ENVIRONMENT" => &self.config.environment,
+            "ENV" => &self.config.environment,
             "BLOCK_MGT_URL" => &self.config.block_mgt_url,
             "CC_STATIC_URL" => &self.config.cc_static_url,
             "FLEET_URL" => &self.config.fleet_url,

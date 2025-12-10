@@ -8,7 +8,7 @@ Demonstrates `wasi-blobstore` using the default (in-memory) implementation.
 cargo build --package train --target wasm32-wasip2 --release
 
 set -a && source .env && set +a
-cargo run --example train -- run ./target/wasm32-wasip2/release/examples/train.wasm
+cargo run --example train -- run ./target/wasm32-wasip2/release/train.wasm
 ```
 
 ## Test

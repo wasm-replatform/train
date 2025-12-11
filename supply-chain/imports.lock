@@ -272,20 +272,6 @@ user-id = 1139
 user-login = "Manishearth"
 user-name = "Manish Goregaokar"
 
-[[publisher.icu_properties]]
-version = "2.1.1"
-when = "2025-10-28"
-user-id = 1139
-user-login = "Manishearth"
-user-name = "Manish Goregaokar"
-
-[[publisher.icu_properties_data]]
-version = "2.1.1"
-when = "2025-10-28"
-user-id = 1139
-user-login = "Manishearth"
-user-name = "Manish Goregaokar"
-
 [[publisher.icu_provider]]
 version = "2.1.1"
 when = "2025-10-28"
@@ -488,8 +474,8 @@ user-login = "BurntSushi"
 user-name = "Andrew Gallant"
 
 [[publisher.reqwest]]
-version = "0.12.24"
-when = "2025-10-13"
+version = "0.12.25"
+when = "2025-12-08"
 user-id = 359
 user-login = "seanmonstar"
 user-name = "Sean McArthur"
@@ -691,8 +677,8 @@ user-login = "seanmonstar"
 user-name = "Sean McArthur"
 
 [[publisher.tower-http]]
-version = "0.6.7"
-when = "2025-11-24"
+version = "0.6.8"
+when = "2025-12-08"
 user-id = 359
 user-login = "seanmonstar"
 user-name = "Sean McArthur"

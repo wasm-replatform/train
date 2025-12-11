@@ -10,7 +10,7 @@ To run the project locally:
 2. Build the wasm guest (builds `./target/wasm32-wasip2/release/train.wasm`)
 3. Run the standalone example
 
-```bash
+```shell
 set -a; source .env; set +a
 cargo build --target wasm32-wasip2 --release
 cargo run --example train -- run ./target/wasm32-wasip2/release/train.wasm

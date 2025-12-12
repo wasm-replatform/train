@@ -226,7 +226,9 @@ async fn process_dilax(payload: &[u8]) -> Result<()> {
 #[allow(clippy::unused_async)]
 async fn publish_smartrak_messages(messages: Vec<SerializedMessage>) -> Result<()> {
     let env = Provider::new().config.environment;
-    let client = Arc::new(MsgClient::connect("").context("connecting to message broker")?);
+    let client = Arc::new(
+        MsgClient::connect("kafka".to_string()).await.context("connecting to message broker")?,
+    );
 
     for message in messages {
         let outgoing = Message::new(&message.payload);

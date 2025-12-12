@@ -73,7 +73,7 @@ impl realtime::Publisher for Provider {
     async fn send(&self, topic: &str, message: &realtime::Message) -> Result<()> {
         tracing::debug!("sending to topic: {topic}");
 
-        let client = Client::connect("").context("connecting to broker")?;
+        let client = Client::connect("kafka".to_string()).await.context("connecting to broker")?;
         let msg = Message::new(&message.payload);
         let topic = format!("{}-{topic}", self.config.environment);
 
@@ -116,17 +116,17 @@ impl realtime::Identity for Provider {
 
 impl realtime::StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
-        let bucket = cache::open("train_cache").context("opening cache")?;
-        bucket.get(key).context("reading state from cache")
+        let bucket = cache::open("train_cache").await.context("opening cache")?;
+        bucket.get(key).await.context("reading state from cache")
     }
 
     async fn set(&self, key: &str, value: &[u8], ttl_secs: Option<u64>) -> Result<Option<Vec<u8>>> {
-        let bucket = cache::open("train_cache").context("opening cache")?;
-        bucket.set(key, value, ttl_secs).context("reading state from cache")
+        let bucket = cache::open("train_cache").await.context("opening cache")?;
+        bucket.set(key, value, ttl_secs).await.context("reading state from cache")
     }
 
     async fn delete(&self, key: &str) -> Result<()> {
-        let bucket = cache::open("train_cache").context("opening cache")?;
-        bucket.delete(key).context("deleting state from cache")
+        let bucket = cache::open("train_cache").await.context("opening cache")?;
+        bucket.delete(key).await.context("deleting state from cache")
     }
 }

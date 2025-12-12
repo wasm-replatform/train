@@ -43,6 +43,9 @@ wasi-otel.workspace = true
 wasip3.workspace = true
 wit-bindgen.workspace = true
 
+[dev-dependencies]
+cfg-if = "1.0.3"
+
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 buildgen.workspace = true
 kernel.workspace = true
@@ -112,7 +115,6 @@ anyhow = "1.0.99"
 async-trait = "0.1"
 axum = { version = "0.8.4", default-features = false }
 bytes = "1.10.1"
-cfg-if = "1.0.3"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10.4"
 dashmap = "5.5.3"

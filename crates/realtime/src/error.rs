@@ -15,11 +15,7 @@ pub enum Error {
     /// The request payload is invalid or missing required fields.
     #[error("code: 400, description: {0}")]
     BadRequest(String),
-    // -----
-    // /// A processing error occurred.
-    // #[error("code: 400, description: invalid_format {0}")]
-    // InvalidFormat(String),
-    // -----
+
     /// The requested resource could not be found.
     #[error("code: 404, description: {0}")]
     NotFound(String),
@@ -44,13 +40,17 @@ pub enum Error {
     #[error("code: 422, description: processing_error {0}")]
     ProcessingError(String),
     // -----
-    // /// A processing error occurred.
-    // #[error("code: 500, description: missing_field {0}")]
-    // MissingField(String),
+    /// A processing error occurred.
+    #[error("code: 400, description: invalid_format {0}")]
+    InvalidFormat(String),
     // -----
-    // /// A processing error occurred.
-    // #[error("code: 500, description: invalid_timestamp {0}")]
-    // InvalidTimestamp(String),
+    /// A processing error occurred.
+    #[error("code: 500, description: missing_field {0}")]
+    MissingField(String),
+    // -----
+    /// A processing error occurred.
+    #[error("code: 500, description: invalid_timestamp {0}")]
+    InvalidTimestamp(String),
     //-----
     // /// A processing error occurred.
     // #[error("code: 500, description: server_error {0}")]
@@ -175,9 +175,9 @@ macro_rules! bad_gateway {
 mod tests {
     use anyhow::{Context, Result, anyhow};
     use serde_json::Value;
-    use tracing_subscriber::layer::SubscriberExt;
-    use tracing_subscriber::util::SubscriberInitExt;
-    use tracing_subscriber::{EnvFilter, Registry, fmt};
+    // use tracing_subscriber::layer::SubscriberExt;
+    // use tracing_subscriber::util::SubscriberInitExt;
+    // use tracing_subscriber::{EnvFilter, Registry, fmt};
 
     use super::Error;
 

@@ -33,4 +33,4 @@ input: |
                   <origenActualizaTren>GAC</origenActualizaTren>
                </ActualizarDatosTren>
             </CCO>
-error: !NoActualUpdate
+error: !Unprocessable "code: no_update, description: arrival/departure time <= 0"

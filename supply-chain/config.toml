@@ -263,7 +263,7 @@ version = "0.20.11"
 criteria = "safe-to-deploy"
 
 [[exemptions.dashmap]]
-version = "5.5.3"
+version = "6.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.deranged]]

@@ -4,8 +4,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+use crate::StateStore;
 use crate::types::{DilaxMessage, Door};
-use crate::{StateStore};
 
 const KEY_OCCUPANCY: &str = "trip:occupancy";
 const KEY_VEHICLE_STATE: &str = "apc:vehicleIdState";

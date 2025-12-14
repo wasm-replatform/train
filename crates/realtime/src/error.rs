@@ -127,10 +127,10 @@ macro_rules! bad_gateway {
 mod tests {
     use anyhow::{Context, Result, anyhow};
     use serde_json::Value;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+    use tracing_subscriber::{EnvFilter, Registry, fmt};
 
-    // use tracing_subscriber::layer::SubscriberExt;
-    // use tracing_subscriber::util::SubscriberInitExt;
-    // use tracing_subscriber::{EnvFilter, Registry, fmt};
     use super::Error;
 
     #[test]
@@ -139,34 +139,36 @@ mod tests {
         assert_eq!(format!("{err}",), "code: 400, description: invalid input");
     }
 
-    // #[test]
-    // fn with_context() {
-    //     Registry::default().with(EnvFilter::new("debug")).with(fmt::layer()).init();
+    #[test]
+    fn with_context() {
+        Registry::default().with(EnvFilter::new("debug")).with(fmt::layer()).init();
 
-    //     let context_error = || -> Result<(), Error> {
-    //         Err(bad_request!("invalid input"))
-    //             .context("doing something")
-    //             .context("more context")?;
-    //         Ok(())
-    //     };
+        let context_error = || -> Result<(), Error> {
+            Err(bad_request!("invalid input"))
+                .context("doing something")
+                .context("more context")?;
+            Ok(())
+        };
 
-    //     let result = context_error();
-    //     assert_eq!(
-    //         result.unwrap_err(),
-    //         bad_request!("more context -> doing something -> code: 400, description: invalid input")
-    //     );
-    // }
+        let result = context_error();
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            bad_request!(
+                "more context -> doing something -> code: 400, description: invalid input"
+            )
+            .to_string()
+        );
+    }
 
     // Test that error details are returned as json.
     #[test]
     fn r9k_context() {
-        let result = Err::<(), Error>(Error::ServerError("server error".to_string()))
-            .context("request context");
+        let result = Err::<(), Error>(server_error!("server error")).context("request context");
         let err: Error = result.unwrap_err().into();
 
         assert_eq!(
             err.to_string(),
-            "code: 500, description: server_error request context: server error"
+            "code: 500, description: request context -> code: 500, description: server error"
         );
     }
 

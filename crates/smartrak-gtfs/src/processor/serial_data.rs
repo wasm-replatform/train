@@ -1,10 +1,12 @@
 use std::env;
 
+use anyhow::Context;
 use chrono::Utc;
+use realtime::bad_request;
 use tracing::{debug, warn};
 
 use crate::models::{DecodedSerialData, SmartrakEvent, TripInstance};
-use crate::{Error, Provider, Result, StateStore, trip};
+use crate::{Provider, Result, StateStore, trip};
 
 const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
 const TTL_SIGN_ON_SECS: u64 = 24 * 60 * 60;
@@ -26,23 +28,23 @@ pub async fn process_serial_data(provider: &impl Provider, event: &SmartrakEvent
     }
 
     let Some(remote) = event.remote_data.as_ref() else {
-        return Err(Error::MissingField("remoteData".to_string()));
+        return Err(bad_request!("missing remoteData"));
     };
 
     let Some(vehicle_id) = remote.external_id.as_deref() else {
-        return Err(Error::MissingField("remoteData.externalId".to_string()));
+        return Err(bad_request!("missing remoteData.externalId"));
     };
 
     let event_timestamp = event
         .timestamp_unix()
-        .ok_or_else(|| Error::InvalidTimestamp(event.message_data.timestamp.clone()))?;
+        .ok_or_else(|| bad_request!("invalid timestamp: {}", event.message_data.timestamp))?;
 
     let Some(serial_data) = event.serial_data.as_ref() else {
-        return Err(Error::MissingField("serialData".to_string()));
+        return Err(bad_request!("missing serialData"));
     };
 
     let Some(decoded) = serial_data.decoded_serial_data.as_ref() else {
-        return Err(Error::MissingField("serialData.decodedSerialData".to_string()));
+        return Err(bad_request!("missing serialData.decodedSerialData"));
     };
 
     //let _guard = lock(&format!("serialData:{vehicle_id}")).await;
@@ -67,7 +69,7 @@ async fn mark_serial_timestamp(
     }
 
     let timestamp_bytes =
-        serde_json::to_vec(&timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+        serde_json::to_vec(&timestamp).context("failed to serialize timestamp")?;
     StateStore::set(provider, &key, &timestamp_bytes, Some(TTL_SERIAL_TIMESTAMP_SECS)).await?;
     Ok(false)
 }
@@ -146,11 +148,11 @@ async fn persist_trip(
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
 
-    let trip_bytes = serde_json::to_vec(&trip).map_err(|e| Error::InvalidFormat(e.to_string()))?;
+    let trip_bytes = serde_json::to_vec(&trip).context("failed to serialize trip")?;
     StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL_SECS)).await?;
 
     let timestamp_bytes =
-        serde_json::to_vec(&event_timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+        serde_json::to_vec(&event_timestamp).context("failed to serialize event timestamp")?;
     StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(TTL_SIGN_ON_SECS)).await?;
     Ok(())
 }

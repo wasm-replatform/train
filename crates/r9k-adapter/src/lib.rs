@@ -20,7 +20,7 @@ pub trait Provider: Config + HttpRequest + Identity + Publisher {}
 impl<T> Provider for T where T: Config + HttpRequest + Identity + Publisher {}
 
 #[derive(Error, Debug)]
- enum R9kError {
+enum R9kError {
     /// The message is outdated or ahead of time.
     #[error("code: bad_time, description: {0}")]
     BadTime(String),
@@ -32,6 +32,6 @@ impl<T> Provider for T where T: Config + HttpRequest + Identity + Publisher {}
 
 impl From<R9kError> for Error {
     fn from(err: R9kError) -> Self {
-        Self::Unprocessable(err.to_string())
+        Self::BadRequest(err.to_string())
     }
 }

@@ -1,7 +1,9 @@
 use std::env;
 
+use anyhow::Context;
 use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
+use realtime::bad_request;
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
@@ -60,17 +62,17 @@ pub async fn process_location(
     }
 
     let _vehicle_identifier = event.vehicle_identifier().ok_or_else(|| {
-        Error::ProcessingError(format!(
+        bad_request!(
             "remoteData.externalId {}",
             event.remote_data.as_ref().and_then(|rd| rd.external_id.clone()).unwrap_or_default()
-        ))
+        )
     })?;
 
     //let _guard = lock(&format!("location:{vehicle_identifier}")).await;
 
     let event_timestamp = event
         .timestamp_unix()
-        .ok_or_else(|| Error::ProcessingError(event.message_data.timestamp.clone()))?;
+        .ok_or_else(|| bad_request!("invalid timestamp: {}", event.message_data.timestamp))?;
 
     if vehicle.vehicle_type.is_train() {
         let allocation =
@@ -189,11 +191,11 @@ async fn assign_train_to_trip(
         return Ok(());
     }
 
-    let trip_bytes = serde_json::to_vec(&trip).map_err(|e| Error::InvalidFormat(e.to_string()))?;
+    let trip_bytes = serde_json::to_vec(&trip).context("failed to serialize trip")?;
     StateStore::set(provider, &trip_key, &trip_bytes, Some(duration_secs(TTL_TRIP_TRAIN))).await?;
 
     let timestamp_bytes =
-        serde_json::to_vec(&event_timestamp).map_err(|e| Error::InvalidTimestamp(e.to_string()))?;
+        serde_json::to_vec(&event_timestamp).context("failed to serialize event timestamp")?;
     StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(duration_secs(TTL_SIGN_ON)))
         .await?;
     Ok(())

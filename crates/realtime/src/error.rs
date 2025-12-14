@@ -2,7 +2,6 @@
 
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
-use quick_xml::DeError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -12,17 +11,9 @@ pub type Result<T> = anyhow::Result<T, Error>;
 /// Domain level error type returned by the adapter.
 #[derive(Error, Debug, Clone, Serialize, Deserialize)]
 pub enum Error {
-    /// The request payload is invalid or missing required fields.
+    /// Request payload is invalid or missing required fields.
     #[error("code: 400, description: {0}")]
     BadRequest(String),
-
-    /// The requested resource could not be found.
-    #[error("code: 404, description: {0}")]
-    NotFound(String),
-
-    /// The request syntax was correct but it failed validation.
-    #[error("code: 422, description: {0}")]
-    Unprocessable(String),
 
     /// A non recoverable internal error occurred.
     #[error("code: 500, description: {0}")]
@@ -31,31 +22,6 @@ pub enum Error {
     /// An upstream dependency failed while fulfilling the request.
     #[error("code: 502, description: {0}")]
     BadGateway(String),
-
-    // ----------------------------------------------------
-    // TODO: remove these once we have a proper error handling system
-    // ----------------------------------------------------
-    // -----
-    /// A processing error occurred.
-    #[error("code: 422, description: processing_error {0}")]
-    ProcessingError(String),
-    // -----
-    /// A processing error occurred.
-    #[error("code: 400, description: invalid_format {0}")]
-    InvalidFormat(String),
-    // -----
-    /// A processing error occurred.
-    #[error("code: 500, description: missing_field {0}")]
-    MissingField(String),
-    // -----
-    /// A processing error occurred.
-    #[error("code: 500, description: invalid_timestamp {0}")]
-    InvalidTimestamp(String),
-    //-----
-    // /// A processing error occurred.
-    // #[error("code: 500, description: server_error {0}")]
-    // ServerError(String),
-    // -----
 }
 
 impl Error {
@@ -64,9 +30,8 @@ impl Error {
     pub const fn code(&self) -> StatusCode {
         match self {
             Self::BadRequest(_) => StatusCode::BAD_REQUEST,
-            Self::NotFound(_) => StatusCode::NOT_FOUND,
+            Self::ServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::BadGateway(_) => StatusCode::BAD_GATEWAY,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -87,21 +52,8 @@ impl From<anyhow::Error> for Error {
 
             return match inner {
                 Self::BadRequest(_s) => Self::BadRequest(chain),
-                Self::NotFound(_s) => Self::NotFound(chain),
-                Self::Unprocessable(_s) => Self::Unprocessable(chain),
                 Self::ServerError(_s) => Self::ServerError(chain),
                 Self::BadGateway(_s) => Self::BadGateway(chain),
-                // Self::Outdated(_e) => Self::Outdated(chain),
-                // Self::Internal(_s) => Self::Internal(chain),
-                // Self::ProcessingError(e) => Self::ProcessingError(format!("{err}: {e}")),
-                // Self::InvalidFormat(e) => Self::InvalidFormat(format!("{err}: {e}")),
-                // Self::MissingField(e) => Self::MissingField(format!("{err}: {e}")),
-                // Self::InvalidTimestamp(e) => Self::InvalidTimestamp(format!("{err}: {e}")),
-                // Self::WrongTime(e) => Self::WrongTime(format!("{err}: {e}")),
-                // Handle the specific cases for NoUpdate and NoActualUpdate
-                // Self::NoUpdate => Self::NoUpdate,
-                // Self::NoActualUpdate => Self::NoActualUpdate,
-                _ => Self::ServerError(chain),
             };
         }
 
@@ -116,9 +68,9 @@ impl From<serde_json::Error> for Error {
     }
 }
 
-impl From<DeError> for Error {
-    fn from(err: DeError) -> Self {
-        Self::BadRequest(format!("failed to deserialize message: {err}"))
+impl From<quick_xml::DeError> for Error {
+    fn from(err: quick_xml::DeError) -> Self {
+        Self::BadRequest(err.to_string())
     }
 }
 
@@ -152,12 +104,12 @@ macro_rules! bad_request {
 }
 
 #[macro_export]
-macro_rules! not_found {
+macro_rules! server_error {
     ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::NotFound(format!($fmt, $($arg)*))
+        $crate::Error::ServerError(format!($fmt, $($arg)*))
     };
      ($err:expr $(,)?) => {
-        $crate::Error::NotFound(format!($err))
+        $crate::Error::ServerError(format!($err))
     };
 }
 
@@ -175,15 +127,15 @@ macro_rules! bad_gateway {
 mod tests {
     use anyhow::{Context, Result, anyhow};
     use serde_json::Value;
+
     // use tracing_subscriber::layer::SubscriberExt;
     // use tracing_subscriber::util::SubscriberInitExt;
     // use tracing_subscriber::{EnvFilter, Registry, fmt};
-
     use super::Error;
 
     #[test]
     fn error_display() {
-        let err = Error::BadRequest("invalid input".to_string());
+        let err = bad_request!("invalid input");
         assert_eq!(format!("{err}",), "code: 400, description: invalid input");
     }
 
@@ -192,7 +144,7 @@ mod tests {
     //     Registry::default().with(EnvFilter::new("debug")).with(fmt::layer()).init();
 
     //     let context_error = || -> Result<(), Error> {
-    //         Err(Error::BadRequest("invalid input".to_string()))
+    //         Err(bad_request!("invalid input"))
     //             .context("doing something")
     //             .context("more context")?;
     //         Ok(())
@@ -201,10 +153,7 @@ mod tests {
     //     let result = context_error();
     //     assert_eq!(
     //         result.unwrap_err(),
-    //         Error::BadRequest(
-    //             "more context -> doing something -> code: 400, description: invalid input"
-    //                 .to_string()
-    //         )
+    //         bad_request!("more context -> doing something -> code: 400, description: invalid input")
     //     );
     // }
 

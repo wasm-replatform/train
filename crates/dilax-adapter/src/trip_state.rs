@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 use crate::types::{DilaxMessage, Door};
-use crate::{Error, StateStore};
+use crate::{StateStore};
 
 const KEY_OCCUPANCY: &str = "trip:occupancy";
 const KEY_VEHICLE_STATE: &str = "apc:vehicleIdState";
@@ -82,8 +82,7 @@ pub async fn update_vehicle(
     state.occupancy_status = Some(status);
 
     // save state
-    let state_json =
-        serde_json::to_string(&state).map_err(|err| Error::ServerError(err.to_string()))?;
+    let state_json = serde_json::to_string(&state).context("serializing trip state")?;
     let replaced = state_store.set(&state_key, state_json.as_bytes(), Some(TTL_APC)).await?;
 
     if let (Some(before), Some(during)) = (&state_prev, &replaced)
@@ -136,8 +135,7 @@ pub async fn get_trip(
 pub async fn set_trip(vehicle_trip: VehicleTripInfo, state_store: &impl StateStore) -> Result<()> {
     let key = format!("{KEY_TRIP_INFO}:{}", vehicle_trip.vehicle_info.vehicle_id);
 
-    let bytes =
-        serde_json::to_vec(&vehicle_trip).map_err(|err| Error::ServerError(err.to_string()))?;
+    let bytes = serde_json::to_vec(&vehicle_trip).context("serializing vehicle trip info")?;
     state_store.set(&key, &bytes, Some(TTL_VEHICLE_TRIP_INFO)).await?;
 
     Ok(())

@@ -7,6 +7,7 @@ use std::fmt::{self, Display};
 use std::str::FromStr;
 
 use credibil_api::{Handler, Request, Response};
+use realtime::bad_request;
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Message, Provider, Publisher, Result};
@@ -23,7 +24,7 @@ async fn handle(
 
     // verify message
     if message.is_empty() || !message.contains("<ActualizarDatosTren>") {
-        return Err(Error::Unprocessable(ERROR.to_string()));
+        return Err(bad_request!("{ERROR}"));
     }
 
     // TODO: forward to replication topic/endpoint

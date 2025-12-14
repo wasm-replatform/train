@@ -5,7 +5,7 @@ use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
-use crate::{Config, Error, HttpRequest, Identity, Provider};
+use crate::{Config, HttpRequest, Identity, Provider};
 
 // const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
 // const TTL_FLEET_FAILURE: Duration = Duration::from_secs(3 * 60);
@@ -54,11 +54,9 @@ pub async fn vehicle_allocation(
         .body(Empty::<Bytes>::new())
         .context("building allocation_by_vehicle request")?;
 
-    let response = HttpRequest::fetch(provider, request).await.map_err(|err| {
-        Error::ServerError(format!(
-            "failed to fetch block allocation for vehicle {vehicle_id}: {err}"
-        ))
-    })?;
+    let response = HttpRequest::fetch(provider, request)
+        .await
+        .with_context(|| format!("failed to fetch block allocation for vehicle {vehicle_id}"))?;
 
     let body = response.into_body();
     let envelope: AllocationEnvelope =

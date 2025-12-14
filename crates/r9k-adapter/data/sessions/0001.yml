@@ -74,4 +74,4 @@ input: |
       </ActualizarDatosTren>
    </CCO>
 delay: 506
-error: !Unprocessable "code: bad_time, description: outdated by 506 seconds"
+error: !BadRequest "code: bad_time, description: outdated by 506 seconds"

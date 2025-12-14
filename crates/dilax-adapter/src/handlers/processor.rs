@@ -1,12 +1,13 @@
 use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
 use tracing::{debug, info};
+use realtime::bad_request;
 
 use crate::block_mgt::{self, FleetVehicle};
 use crate::gtfs::{self, StopType, StopTypeEntry};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
-use crate::{Error, Message, Provider, Publisher, Result, trip_state};
+use crate::{ Error, Message, Provider, Publisher, Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const VEHICLE_LABEL_WIDTH: usize = 14;
@@ -40,35 +41,32 @@ impl<P: Provider> Handler<DilaxResponse, P> for Request<DilaxMessage> {
 /// while augmenting the incoming Dilax event.
 pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()> {
     let vehicle_label = vehicle_label(&event).ok_or_else(|| {
-        Error::ProcessingError(format!("vehicle label missing for device {:?}", event.device))
+        bad_request!("vehicle label missing for device {:?}", event.device)
     })?;
 
     let vehicle = block_mgt::vehicle(&vehicle_label, provider)
         .await
         .map_err(|err| {
-            Error::ProcessingError(format!(
-                "failed to resolve vehicle for label {vehicle_label}: {err}"
-            ))
+            bad_request!("failed to resolve vehicle for label {vehicle_label}: {err}")
         })?
-        .ok_or_else(|| {
-            Error::ProcessingError(format!("vehicle not found for label {vehicle_label}"))
-        })?;
+        .ok_or_else(|| bad_request!("vehicle not found for label {vehicle_label}"))?;
 
     let (vehicle_seating, vehicle_total) = vehicle_capacity(&vehicle).ok_or_else(|| {
-        Error::ProcessingError(format!("vehicle {} lacks capacity information", vehicle.id))
+        bad_request!("vehicle {} lacks capacity information", vehicle.id)
     })?;
     let vehicle_id = vehicle.id.clone();
 
     let allocation = block_mgt::vehicle_allocation(&vehicle_id, provider)
         .await
         .map_err(|err| {
-            Error::ProcessingError(format!(
+            bad_request!(
                 "failed to fetch block allocation for vehicle {vehicle_id}: {err}"
-            ))
+            )
         })?
         .ok_or_else(|| {
-            Error::ProcessingError(format!("block allocation unavailable for vehicle {vehicle_id}"))
+            bad_request!("block allocation unavailable for vehicle {vehicle_id}")
         })?;
+        
     let trip_id_value = allocation.trip_id.clone();
     let start_date_value = allocation.service_date.clone();
     let start_time_value = allocation.start_time.clone();
@@ -86,9 +84,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
     )
     .await
     .map_err(|err| {
-        Error::ProcessingError(format!(
-            "failed to update trip state for vehicle {vehicle_id}: {err}"
-        ))
+        bad_request!("failed to update trip state for vehicle {vehicle_id}: {err}")
     })?;
 
     let vt = VehicleTripInfo {
@@ -102,9 +98,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
         dilax_message: Some(event.clone()),
     };
     trip_state::set_trip(vt, provider).await.map_err(|err| {
-        Error::ProcessingError(format!(
-            "failed to persist trip info for vehicle {vehicle_id}: {err}"
-        ))
+        bad_request!("failed to persist trip info for vehicle {vehicle_id}: {err}")
     })?;
 
     // -------------------------------------
@@ -199,34 +193,34 @@ async fn stop_id(
     let vehicle_id_owned = vehicle_id.to_string();
 
     let Some(waypoint) = event.wpt.as_ref() else {
-        return Err(Error::ProcessingError(format!(
+        return Err(bad_request!(
             "dilax-adapter event missing waypoint data for vehicle {vehicle_id_owned}"
-        )));
+        ))?;
     };
 
     let stops =
         gtfs::location_stops(&waypoint.lat, &waypoint.lon, STOP_SEARCH_DISTANCE_METERS, provider)
             .await
             .map_err(|err| {
-                Error::ProcessingError(format!(
+                bad_request!(
                     "failed to look up stops for vehicle {vehicle_id_owned}: {err}"
-                ))
+                )
             })?;
     if stops.is_empty() {
-        return Err(Error::ProcessingError(format!(
+        return Err(bad_request!(
             "stop id unavailable for vehicle {vehicle_id_owned}"
-        )));
+        ))?;
     }
 
     let stop_types = gtfs::stop_types(provider).await.map_err(|err| {
-        Error::ProcessingError(format!(
+        bad_request!(
             "failed to look up stop types for vehicle {vehicle_id_owned}: {err}"
-        ))
+        )
     })?;
     if stop_types.is_empty() {
-        return Err(Error::ProcessingError(format!(
+        return Err(bad_request!(
             "train stop types unavailable for vehicle {vehicle_id_owned}"
-        )));
+        ))?;
     }
 
     for stop in &stops {
@@ -240,7 +234,7 @@ async fn stop_id(
         }
     }
 
-    Err(Error::ProcessingError(format!("stop id unavailable for vehicle {vehicle_id_owned}")))
+    Err(bad_request!("stop id unavailable for vehicle {vehicle_id_owned}"))
 }
 
 fn is_station(stop_types: &[StopTypeEntry], stop_code: &str) -> bool {

@@ -2,6 +2,7 @@ use anyhow::Context;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use credibil_api::{Handler, Request, Response};
+use realtime::server_error;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
@@ -27,9 +28,7 @@ pub struct DetectionResponse {
 async fn handle(
     _owner: &str, _: DetectionRequest, provider: &impl Provider,
 ) -> Result<Response<DetectionResponse>> {
-    let detections = lost_connections(provider)
-        .await
-        .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;
+    let detections = lost_connections(provider).await.context("detecting lost connections")?;
 
     Ok(DetectionResponse { detections }.into())
 }
@@ -48,9 +47,7 @@ async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detect
 
     let allocs: Vec<VehicleAllocation> =
         allocations(provider).await.context("refreshing Dilax allocations")?;
-    let detections = detect(allocs, provider)
-        .await
-        .map_err(|e| Error::ServerError(format!("detecting lost connections: {e}")))?;
+    let detections = detect(allocs, provider).await.context("detecting lost connections")?;
 
     info!(count = detections.len(), "Completed Dilax lost connection job");
 
@@ -70,8 +67,7 @@ pub struct Detection {
 ///
 /// Returns an error if the block management provider or backing store cannot be queried.
 async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
-    let allocations =
-        block_mgt::allocations(provider).await.map_err(|e| Error::ServerError(e.to_string()))?;
+    let allocations = block_mgt::allocations(provider).await.map_err(|e| server_error!("{e}"))?;
 
     let now_tz = Utc::now().with_timezone(&Pacific::Auckland);
     let service_date = now_tz.format("%Y%m%d").to_string();

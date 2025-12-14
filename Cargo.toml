@@ -172,6 +172,3 @@ lto = "thin"
 opt-level = "s"
 strip = "symbols"
 
-# [[bin]]
-# name = "train"
-# path = "examples/train.rs"

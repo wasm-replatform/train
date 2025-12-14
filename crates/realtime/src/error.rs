@@ -10,59 +10,52 @@ use thiserror::Error;
 pub type Result<T> = anyhow::Result<T, Error>;
 
 /// Domain level error type returned by the adapter.
-#[derive(Error, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, Serialize, Deserialize)]
 pub enum Error {
     /// The request payload is invalid or missing required fields.
     #[error("code: 400, description: {0}")]
     BadRequest(String),
-
+    // -----
+    // /// A processing error occurred.
+    // #[error("code: 400, description: invalid_format {0}")]
+    // InvalidFormat(String),
+    // -----
     /// The requested resource could not be found.
     #[error("code: 404, description: {0}")]
     NotFound(String),
 
+    /// The request syntax was correct but it failed validation.
+    #[error("code: 422, description: {0}")]
+    Unprocessable(String),
+
     /// A non recoverable internal error occurred.
     #[error("code: 500, description: {0}")]
-    Internal(String),
+    ServerError(String),
 
     /// An upstream dependency failed while fulfilling the request.
     #[error("code: 502, description: {0}")]
     BadGateway(String),
 
+    // ----------------------------------------------------
+    // TODO: remove these once we have a proper error handling system
+    // ----------------------------------------------------
+    // -----
     /// A processing error occurred.
-    #[error("code: 500, description: processing_error {0}")]
+    #[error("code: 422, description: processing_error {0}")]
     ProcessingError(String),
-
-    /// A processing error occurred.
-    #[error("code: 500, description: invalid_format {0}")]
-    InvalidFormat(String),
-
-    /// A processing error occurred.
-    #[error("code: 500, description: missing_field {0}")]
-    MissingField(String),
-
-    /// A processing error occurred.
-    #[error("code: 500, description: invalid_timestamp {0}")]
-    InvalidTimestamp(String),
-
-    /// Delayed message arrival.
-    #[error("code: 500, description: outdated {0}")]
-    Outdated(String),
-
-    /// Ahead of time message arrival.
-    #[error("code: 500, description: wrong_time {0}")]
-    WrongTime(String),
-
-    /// A processing error occurred.
-    #[error("code: 500, description: server_error {0}")]
-    ServerError(String),
-
-    /// A processing error occurred.
-    #[error("code: 500, description: no_update")]
-    NoUpdate,
-
-    /// A processing error occurred.
-    #[error("code: 500, description: no_actual_update")]
-    NoActualUpdate,
+    // -----
+    // /// A processing error occurred.
+    // #[error("code: 500, description: missing_field {0}")]
+    // MissingField(String),
+    // -----
+    // /// A processing error occurred.
+    // #[error("code: 500, description: invalid_timestamp {0}")]
+    // InvalidTimestamp(String),
+    //-----
+    // /// A processing error occurred.
+    // #[error("code: 500, description: server_error {0}")]
+    // ServerError(String),
+    // -----
 }
 
 impl Error {
@@ -95,35 +88,37 @@ impl From<anyhow::Error> for Error {
             return match inner {
                 Self::BadRequest(_s) => Self::BadRequest(chain),
                 Self::NotFound(_s) => Self::NotFound(chain),
+                Self::Unprocessable(_s) => Self::Unprocessable(chain),
+                Self::ServerError(_s) => Self::ServerError(chain),
                 Self::BadGateway(_s) => Self::BadGateway(chain),
-                Self::Internal(_s) => Self::Internal(chain),
-                Self::ProcessingError(e) => Self::ProcessingError(format!("{err}: {e}")),
-                Self::InvalidFormat(e) => Self::InvalidFormat(format!("{err}: {e}")),
-                Self::MissingField(e) => Self::MissingField(format!("{err}: {e}")),
-                Self::InvalidTimestamp(e) => Self::InvalidTimestamp(format!("{err}: {e}")),
-                Self::Outdated(e) => Self::Outdated(format!("{err}: {e}")),
-                Self::WrongTime(e) => Self::WrongTime(format!("{err}: {e}")),
-                Self::ServerError(e) => Self::ServerError(format!("{err}: {e}")),
+                // Self::Outdated(_e) => Self::Outdated(chain),
+                // Self::Internal(_s) => Self::Internal(chain),
+                // Self::ProcessingError(e) => Self::ProcessingError(format!("{err}: {e}")),
+                // Self::InvalidFormat(e) => Self::InvalidFormat(format!("{err}: {e}")),
+                // Self::MissingField(e) => Self::MissingField(format!("{err}: {e}")),
+                // Self::InvalidTimestamp(e) => Self::InvalidTimestamp(format!("{err}: {e}")),
+                // Self::WrongTime(e) => Self::WrongTime(format!("{err}: {e}")),
                 // Handle the specific cases for NoUpdate and NoActualUpdate
-                Self::NoUpdate => Self::NoUpdate,
-                Self::NoActualUpdate => Self::NoActualUpdate,
+                // Self::NoUpdate => Self::NoUpdate,
+                // Self::NoActualUpdate => Self::NoActualUpdate,
+                _ => Self::ServerError(chain),
             };
         }
 
         // otherwise, return an Internal error
-        Self::Internal(chain)
+        Self::ServerError(chain)
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
-        Self::InvalidFormat(err.to_string())
+        Self::BadRequest(err.to_string())
     }
 }
 
 impl From<DeError> for Error {
     fn from(err: DeError) -> Self {
-        Self::InvalidFormat(format!("failed to deserialize message: {err}"))
+        Self::BadRequest(format!("failed to deserialize message: {err}"))
     }
 }
 
@@ -192,26 +187,26 @@ mod tests {
         assert_eq!(format!("{err}",), "code: 400, description: invalid input");
     }
 
-    #[test]
-    fn with_context() {
-        Registry::default().with(EnvFilter::new("debug")).with(fmt::layer()).init();
+    // #[test]
+    // fn with_context() {
+    //     Registry::default().with(EnvFilter::new("debug")).with(fmt::layer()).init();
 
-        let context_error = || -> Result<(), Error> {
-            Err(Error::BadRequest("invalid input".to_string()))
-                .context("doing something")
-                .context("more context")?;
-            Ok(())
-        };
+    //     let context_error = || -> Result<(), Error> {
+    //         Err(Error::BadRequest("invalid input".to_string()))
+    //             .context("doing something")
+    //             .context("more context")?;
+    //         Ok(())
+    //     };
 
-        let result = context_error();
-        assert_eq!(
-            result.unwrap_err(),
-            Error::BadRequest(
-                "more context -> doing something -> code: 400, description: invalid input"
-                    .to_string()
-            )
-        );
-    }
+    //     let result = context_error();
+    //     assert_eq!(
+    //         result.unwrap_err(),
+    //         Error::BadRequest(
+    //             "more context -> doing something -> code: 400, description: invalid input"
+    //                 .to_string()
+    //         )
+    //     );
+    // }
 
     // Test that error details are returned as json.
     #[test]

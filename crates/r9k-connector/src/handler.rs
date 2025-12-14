@@ -23,7 +23,7 @@ async fn handle(
 
     // verify message
     if message.is_empty() || !message.contains("<ActualizarDatosTren>") {
-        return Err(Error::InvalidFormat(ERROR.to_string()));
+        return Err(Error::Unprocessable(ERROR.to_string()));
     }
 
     // TODO: forward to replication topic/endpoint

@@ -7,7 +7,7 @@ use chrono_tz::Pacific;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{Error, Result};
+use crate::{Error, R9kError, Result};
 
 const MAX_DELAY_SECS: i64 = 60;
 const MIN_DELAY_SECS: i64 = -30;
@@ -112,7 +112,7 @@ impl TrainUpdate {
     ///  - `Error::WrongTime` if the message is from the future
     pub fn validate(&self) -> Result<()> {
         if self.changes.is_empty() {
-            return Err(Error::NoUpdate);
+            return Err(R9kError::NoUpdate("contains no updates".to_string()).into());
         }
 
         // an *actual* update will have a +ve arrival or departure time
@@ -122,17 +122,17 @@ impl TrainUpdate {
         } else if change.has_arrived {
             change.actual_arrival_time
         } else {
-            return Err(Error::NoActualUpdate);
+            return Err(R9kError::NoUpdate("arrival/departure time <= 0".to_string()).into());
         };
 
         if since_midnight_secs <= 0 {
-            return Err(Error::NoActualUpdate);
+            return Err(R9kError::NoUpdate("arrival/departure time <= 0".to_string()).into());
         }
 
         // rebuild the event timestamp from the creation date + seconds from midnight
         let naive_dt = self.created_date.and_hms_opt(0, 0, 0).unwrap_or_default();
         let Some(midnight_dt) = naive_dt.and_local_timezone(Pacific::Auckland).earliest() else {
-            return Err(Error::WrongTime(format!("invalid local time: {naive_dt}")));
+            return Err(R9kError::BadTime(format!("invalid local time: {naive_dt}")).into());
         };
         let midnight_ts = midnight_dt.timestamp();
         let event_ts = midnight_ts + i64::from(since_midnight_secs);
@@ -145,10 +145,12 @@ impl TrainUpdate {
         tracing::info!(gauge.r9k_delay = delay_secs);
 
         if delay_secs > MAX_DELAY_SECS {
-            return Err(Error::Outdated(format!("message delayed by {delay_secs} seconds")));
+            return Err(R9kError::BadTime(format!("outdated by {delay_secs} seconds")).into());
         }
         if delay_secs < MIN_DELAY_SECS {
-            return Err(Error::WrongTime(format!("message ahead by {delay_secs} seconds")));
+            return Err(
+                R9kError::BadTime(format!("too early by {} seconds", delay_secs.abs())).into()
+            );
         }
 
         Ok(())

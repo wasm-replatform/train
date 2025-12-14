@@ -14,6 +14,7 @@ cfg_if::cfg_if! {
             WasiMessaging: MessagingDefault,
         });
     } else {
+        // HACK: prevent lint error for wasm32 target
         fn main() {}
     }
 }

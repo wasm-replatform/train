@@ -5,7 +5,7 @@ use chrono::Utc;
 use realtime::bad_request;
 use tracing::{debug, warn};
 
-use crate::models::{DecodedSerialData, SmartrakEvent, TripInstance};
+use crate::models::{DecodedSerialData, SmarTrakMessage, TripInstance};
 use crate::{Provider, Result, StateStore, trip};
 
 const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
@@ -22,7 +22,7 @@ fn env_i64(key: &str, default: i64) -> i64 {
 ///
 /// Returns an error when required event fields are missing, cached state cannot
 /// be accessed, or downstream lookups fail.
-pub async fn process_serial_data(provider: &impl Provider, event: &SmartrakEvent) -> Result<()> {
+pub async fn process(provider: &impl Provider, event: &SmarTrakMessage) -> Result<()> {
     if !is_serial_event_valid(event) {
         return Ok(());
     }
@@ -74,7 +74,7 @@ async fn mark_serial_timestamp(
     Ok(false)
 }
 
-fn is_serial_event_valid(event: &SmartrakEvent) -> bool {
+fn is_serial_event_valid(event: &SmarTrakMessage) -> bool {
     let Some(remote) = event.remote_data.as_ref() else {
         return false;
     };

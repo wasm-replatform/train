@@ -8,9 +8,8 @@ use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
 use crate::models::{
-    BlockInstance, DeadReckoningMessage, FeedEntity, PassengerCountEvent, Position, PositionDr,
-    SmartrakEvent, TripDescriptor, TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo,
-    VehiclePosition,
+    BlockInstance, DeadReckoningMessage, FeedEntity, Position, PositionDr, SmarTrakMessage,
+    TripDescriptor, TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo, VehiclePosition,
 };
 use crate::{Error, Provider, Result, StateStore, block_mgt, fleet, trip};
 
@@ -26,7 +25,7 @@ const fn duration_secs(duration: Duration) -> u64 {
     duration.num_seconds().unsigned_abs()
 }
 
-pub enum LocationOutcome {
+pub enum Location {
     VehiclePosition(FeedEntity),
     DeadReckoning(DeadReckoningMessage),
 }
@@ -54,9 +53,9 @@ pub async fn resolve_vehicle(
 ///
 /// Returns an error when the incoming payload cannot be parsed or when domain logic
 /// encounters an unrecoverable condition.
-pub async fn process_location(
-    provider: &impl Provider, event: &SmartrakEvent, vehicle: &VehicleInfo,
-) -> Result<Option<LocationOutcome>> {
+pub async fn process(
+    provider: &impl Provider, event: &SmarTrakMessage, vehicle: &VehicleInfo,
+) -> Result<Option<Location>> {
     if !is_location_event_valid(event) {
         return Ok(None);
     }
@@ -93,7 +92,7 @@ pub async fn process_location(
             trip: descriptor,
             vehicle: VehicleDr { id: vehicle.id.clone() },
         };
-        return Ok(Some(LocationOutcome::DeadReckoning(dr_message)));
+        return Ok(Some(Location::DeadReckoning(dr_message)));
     }
 
     let descriptor = VehicleDescriptor {
@@ -125,7 +124,7 @@ pub async fn process_location(
     };
 
     let entity = FeedEntity { id: vehicle.id.clone(), vehicle: Some(vehicle_position) };
-    Ok(Some(LocationOutcome::VehiclePosition(entity)))
+    Ok(Some(Location::VehiclePosition(entity)))
 }
 
 fn deserialize_optional<T>(bytes: Option<&[u8]>) -> Option<T>
@@ -135,7 +134,7 @@ where
     bytes.and_then(|raw| serde_json::from_slice::<T>(raw).ok())
 }
 
-fn is_location_event_valid(event: &SmartrakEvent) -> bool {
+fn is_location_event_valid(event: &SmarTrakMessage) -> bool {
     event.remote_data.is_some() && event.location_data.gps_accuracy >= 0.0
 }
 
@@ -242,12 +241,17 @@ async fn get_occupancy_status(
     };
 
     let key = format!(
-        "smartrakGtfs:passengerCountEvent:{}:{}:{}:{}",
+        "smartrakGtfs:occupancyStatus:{}:{}:{}:{}",
         &vehicle.id, &trip.trip_id, start_date, start_time
     );
-    let bytes = StateStore::get(provider, &key).await?;
-    let passenger_event: Option<PassengerCountEvent> = deserialize_optional(bytes.as_deref());
-    Ok(passenger_event.and_then(|event| event.occupancy_status))
+
+    let Some(bytes) = StateStore::get(provider, &key).await? else {
+        return Ok(None);
+    };
+
+    let occupancy_status: String = serde_json::from_slice(&bytes)?;
+
+    Ok(Some(occupancy_status))
 }
 
 fn time_to_timestamp(date: &str, time: &str, tz: Tz) -> Option<i64> {

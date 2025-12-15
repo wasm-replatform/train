@@ -120,7 +120,8 @@ async fn no_train_update() {
     let xml = XmlBuilder::new().update(UpdateType::None).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
+    else {
         panic!("should return BadRequest error");
     };
     assert_eq!(code, "no_update");
@@ -137,7 +138,8 @@ async fn no_changes() {
     let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
+    else {
         panic!("should return BadRequest error");
     };
     assert_eq!(code, "no_update");
@@ -154,7 +156,8 @@ async fn no_actual_changes() {
     let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
+    else {
         panic!("should return BadRequest error");
     };
     assert_eq!(code, "no_update");
@@ -171,7 +174,8 @@ async fn too_late() {
     let xml = XmlBuilder::new().delay_secs(61).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
+    else {
         panic!("should return no actual update error");
     };
     assert_eq!(code, "bad_time");
@@ -188,7 +192,8 @@ async fn too_early() {
     let xml = XmlBuilder::new().delay_secs(-32).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
+    else {
         panic!("should return no actual update error");
     };
     assert_eq!(code, "bad_time");

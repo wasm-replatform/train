@@ -11,7 +11,7 @@ use serde_json::Value;
 use tracing::{debug, warn};
 use urlencoding::encode;
 
-use crate::models::{VehicleCapacity, VehicleInfo};
+use crate::models::VehicleInfo;
 use crate::{HttpRequest, Provider};
 
 /// Fetches vehicle metadata by label from the Fleet API.
@@ -36,18 +36,18 @@ pub async fn get_vehicle_by_id(
     fetch_vehicle(provider, format!("id={}", encode(vehicle_id))).await
 }
 
-/// Fetches vehicle capacity for a specific route.
-///
-/// # Errors
-///
-/// Returns an error when the Fleet API call fails or the response cannot be deserialized.
-pub async fn get_vehicle_capacity_for_route(
-    provider: &impl Provider, vehicle_id: &str, route_id: &str,
-) -> Result<Option<VehicleCapacity>> {
-    Ok(fetch_vehicle(provider, format!("id={}&route_id={}", encode(vehicle_id), encode(route_id)))
-        .await?
-        .map(|info| info.capacity))
-}
+// /// Fetches vehicle capacity for a specific route.
+// ///
+// /// # Errors
+// ///
+// /// Returns an error when the Fleet API call fails or the response cannot be deserialized.
+// pub async fn get_vehicle_capacity_for_route(
+//     provider: &impl Provider, vehicle_id: &str, route_id: &str,
+// ) -> Result<Option<VehicleCapacity>> {
+//     Ok(fetch_vehicle(provider, format!("id={}&route_id={}", encode(vehicle_id), encode(route_id)))
+//         .await?
+//         .map(|info| info.capacity))
+// }
 
 /// Attempts to resolve a vehicle using multiple heuristics (label, train pattern, fallback id).
 ///

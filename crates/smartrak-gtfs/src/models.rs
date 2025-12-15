@@ -61,7 +61,7 @@ pub struct SerialData {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SmartrakEvent {
+pub struct SmarTrakMessage {
     #[serde(rename = "eventType")]
     pub event_type: EventType,
     pub remote_data: Option<RemoteData>,
@@ -73,7 +73,7 @@ pub struct SmartrakEvent {
     pub serial_data: Option<SerialData>,
 }
 
-impl SmartrakEvent {
+impl SmarTrakMessage {
     #[must_use]
     pub fn timestamp_unix(&self) -> Option<i64> {
         DateTime::parse_from_rfc3339(&self.message_data.timestamp)
@@ -89,29 +89,7 @@ impl SmartrakEvent {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PassengerCountEvent {
-    pub occupancy_status: Option<String>,
-    pub vehicle: PassengerVehicle,
-    pub trip: PassengerTrip,
-    pub timestamp: i64,
-}
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PassengerVehicle {
-    pub id: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PassengerTrip {
-    pub trip_id: String,
-    pub route_id: String,
-    pub start_date: String,
-    pub start_time: String,
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]

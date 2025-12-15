@@ -1,5 +1,4 @@
 use credibil_api::{Handler, Request, Response};
-use serde::Serialize;
 use tracing::debug;
 
 use crate::god_mode;
@@ -45,24 +44,19 @@ async fn handle(
         return Ok(SmarTrakResponse.into());
     };
 
-    let mut messages = Vec::new();
-    match result {
+    let (payload, key, topic) = match result {
         Location::VehiclePosition(feed) => {
-            let topic = "realtime-gtfs-vp.v1".to_string();
-            messages.push(Serialized::new(topic, feed.id.clone(), feed)?);
+            (serde_json::to_vec(&feed)?, feed.id, "realtime-gtfs-vp.v1")
         }
         Location::DeadReckoning(dr) => {
-            let topic = "realtime-dead-reckoning.v1".to_string();
-            messages.push(Serialized::new(topic, dr.vehicle.id.clone(), dr)?);
+            (serde_json::to_vec(&dr)?, dr.id, "realtime-dead-reckoning.v1")
         }
-    }
+    };
 
-    // publish messages to topics
-    for msg in messages {
-        let mut message = Message::new(&msg.payload);
-        message.headers.insert("key".to_string(), msg.key.clone());
-        Publisher::send(provider, &msg.topic, &message).await?;
-    }
+    // publish
+    let mut message = Message::new(&payload);
+    message.headers.insert("key".to_string(), key.clone());
+    Publisher::send(provider, topic, &message).await?;
 
     Ok(SmarTrakResponse.into())
 }
@@ -73,26 +67,5 @@ impl<P: Provider> Handler<SmarTrakResponse, P> for Request<SmarTrakMessage> {
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<SmarTrakResponse>> {
         handle(owner, self.body, provider).await
-    }
-}
-
-pub struct Serialized {
-    pub topic: String,
-    pub key: String,
-    pub payload: Vec<u8>,
-}
-
-impl Serialized {
-    /// Creates a serialized message ready for publication.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the value cannot be serialized to JSON.
-    pub fn new<T>(topic: String, key: String, value: T) -> Result<Self>
-    where
-        T: Serialize,
-    {
-        let payload = serde_json::to_vec(&value)?;
-        Ok(Self { topic, key, payload })
     }
 }

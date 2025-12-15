@@ -1,5 +1,5 @@
 use credibil_api::{Handler, Request, Response};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tracing::debug;
 
 use crate::god_mode;
@@ -83,26 +83,5 @@ impl<P: Provider> Handler<CafAvlResponse, P> for Request<CafAvlMessage> {
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<CafAvlResponse>> {
         handle(owner, self.body, provider).await
-    }
-}
-
-pub struct Serialized {
-    pub topic: String,
-    pub key: String,
-    pub payload: Vec<u8>,
-}
-
-impl Serialized {
-    /// Creates a serialized message ready for publication.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the value cannot be serialized to JSON.
-    pub fn new<T>(topic: String, key: String, value: T) -> Result<Self>
-    where
-        T: Serialize,
-    {
-        let payload = serde_json::to_vec(&value)?;
-        Ok(Self { topic, key, payload })
     }
 }

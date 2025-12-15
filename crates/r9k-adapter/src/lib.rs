@@ -19,19 +19,30 @@ pub trait Provider: Config + HttpRequest + Identity + Publisher {}
 
 impl<T> Provider for T where T: Config + HttpRequest + Identity + Publisher {}
 
+// TODO: use for internal methods
 #[derive(Error, Debug)]
 enum R9kError {
-    /// The message is outdated or ahead of time.
-    #[error("code: bad_time, description: {0}")]
+    /// The message timestamp is invalid (too old or future-dated).
+    #[error("{0}")]
     BadTime(String),
 
-    /// The message has no updates or arrival/departure time <= 0.
-    #[error("code: no_update, description: {0}")]
+    /// The message contains no updates or the arrival/departure time is
+    /// invalid (negative or 0).
+    #[error("{0}")]
     NoUpdate(String),
+}
+
+impl R9kError {
+    fn code(&self) -> String {
+        match self {
+            Self::BadTime(_) => "bad_time".to_string(),
+            Self::NoUpdate(_) => "no_update".to_string(),
+        }
+    }
 }
 
 impl From<R9kError> for Error {
     fn from(err: R9kError) -> Self {
-        Self::BadRequest(err.to_string())
+        Self::BadRequest { code: err.code(), description: err.to_string() }
     }
 }

@@ -77,17 +77,16 @@ impl realtime::Publisher for Provider {
         let msg = Message::new(&message.payload);
         let topic = format!("{}-{topic}", self.config.environment);
 
-        wit_bindgen::block_on(async move {
-            if let Err(e) = producer::send(&client, topic.clone(), msg).await {
-                error!(
-                    monotonic_counter.publishing_errors = 1, error = %e, topic = %topic, service = %SERVICE
-                );
-            } else {
-                tracing::info!(
-                    monotonic_counter.messages_sent = 1, topic = %topic, service = %SERVICE
-                );
-            }
-        });
+        // TODO: move to wrt
+        if let Err(e) = producer::send(&client, topic.clone(), msg).await {
+            error!(
+                monotonic_counter.publishing_errors = 1, error = %e, topic = %topic, service = %SERVICE
+            );
+        } else {
+            tracing::info!(
+                monotonic_counter.messages_sent = 1, topic = %topic, service = %SERVICE
+            );
+        }
 
         Ok(())
     }

@@ -120,10 +120,11 @@ async fn no_train_update() {
     let xml = XmlBuilder::new().update(UpdateType::None).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest(e)) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
         panic!("should return BadRequest error");
     };
-    assert_eq!(e, "code: no_update, description: contains no updates");
+    assert_eq!(code, "no_update");
+    assert_eq!(description, "contains no updates");
 }
 
 // Should return no events when there is a train update but it contains no
@@ -136,10 +137,11 @@ async fn no_changes() {
     let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest(e)) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
         panic!("should return BadRequest error");
     };
-    assert_eq!(e, "code: no_update, description: contains no updates");
+    assert_eq!(code, "no_update");
+    assert_eq!(description, "contains no updates");
 }
 
 // Should return no events when there is a train update but it contains no
@@ -152,10 +154,11 @@ async fn no_actual_changes() {
     let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest(e)) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
         panic!("should return BadRequest error");
     };
-    assert_eq!(e, "code: no_update, description: arrival/departure time <= 0");
+    assert_eq!(code, "no_update");
+    assert_eq!(description, "arrival/departure time <= 0");
 }
 
 // Should return no events when train update arrives more than 60 seconds after
@@ -168,10 +171,11 @@ async fn too_late() {
     let xml = XmlBuilder::new().delay_secs(61).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest(e)) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
         panic!("should return no actual update error");
     };
-    assert_eq!(e, "code: bad_time, description: outdated by 61 seconds");
+    assert_eq!(code, "bad_time");
+    assert_eq!(description, "outdated by 61 seconds");
 }
 
 // Should return no events when train update arrives more than 30 seconds before
@@ -184,10 +188,11 @@ async fn too_early() {
     let xml = XmlBuilder::new().delay_secs(-32).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest(e)) = client.request(message).owner("owner").await else {
+    let Err(Error::BadRequest{code, description}) = client.request(message).owner("owner").await else {
         panic!("should return no actual update error");
     };
-    assert_eq!(e, "code: bad_time, description: too early by 32 seconds");
+    assert_eq!(code, "bad_time");
+    assert_eq!(description, "too early by 32 seconds");
 }
 
 struct XmlBuilder<'a> {

@@ -2,9 +2,7 @@ use anyhow::Context;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use credibil_api::{Handler, Request, Response};
-use realtime::server_error;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
 
 use crate::block_mgt::{self, VehicleAllocation};
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
@@ -43,14 +41,9 @@ impl<P: Provider> Handler<DetectionResponse, P> for Request<DetectionRequest> {
 }
 
 async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detection>> {
-    info!("Starting Dilax lost connection job");
-
     let allocs: Vec<VehicleAllocation> =
         allocations(provider).await.context("refreshing Dilax allocations")?;
     let detections = detect(allocs, provider).await.context("detecting lost connections")?;
-
-    info!(count = detections.len(), "Completed Dilax lost connection job");
-
     Ok(detections)
 }
 
@@ -67,7 +60,8 @@ pub struct Detection {
 ///
 /// Returns an error if the block management provider or backing store cannot be queried.
 async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
-    let allocations = block_mgt::allocations(provider).await.map_err(|e| server_error!("{e}"))?;
+    let allocations =
+        block_mgt::allocations(provider).await.context("fetching Dilax allocations")?;
 
     let now_tz = Utc::now().with_timezone(&Pacific::Auckland);
     let service_date = now_tz.format("%Y%m%d").to_string();
@@ -81,8 +75,6 @@ async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>>
         })
         .collect();
 
-    info!("Caching {} allocations", filtered.len());
-
     Ok(filtered)
 }
 
@@ -94,12 +86,12 @@ async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>>
 async fn detect(
     allocs: Vec<VehicleAllocation>, provider: &impl Provider,
 ) -> anyhow::Result<Vec<Detection>> {
-    info!("Starting Dilax lost connection detection pass");
+    tracing::debug!("Starting Dilax lost connection detection pass");
     let candidates = detect_candidates(allocs, provider).await?;
 
-    debug!(candidate_count = candidates.len(), "Dilax detection candidates evaluated");
+    tracing::debug!(candidate_count = candidates.len(), "Dilax detection candidates evaluated");
     if candidates.is_empty() {
-        info!("No Dilax lost connection candidates found");
+        tracing::debug!("No Dilax lost connection candidates found");
         return Ok(Vec::new());
     }
 
@@ -146,7 +138,6 @@ async fn detect(
         SetEnvelope { expires_at: Some(now_ts + TTL_RETENTION as i64), members: trip_vehicles };
     let bytes = serde_json::to_vec(&mapping_set)?;
     StateStore::set(provider, &set_key, &bytes, Some(TTL_RETENTION)).await?;
-    info!("{} Dilax lost connection detections recorded", new_detections.len());
     Ok(new_detections)
 }
 
@@ -160,7 +151,7 @@ async fn detect_candidates(
         .filter(|alloc| alloc.start_datetime <= now_ts && alloc.end_datetime >= now_ts)
         .collect();
 
-    debug!("{} Dilax services currently running", active.len());
+    tracing::debug!("{} Dilax services currently running", active.len());
 
     let mut detections = Vec::new();
     for alloc in active {
@@ -270,7 +261,7 @@ fn log_detection(detection: &Detection) {
 
     let vehicle_field = format!("{vehicle_label}{}", vehicle_info.vehicle_id);
 
-    warn!(
+    tracing::warn!(
         vehicle = %vehicle_field,
         trip_id = %detection.allocation.trip_id,
         timestamp = %timestamp_str,

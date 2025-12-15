@@ -1,7 +1,6 @@
 use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
 use realtime::bad_request;
-use tracing::{debug, info};
 
 use crate::block_mgt::{self, FleetVehicle};
 use crate::gtfs::{self, StopType, StopTypeEntry};
@@ -62,7 +61,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
     let trip_id_value = allocation.trip_id.clone();
     let start_date_value = allocation.service_date.clone();
     let start_time_value = allocation.start_time.clone();
-    debug!(vehicle_id = %vehicle_id, allocation = ?allocation, trip_id = %trip_id_value);
+    tracing::debug!(vehicle_id = %vehicle_id, allocation = ?allocation, trip_id = %trip_id_value);
 
     let stop_id_value: String = stop_id(&vehicle_id, &event, provider).await?;
 
@@ -91,7 +90,6 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
         bad_request!("failed to persist trip info for vehicle {vehicle_id}: {err}")
     })?;
 
-    // -------------------------------------
     let enriched = EnrichedEvent {
         event,
         stop_id: Some(stop_id_value),
@@ -107,7 +105,6 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
     }
 
     Publisher::send(provider, DILAX_ENRICHED_TOPIC, &message).await?;
-    // -------------------------------------
 
     Ok(())
 }
@@ -206,12 +203,12 @@ async fn stop_id(
     }
 
     for stop in &stops {
-        debug!(vehicle_id = %vehicle_id, stop = ?stop);
+        tracing::debug!(vehicle_id = %vehicle_id, stop = ?stop);
 
         if let Some(code) = stop.stop_code.as_deref()
             && is_station(&stop_types, code)
         {
-            info!(vehicle_id = %vehicle_id, stop_id = %stop.stop_id, stop_code = code);
+            tracing::debug!(vehicle_id = %vehicle_id, stop_id = %stop.stop_id, stop_code = code);
             return Ok(stop.stop_id.clone());
         }
     }

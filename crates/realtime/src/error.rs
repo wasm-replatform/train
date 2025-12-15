@@ -12,65 +12,85 @@ pub type Result<T> = anyhow::Result<T, Error>;
 #[derive(Error, Debug, Clone, Serialize, Deserialize)]
 pub enum Error {
     /// Request payload is invalid or missing required fields.
-    #[error("code: 400, description: {0}")]
-    BadRequest(String),
+    #[error("code: {code}, description: {description}")]
+    BadRequest { code: String, description: String },
 
     /// A non recoverable internal error occurred.
-    #[error("code: 500, description: {0}")]
-    ServerError(String),
+    #[error("code: {code}, description: {description}")]
+    ServerError { code: String, description: String },
 
     /// An upstream dependency failed while fulfilling the request.
-    #[error("code: 502, description: {0}")]
-    BadGateway(String),
+    #[error("code: {code}, description: {description}")]
+    BadGateway { code: String, description: String },
 }
 
 impl Error {
-    /// Returns the stable error code associated with the variant.
+    /// Returns the HTTP status code associated with the variant.
     #[must_use]
-    pub const fn code(&self) -> StatusCode {
+    pub const fn status(&self) -> StatusCode {
         match self {
-            Self::BadRequest(_) => StatusCode::BAD_REQUEST,
-            Self::ServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            Self::BadGateway(_) => StatusCode::BAD_GATEWAY,
+            Self::BadRequest { .. } => StatusCode::BAD_REQUEST,
+            Self::ServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::BadGateway { .. } => StatusCode::BAD_GATEWAY,
+        }
+    }
+
+    /// Returns the error code for the variant.
+    #[must_use]
+    pub fn code(&self) -> String {
+        match self {
+            Self::BadRequest { code, .. }
+            | Self::ServerError { code, .. }
+            | Self::BadGateway { code, .. } => code.clone(),
         }
     }
 
     /// Returns the error description.
     #[must_use]
     pub fn description(&self) -> String {
-        self.to_string()
+        match self {
+            Self::BadRequest { description, .. }
+            | Self::ServerError { description, .. }
+            | Self::BadGateway { description, .. } => description.clone(),
+        }
     }
 }
 
 impl From<anyhow::Error> for Error {
     fn from(err: anyhow::Error) -> Self {
-        let chain = err.chain().map(ToString::to_string).collect::<Vec<_>>().join(" -> ");
+        let chain = err.chain().map(ToString::to_string).collect::<Vec<_>>().join(": ");
 
         // if type is Error, return it with the newly added context
         if let Some(inner) = err.downcast_ref::<Self>() {
             tracing::debug!("Error: {err}, caused by: {inner}");
 
             return match inner {
-                Self::BadRequest(_s) => Self::BadRequest(chain),
-                Self::ServerError(_s) => Self::ServerError(chain),
-                Self::BadGateway(_s) => Self::BadGateway(chain),
+                Self::BadRequest { code, .. } => {
+                    Self::BadRequest { code: code.clone(), description: chain }
+                }
+                Self::ServerError { code, .. } => {
+                    Self::ServerError { code: code.clone(), description: chain }
+                }
+                Self::BadGateway { code, .. } => {
+                    Self::BadGateway { code: code.clone(), description: chain }
+                }
             };
         }
 
         // otherwise, return an Internal error
-        Self::ServerError(chain)
+        Self::ServerError { code: "server_error".to_string(), description: chain }
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
-        Self::BadRequest(err.to_string())
+        Self::BadRequest { code: "serde_json".to_string(), description: err.to_string() }
     }
 }
 
 impl From<quick_xml::DeError> for Error {
     fn from(err: quick_xml::DeError) -> Self {
-        Self::BadRequest(err.to_string())
+        Self::BadRequest { code: "quick_xml".to_string(), description: err.to_string() }
     }
 }
 
@@ -82,7 +102,7 @@ pub struct HttpError {
 impl From<anyhow::Error> for HttpError {
     fn from(e: anyhow::Error) -> Self {
         let error = format!("{e}, caused by: {}", e.root_cause());
-        let status = e.downcast_ref().map_or(StatusCode::INTERNAL_SERVER_ERROR, Error::code);
+        let status = e.downcast_ref().map_or(StatusCode::INTERNAL_SERVER_ERROR, Error::status);
         Self { status, error }
     }
 }
@@ -96,30 +116,30 @@ impl IntoResponse for HttpError {
 #[macro_export]
 macro_rules! bad_request {
     ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::BadRequest(format!($fmt, $($arg)*))
+        $crate::Error::BadRequest { code: "bad_request".to_string(), description: format!($fmt, $($arg)*) }
     };
-     ($err:expr $(,)?) => {
-        $crate::Error::BadRequest(format!($err))
+    ($desc:expr $(,)?) => {
+        $crate::Error::BadRequest { code: "bad_request".to_string(), description: format!($desc) }
     };
 }
 
 #[macro_export]
 macro_rules! server_error {
     ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::ServerError(format!($fmt, $($arg)*))
+        $crate::Error::ServerError { code: "server_error".to_string(), description: format!($fmt, $($arg)*) }
     };
      ($err:expr $(,)?) => {
-        $crate::Error::ServerError(format!($err))
+        $crate::Error::ServerError { code: "server_error".to_string(), description: format!($err) }
     };
 }
 
 #[macro_export]
 macro_rules! bad_gateway {
     ($fmt:expr, $($arg:tt)*) => {
-        $crate::Error::BadGateway(format!($fmt, $($arg)*))
+        $crate::Error::BadGateway { code: "bad_gateway".to_string(), description: format!($fmt, $($arg)*) }
     };
      ($err:expr $(,)?) => {
-        $crate::Error::BadGateway(format!($err))
+        $crate::Error::BadGateway { code: "bad_gateway".to_string(), description: format!($err) }
     };
 }
 

@@ -1,6 +1,6 @@
 //! Dilax domain library
 
-mod block_mgt;
+
 mod gtfs;
 mod handlers;
 mod trip_state;

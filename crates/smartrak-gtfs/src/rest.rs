@@ -3,9 +3,10 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::{error, info, instrument};
 
+use crate::block_mgt::VehicleIdentifier;
 use crate::god_mode::god_mode;
 use crate::models::{TripInstance, VehicleInfo};
-use crate::{Provider, StateStore, fleet};
+use crate::{Provider, StateStore, block_mgt};
 
 const PROCESS_ID: u32 = 0;
 
@@ -84,7 +85,9 @@ where
         }
     };
 
-    let fleet_info = match fleet::get_vehicle(vehicle_id, provider).await {
+    let identifier = vehicle_id.parse::<VehicleIdentifier>().unwrap_or_default();
+
+    let fleet_info = match block_mgt::vehicle(&identifier, provider).await {
         Ok(info) => info,
         Err(err) => {
             error!(vehicle_id, ?err, "failed to fetch fleet info");

@@ -5,12 +5,18 @@ use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
-use crate::{Config, HttpRequest, Identity, Provider};
+use realtime::{Config, HttpRequest, Identity};
 
-// const TTL_FLEET_SUCCESS: Duration = Duration::from_secs(24 * 60 * 60);
-// const TTL_FLEET_FAILURE: Duration = Duration::from_secs(3 * 60);
-
-pub async fn vehicle(label: &str, provider: &impl Provider) -> Result<Option<FleetVehicle>> {
+/// Retrieves a vehicle (train) by label.
+/// 
+/// # Errors
+/// 
+/// Returns an error when the fleet API request fails or the
+/// response cannot be deserialized.
+pub async fn vehicle<P>(label: &str, provider: &P) -> Result<Option<Vehicle>>
+where
+    P: Config + HttpRequest + Identity,
+{
     let fleet_api_url = Config::get(provider, "FLEET_URL").await.context("getting `FLEET_URL`")?;
     let url = format!("{fleet_api_url}/vehicles?label={}", urlencoding::encode(label));
 
@@ -27,20 +33,24 @@ pub async fn vehicle(label: &str, provider: &impl Provider) -> Result<Option<Fle
         HttpRequest::fetch(provider, request).await.context("Fleet API request failed")?;
 
     let body = response.into_body();
-    let records: Vec<FleetVehicleRecord> =
+    let records: Vec<Vehicle> =
         serde_json::from_slice(&body).context("Failed to deserialize Fleet API response")?;
 
-    let vehicle = records
-        .into_iter()
-        .find(FleetVehicleRecord::is_train)
-        .map(|record| FleetVehicle { id: record.id, capacity: record.capacity });
-
+    // get first vehicle that is a train
+    let vehicle = records.into_iter().find(Vehicle::is_train);
     Ok(vehicle)
 }
 
-pub async fn vehicle_allocation(
-    vehicle_id: &str, provider: &impl Provider,
-) -> Result<Option<VehicleAllocation>> {
+/// Retrieves the block allocation for a specific vehicle.
+///
+/// # Errors
+/// 
+/// Returns an error when the block management API request fails or the
+/// response cannot be deserialized.
+pub async fn allocation<P>(vehicle_id: &str, provider: &P) -> Result<Option<Allocation>>
+where
+    P: Config + HttpRequest + Identity,
+{
     let block_mgt_url =
         Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
     let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
@@ -59,13 +69,22 @@ pub async fn vehicle_allocation(
         .with_context(|| format!("failed to fetch block allocation for vehicle {vehicle_id}"))?;
 
     let body = response.into_body();
-    let envelope: AllocationEnvelope =
+    let envelope: AllocationResponse =
         serde_json::from_slice(&body).context("Failed to decode allocation response")?;
 
     Ok(envelope.current.into_iter().next())
 }
 
-pub async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocation>> {
+/// Retrieves all block allocations.
+///
+/// # Errors
+/// 
+/// Returns an error when the block management API request fails or the
+/// response cannot be deserialized.
+pub async fn allocations<P>(provider: &P) -> Result<Vec<Allocation>>
+where
+    P: Config + HttpRequest + Identity,
+{
     let block_mgt_url =
         Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
 
@@ -85,23 +104,21 @@ pub async fn allocations(provider: &impl Provider) -> Result<Vec<VehicleAllocati
         .context("Block management list request failed")?;
 
     let body = response.into_body();
-    let envelope: AllocationEnvelope =
+    let envelope: AllocationResponse =
         serde_json::from_slice(&body).context("Failed to decode allocations response")?;
 
     Ok(envelope.all)
 }
 
 #[derive(Clone, Default, Deserialize)]
-struct AllocationEnvelope {
-    #[serde(default)]
-    current: Vec<VehicleAllocation>,
-
-    #[serde(default)]
-    all: Vec<VehicleAllocation>,
+#[serde(default)]
+struct AllocationResponse {
+    current: Vec<Allocation>,
+    all: Vec<Allocation>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VehicleAllocation {
+pub struct Allocation {
     #[serde(rename = "operationalBlockId")]
     pub operational_block_id: String,
     #[serde(rename = "tripId")]
@@ -137,45 +154,32 @@ pub struct VehicleAllocation {
 }
 
 #[derive(Deserialize)]
-struct FleetVehicleRecord {
-    id: String,
+pub struct Vehicle {
+    pub id: String,
+    pub capacity: Option<Capacity>,
 
-    // #[serde(default)]
-    // label: Option<String>,
-    #[serde(default)]
-    capacity: Option<VehicleCapacity>,
-
-    #[serde(default, rename = "type")]
-    type_info: Option<FleetVehicleType>,
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    type_: Option<VehicleType>,
 }
 
-impl FleetVehicleRecord {
+impl Vehicle {
     fn is_train(&self) -> bool {
-        self.type_info
+        self.type_
             .as_ref()
-            .and_then(|info| info.kind.as_deref())
+            .and_then(|type_| type_.kind.as_deref())
             .is_some_and(|value| value.eq_ignore_ascii_case("train"))
     }
 }
 
 #[derive(Deserialize)]
-struct FleetVehicleType {
+struct VehicleType {
     #[serde(rename = "type")]
     kind: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct FleetVehicle {
-    pub id: String,
-    // #[serde(default)]
-    // pub label: Option<String>,
-    #[serde(default)]
-    pub capacity: Option<VehicleCapacity>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct VehicleCapacity {
+pub struct Capacity {
     pub seating: i64,
-    // pub standing: Option<i64>,
     pub total: i64,
 }

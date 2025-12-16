@@ -1,4 +1,4 @@
-export type VehicleAllocation = {
+export type Allocation = {
     operationalBlockId: string;
     tripId: string;
     serviceDate: string;

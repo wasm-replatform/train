@@ -2,7 +2,7 @@ import { Expose } from "@nestjs/class-transformer";
 import { IsString } from "@nestjs/class-validator";
 import { BaseModel } from "at-realtime-common/common";
 
-export class VehicleAllocation extends BaseModel {
+export class Allocation extends BaseModel {
     @Expose()
     @IsString()
     public tripId: string;
@@ -19,7 +19,7 @@ export class VehicleAllocation extends BaseModel {
     @IsString()
     public vehicleId: string;
 
-    constructor(partial: Partial<VehicleAllocation>) {
+    constructor(partial: Partial<Allocation>) {
         super();
         this.assign(partial);
     }

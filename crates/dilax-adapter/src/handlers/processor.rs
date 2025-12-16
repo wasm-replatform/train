@@ -2,7 +2,7 @@ use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
 use realtime::bad_request;
 
-use crate::block_mgt::{self, FleetVehicle};
+use common::block_mgt::{self, Vehicle};
 use crate::gtfs::{self, StopType, StopTypeEntry};
 use crate::trip_state::{VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
@@ -51,7 +51,7 @@ pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()
         .ok_or_else(|| bad_request!("vehicle {} lacks capacity information", vehicle.id))?;
     let vehicle_id = vehicle.id.clone();
 
-    let allocation = block_mgt::vehicle_allocation(&vehicle_id, provider)
+    let allocation = block_mgt::allocation(&vehicle_id, provider)
         .await
         .map_err(|err| {
             bad_request!("failed to fetch block allocation for vehicle {vehicle_id}: {err}")
@@ -164,7 +164,7 @@ fn vehicle_label(event: &DilaxMessage) -> Option<String> {
     Some(format!("{prefix}{numeric}"))
 }
 
-fn vehicle_capacity(vehicle: &FleetVehicle) -> Option<(i64, i64)> {
+fn vehicle_capacity(vehicle: &Vehicle) -> Option<(i64, i64)> {
     vehicle.capacity.as_ref().map(|capacity| (capacity.seating, capacity.total))
 }
 

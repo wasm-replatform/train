@@ -6,7 +6,7 @@ import * as _ from "lodash";
 import { Redis } from "at-realtime-common/redis";
 import { Config } from "./config";
 import { VehicleTripInfo } from "./types/vehicle-trip-info";
-import { VehicleAllocation } from "./types/vehicle-allocation";
+import { Allocation } from "./types/vehicle-allocation";
 
 export class DilaxLostConnectionsDetector {
     private static readonly DIESEL_TRAIN_PREFIX = "ADL";
@@ -108,10 +108,10 @@ export class DilaxLostConnectionsDetector {
         Config.logger.info("Stopped detecting lost dilax-adapter connections.");
     }
 
-    public async detectCandidates(): Promise<{ detectionTime: number; allocation: VehicleAllocation; vehicleTripInfo: VehicleTripInfo }[]> {
+    public async detectCandidates(): Promise<{ detectionTime: number; allocation: Allocation; vehicleTripInfo: VehicleTripInfo }[]> {
         const detectionTime = moment().unix();
         Config.logger.info(`Start detecting lost dilax-adapter connection with time ${detectionTime}`);
-        const allocations = this.cache.get<VehicleAllocation[]>(this.allocationsCacheKey) || [];
+        const allocations = this.cache.get<Allocation[]>(this.allocationsCacheKey) || [];
         const runningTrips = allocations.filter((allocation) => allocation.startDatetime <= detectionTime && allocation.endDatetime >= detectionTime);
         Config.logger.debug(`Following services are currently running: ${JSON.stringify(runningTrips)}`);
 
@@ -126,14 +126,14 @@ export class DilaxLostConnectionsDetector {
             }),
         );
 
-        return <{ detectionTime: number; allocation: VehicleAllocation; vehicleTripInfo: VehicleTripInfo }[]>candidates.filter((candidate) => candidate);
+        return <{ detectionTime: number; allocation: Allocation; vehicleTripInfo: VehicleTripInfo }[]>candidates.filter((candidate) => candidate);
     }
 
     private detectForExistingVehicleTripInfo(
         detectionTime: number,
         vehicleTripInfoAsString: string,
-        allocation: VehicleAllocation,
-    ): { detectionTime: number; allocation: VehicleAllocation; vehicleTripInfo: VehicleTripInfo } | undefined {
+        allocation: Allocation,
+    ): { detectionTime: number; allocation: Allocation; vehicleTripInfo: VehicleTripInfo } | undefined {
         const vehicleTripInfo: VehicleTripInfo = JSON.parse(vehicleTripInfoAsString);
         if (allocation.tripId === vehicleTripInfo.tripId) {
             if (this.isDilaxConnectionLost(detectionTime, Number(vehicleTripInfo.lastReceivedTimestamp))) {
@@ -146,9 +146,9 @@ export class DilaxLostConnectionsDetector {
 
     private detectForAllocation(
         detectionTime: number,
-        allocation: VehicleAllocation,
+        allocation: Allocation,
         oldVehicleInfoPayload?: VehicleTripInfo,
-    ): { detectionTime: number; allocation: VehicleAllocation; vehicleTripInfo: VehicleTripInfo } | undefined {
+    ): { detectionTime: number; allocation: Allocation; vehicleTripInfo: VehicleTripInfo } | undefined {
         if (this.isDilaxConnectionLost(detectionTime, allocation.startDatetime)) {
             Config.logger.debug(`${allocation.vehicleLabel} - ${allocation.vehicleId} lost tracking. \
             TripStartTime: ${allocation.startDatetime}, Detection: ${moment().unix()}`);

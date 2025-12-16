@@ -151,6 +151,7 @@ wasi-messaging = { version = "0.19.0", registry = "credibil" }
 wasi-otel = { version = "0.19.0", registry = "credibil" }
 
 # Internally referenced crates
+common = { path = "crates/common" }
 realtime = { path = "crates/realtime" }
 
 [patch.credibil]
@@ -171,4 +172,3 @@ wasmtime-wasi-http = { git = "https://github.com/bytecodealliance/wasmtime", ver
 lto = "thin"
 opt-level = "s"
 strip = "symbols"
-

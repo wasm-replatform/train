@@ -6,11 +6,12 @@ use chrono_tz::Tz;
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
+use crate::block_mgt::BlockInstance;
 use crate::models::{
-    BlockInstance, DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor,
-    TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo, VehiclePosition,
+    DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor, TripInstance,
+    VehicleDescriptor, VehicleDr, VehicleInfo, VehiclePosition,
 };
-use crate::{EventType, Provider, Result, SmarTrakMessage, StateStore, block_mgt, fleet, trip};
+use crate::{EventType, Provider, Result, SmarTrakMessage, StateStore, block_mgt, trip};
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
@@ -56,7 +57,7 @@ pub async fn process(
         tracing::debug!("no vehicle identifier found");
         return Ok(None);
     };
-    let Some(vehicle) = fleet::get_vehicle(vehicle_id, provider).await? else {
+    let Some(vehicle) = block_mgt::vehicle(&vehicle_id.parse()?, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
         return Ok(None);
     };
@@ -64,21 +65,20 @@ pub async fn process(
     let timestamp = message.timestamp()?;
 
     if vehicle.vehicle_type.is_train() {
-        let allocation =
-            block_mgt::get_allocation_by_vehicle(provider, &vehicle.id, timestamp).await?;
-        assign_to_trip(provider, &vehicle, allocation, timestamp).await?;
+        let allocation = block_mgt::allocation(&vehicle.id, timestamp, provider).await?;
+        allocate(&vehicle, allocation, timestamp, provider).await?;
     }
-    let trip_inst = current_trip_instance(provider, &vehicle.id, timestamp).await?;
+    let trip_inst = current_trip(provider, &vehicle.id, timestamp).await?;
     let trip_desc = trip_inst.as_ref().map(TripDescriptor::from);
     let odometer = location.odometer.or(message.event_data.odometer);
 
     if (location.latitude.is_none() || location.longitude.is_none())
-        && let (Some(odometer_value), Some(descriptor)) = (odometer, trip_desc.clone())
+        && let (Some(odometer), Some(descriptor)) = (odometer, trip_desc.clone())
     {
         let dr_message = DeadReckoningMessage {
             id: Uuid::new_v4().to_string(),
             received_at: timestamp,
-            position: PositionDr { odometer: odometer_value },
+            position: PositionDr { odometer },
             trip: descriptor,
             vehicle: VehicleDr { id: vehicle.id.clone() },
         };
@@ -125,9 +125,9 @@ where
     bytes.and_then(|raw| serde_json::from_slice::<T>(raw).ok())
 }
 
-async fn assign_to_trip(
-    provider: &impl Provider, vehicle: &VehicleInfo, allocation: Option<BlockInstance>,
-    timestamp: i64,
+async fn allocate(
+    vehicle: &VehicleInfo, allocation: Option<BlockInstance>, timestamp: i64,
+    provider: &impl Provider,
 ) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle.id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle.id);
@@ -187,7 +187,7 @@ async fn assign_to_trip(
     Ok(())
 }
 
-async fn current_trip_instance(
+async fn current_trip(
     provider: &impl Provider, vehicle_id: &str, timestamp: i64,
 ) -> Result<Option<TripInstance>> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);

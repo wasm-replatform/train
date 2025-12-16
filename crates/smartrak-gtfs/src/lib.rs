@@ -1,7 +1,6 @@
 //! SmarTrak GTFS adapter.
 
 mod block_mgt;
-mod fleet;
 mod god_mode;
 mod handlers;
 mod location;

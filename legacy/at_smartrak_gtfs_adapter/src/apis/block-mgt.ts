@@ -8,7 +8,7 @@ import { Logger } from "at-realtime-common/logger";
 import { AppConfig } from "../config/app";
 import { RedisConfig } from "../config/redis";
 import { CacheRepository } from "../repositories/cache";
-import { VehicleAllocation } from "../model/vehicle-allocation";
+import { Allocation } from "../model/vehicle-allocation";
 
 enum BlockState {
     OK,
@@ -98,7 +98,7 @@ export class BlockMgtApi {
                             tripId: res.data.current[0].tripId,
                             startTime: res.data.current[0].startTime,
                             serviceDate: res.data.current[0].serviceDate,
-                            vehicleIds: res.data.current.map((instance: VehicleAllocation) => instance.vehicleId),
+                            vehicleIds: res.data.current.map((instance: Allocation) => instance.vehicleId),
                         });
                     }
 

@@ -1,7 +1,7 @@
 use credibil_api::{Handler, Request, Response};
 use serde::Deserialize;
 
-use crate::{Error, Provider, Result, SmarTrakMessage, fleet};
+use crate::{Error, Provider, Result, SmarTrakMessage, block_mgt};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(transparent)]
@@ -21,7 +21,7 @@ async fn handle(
         tracing::debug!("no vehicle identifier found");
         return Ok(CafAvlResponse.into());
     };
-    let Some(vehicle) = fleet::get_vehicle(vehicle_id, provider).await? else {
+    let Some(vehicle) = block_mgt::vehicle(&vehicle_id.parse()?, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
         return Ok(CafAvlResponse.into());
     };

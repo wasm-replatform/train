@@ -84,24 +84,6 @@ impl From<&TripInstance> for TripDescriptor {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct BlockInstance {
-    pub trip_id: String,
-    pub start_time: String,
-    pub service_date: String,
-    #[serde(default)]
-    pub vehicle_ids: Vec<String>,
-    #[serde(default)]
-    pub error: bool,
-}
-
-impl BlockInstance {
-    #[must_use]
-    pub const fn has_error(&self) -> bool {
-        self.error
-    }
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,95 +1,4 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
-pub enum EventType {
-    #[serde(alias = "serialData", alias = "SERIAL_DATA")]
-    SerialData,
-    #[serde(alias = "location", alias = "LOCATION")]
-    Location,
-    #[serde(other)]
-    Unknown,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct RemoteData {
-    pub external_id: Option<String>,
-    pub remote_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MessageData {
-    pub timestamp: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct LocationData {
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
-    pub heading: Option<f64>,
-    pub speed: Option<f64>,
-    pub odometer: Option<f64>,
-    #[serde(default)]
-    pub gps_accuracy: f64,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct EventData {
-    pub odometer: Option<f64>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DecodedSerialData {
-    #[serde(alias = "tripNumber")]
-    pub trip_number: Option<String>,
-    #[serde(alias = "tripId")]
-    pub trip_id: Option<String>,
-    #[serde(alias = "lineId")]
-    pub line_id: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SerialData {
-    pub decoded_serial_data: Option<DecodedSerialData>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SmarTrakMessage {
-    #[serde(rename = "eventType")]
-    pub event_type: EventType,
-    pub remote_data: Option<RemoteData>,
-    pub message_data: MessageData,
-    #[serde(default)]
-    pub location_data: LocationData,
-    #[serde(default)]
-    pub event_data: EventData,
-    pub serial_data: Option<SerialData>,
-}
-
-impl SmarTrakMessage {
-    #[must_use]
-    pub fn timestamp_unix(&self) -> Option<i64> {
-        DateTime::parse_from_rfc3339(&self.message_data.timestamp)
-            .map(|dt| dt.with_timezone(&Utc).timestamp())
-            .ok()
-    }
-
-    #[must_use]
-    pub fn vehicle_identifier(&self) -> Option<&str> {
-        self.remote_data
-            .as_ref()
-            .and_then(|remote| remote.external_id.as_deref().or(remote.remote_name.as_deref()))
-    }
-}
-
-
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -150,27 +59,28 @@ impl TripInstance {
     }
 
     #[must_use]
-    pub fn to_trip_descriptor(&self) -> TripDescriptor {
-        TripDescriptor {
-            trip_id: self.trip_id.clone(),
-            route_id: self.route_id.clone(),
-            start_time: Some(self.start_time.clone()),
-            start_date: Some(self.service_date.clone()),
-            direction_id: self.direction_id,
-            schedule_relationship: Some(if self.is_added_trip {
-                TripDescriptor::ADDED.to_string()
-            } else {
-                TripDescriptor::SCHEDULED.to_string()
-            }),
-        }
-    }
-
-    #[must_use]
     pub fn remap(&self, trip_id: &str, route_id: &str) -> Self {
         let mut clone = self.clone();
         clone.trip_id = trip_id.to_string();
         clone.route_id = route_id.to_string();
         clone
+    }
+}
+
+impl From<&TripInstance> for TripDescriptor {
+    fn from(inst: &TripInstance) -> Self {
+        Self {
+            trip_id: inst.trip_id.clone(),
+            route_id: inst.route_id.clone(),
+            start_time: Some(inst.start_time.clone()),
+            start_date: Some(inst.service_date.clone()),
+            direction_id: inst.direction_id,
+            schedule_relationship: Some(if inst.is_added_trip {
+                Self::ADDED.to_string()
+            } else {
+                Self::SCHEDULED.to_string()
+            }),
+        }
     }
 }
 

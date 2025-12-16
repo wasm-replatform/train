@@ -84,7 +84,7 @@ where
         }
     };
 
-    let fleet_info = match fleet::get_vehicle_by_id_or_label(provider, vehicle_id).await {
+    let fleet_info = match fleet::get_vehicle(vehicle_id, provider).await {
         Ok(info) => info,
         Err(err) => {
             error!(vehicle_id, ?err, "failed to fetch fleet info");

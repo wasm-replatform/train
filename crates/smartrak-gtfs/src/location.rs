@@ -3,15 +3,14 @@ use std::env;
 use anyhow::Context;
 use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
-use realtime::bad_request;
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
 use crate::models::{
-    BlockInstance, DeadReckoningMessage, FeedEntity, Position, PositionDr, SmarTrakMessage,
-    TripDescriptor, TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo, VehiclePosition,
+    BlockInstance, DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor,
+    TripInstance, VehicleDescriptor, VehicleDr, VehicleInfo, VehiclePosition,
 };
-use crate::{Error, Provider, Result, StateStore, block_mgt, fleet, trip};
+use crate::{EventType, Provider, Result, SmarTrakMessage, StateStore, block_mgt, fleet, trip};
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
@@ -30,23 +29,6 @@ pub enum Location {
     DeadReckoning(DeadReckoningMessage),
 }
 
-/// Attempts to resolve vehicle metadata from the Fleet API using multiple heuristics.
-///
-/// # Errors
-///
-/// Returns an error when the Fleet provider cannot be queried.
-pub async fn resolve_vehicle(
-    provider: &impl Provider, vehicle_id_or_label: &str,
-) -> Result<Option<VehicleInfo>> {
-    let candidate = vehicle_id_or_label.trim();
-
-    if candidate.is_empty() {
-        return Ok(None);
-    }
-
-    fleet::get_vehicle_by_id_or_label(provider, candidate).await.map_err(Error::from)
-}
-
 /// Processes a Smartrak Kafka payload and emits outbound messages when applicable.
 ///
 /// # Errors
@@ -54,44 +36,53 @@ pub async fn resolve_vehicle(
 /// Returns an error when the incoming payload cannot be parsed or when domain logic
 /// encounters an unrecoverable condition.
 pub async fn process(
-    provider: &impl Provider, event: &SmarTrakMessage, vehicle: &VehicleInfo,
+    message: &SmarTrakMessage, provider: &impl Provider,
 ) -> Result<Option<Location>> {
-    if !is_location_event_valid(event) {
+    // check for location event
+    if message.event_type != EventType::Location {
+        tracing::debug!("unsupported request type: {:?}", message.event_type);
         return Ok(None);
     }
 
-    let _vehicle_identifier = event.vehicle_identifier().ok_or_else(|| {
-        bad_request!(
-            "remoteData.externalId {}",
-            event.remote_data.as_ref().and_then(|rd| rd.external_id.clone()).unwrap_or_default()
-        )
-    })?;
+    let location = &message.location_data;
 
-    //let _guard = lock(&format!("location:{vehicle_identifier}")).await;
+    if message.remote_data.is_none() || location.gps_accuracy < 0.0 {
+        tracing::debug!("invalid location event");
+        return Ok(None);
+    }
 
-    let event_timestamp = event
-        .timestamp_unix()
-        .ok_or_else(|| bad_request!("invalid timestamp: {}", event.message_data.timestamp))?;
+    // get vehicle info
+    let Some(vehicle_id) = message.vehicle_id() else {
+        tracing::debug!("no vehicle identifier found");
+        return Ok(None);
+    };
+    let Some(vehicle) = fleet::get_vehicle(vehicle_id, provider).await? else {
+        tracing::debug!("vehicle info not found for {vehicle_id}");
+        return Ok(None);
+    };
+
+    let timestamp = message.timestamp()?;
 
     if vehicle.vehicle_type.is_train() {
         let allocation =
-            block_mgt::get_allocation_by_vehicle(provider, &vehicle.id, event_timestamp).await?;
-        assign_train_to_trip(provider, vehicle, allocation, event_timestamp).await?;
+            block_mgt::get_allocation_by_vehicle(provider, &vehicle.id, timestamp).await?;
+        assign_to_trip(provider, &vehicle, allocation, timestamp).await?;
     }
-    let trip_instance = current_trip_instance(provider, &vehicle.id, event_timestamp).await?;
-    let trip_descriptor = trip_instance.as_ref().map(TripInstance::to_trip_descriptor);
-    let odometer = event.location_data.odometer.or(event.event_data.odometer);
+    let trip_inst = current_trip_instance(provider, &vehicle.id, timestamp).await?;
+    let trip_desc = trip_inst.as_ref().map(TripDescriptor::from);
+    let odometer = location.odometer.or(message.event_data.odometer);
 
-    if (event.location_data.latitude.is_none() || event.location_data.longitude.is_none())
-        && let (Some(odometer_value), Some(descriptor)) = (odometer, trip_descriptor.clone())
+    if (location.latitude.is_none() || location.longitude.is_none())
+        && let (Some(odometer_value), Some(descriptor)) = (odometer, trip_desc.clone())
     {
         let dr_message = DeadReckoningMessage {
             id: Uuid::new_v4().to_string(),
-            received_at: event_timestamp,
+            received_at: timestamp,
             position: PositionDr { odometer: odometer_value },
             trip: descriptor,
             vehicle: VehicleDr { id: vehicle.id.clone() },
         };
+
         return Ok(Some(Location::DeadReckoning(dr_message)));
     }
 
@@ -101,26 +92,26 @@ pub async fn process(
         license_plate: vehicle.registration.clone(),
     };
 
-    let occupancy_status = if let Some(trip) = trip_descriptor.as_ref() {
-        get_occupancy_status(provider, vehicle, trip).await?
+    let occupancy_status = if let Some(trip) = trip_desc.as_ref() {
+        get_occupancy_status(provider, &vehicle, trip).await?
     } else {
         None
     };
 
     let position = Position {
-        latitude: event.location_data.latitude,
-        longitude: event.location_data.longitude,
-        bearing: event.location_data.heading,
-        speed: event.location_data.speed.map(|value| value * 1000.0 / 3600.0),
+        latitude: location.latitude,
+        longitude: location.longitude,
+        bearing: location.heading,
+        speed: location.speed.map(|value| value * 1000.0 / 3600.0),
         odometer,
     };
 
     let vehicle_position = VehiclePosition {
         position: Some(position),
-        trip: trip_descriptor,
+        trip: trip_desc,
         vehicle: Some(descriptor),
         occupancy_status,
-        timestamp: event_timestamp,
+        timestamp,
     };
 
     let entity = FeedEntity { id: vehicle.id.clone(), vehicle: Some(vehicle_position) };
@@ -134,13 +125,9 @@ where
     bytes.and_then(|raw| serde_json::from_slice::<T>(raw).ok())
 }
 
-fn is_location_event_valid(event: &SmarTrakMessage) -> bool {
-    event.remote_data.is_some() && event.location_data.gps_accuracy >= 0.0
-}
-
-async fn assign_train_to_trip(
+async fn assign_to_trip(
     provider: &impl Provider, vehicle: &VehicleInfo, allocation: Option<BlockInstance>,
-    event_timestamp: i64,
+    timestamp: i64,
 ) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle.id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle.id);
@@ -194,14 +181,14 @@ async fn assign_train_to_trip(
     StateStore::set(provider, &trip_key, &trip_bytes, Some(duration_secs(TTL_TRIP_TRAIN))).await?;
 
     let timestamp_bytes =
-        serde_json::to_vec(&event_timestamp).context("failed to serialize event timestamp")?;
+        serde_json::to_vec(&timestamp).context("failed to serialize message timestamp")?;
     StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(duration_secs(TTL_SIGN_ON)))
         .await?;
     Ok(())
 }
 
 async fn current_trip_instance(
-    provider: &impl Provider, vehicle_id: &str, event_timestamp: i64,
+    provider: &impl Provider, vehicle_id: &str, timestamp: i64,
 ) -> Result<Option<TripInstance>> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
@@ -217,7 +204,7 @@ async fn current_trip_instance(
         ) {
             let duration = end - start
                 + Duration::seconds(env_i64("TRIP_DURATION_BUFFER", 3_600)).num_seconds();
-            if event_timestamp - duration > sign_on_ts {
+            if timestamp - duration > sign_on_ts {
                 StateStore::delete(provider, &sign_on_key).await?;
                 StateStore::delete(provider, &trip_key).await?;
                 return Ok(None);
@@ -248,8 +235,7 @@ async fn get_occupancy_status(
     let Some(bytes) = StateStore::get(provider, &key).await? else {
         return Ok(None);
     };
-
-    let occupancy_status: String = serde_json::from_slice(&bytes)?;
+    let occupancy_status = serde_json::from_slice(&bytes)?;
 
     Ok(Some(occupancy_status))
 }

@@ -28,7 +28,6 @@ http-body.workspace = true
 http-body-util.workspace = true
 once_cell = "1.19"
 realtime.workspace = true
-regex = "1.11"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

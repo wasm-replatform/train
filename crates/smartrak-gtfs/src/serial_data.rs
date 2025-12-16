@@ -1,158 +1,112 @@
-use std::env;
-
 use anyhow::Context;
 use chrono::Utc;
 use realtime::bad_request;
-use tracing::{debug, warn};
 
-use crate::models::{DecodedSerialData, SmarTrakMessage, TripInstance};
-use crate::{Provider, Result, StateStore, trip};
+use crate::{
+    DecodedSerialData, Provider, Result, SmarTrakError, SmarTrakMessage, StateStore, TripInstance,
+    trip,
+};
 
 const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
 const TTL_SIGN_ON_SECS: u64 = 24 * 60 * 60;
 const TTL_SERIAL_TIMESTAMP_SECS: u64 = 24 * 60 * 60;
 
-fn env_i64(key: &str, default: i64) -> i64 {
-    env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
-}
+const SERIAL_DATA_THRESHOLD: i64 = 900;
 
-/// Processes SmarTrak serial data events, updating allocations and in-memory state.
-///
-/// # Errors
-///
-/// Returns an error when required event fields are missing, cached state cannot
-/// be accessed, or downstream lookups fail.
-pub async fn process(provider: &impl Provider, event: &SmarTrakMessage) -> Result<()> {
-    if !is_serial_event_valid(event) {
-        return Ok(());
+// Processes SmarTrak serial data events, updating allocations and  state.
+pub async fn process(message: &SmarTrakMessage, provider: &impl Provider) -> Result<()> {
+    let Some(vehicle_id) = message.vehicle_id() else {
+        return Err(bad_request!("missing vehicle identifier"));
+    };
+
+    // validate timestamp
+    let timestamp = message.timestamp()?;
+
+    // is this a future-dated (by 900 secs) timestamp?
+    if timestamp > Utc::now().timestamp() + SERIAL_DATA_THRESHOLD {
+        return Err(SmarTrakError::BadTime("future-dated serial data message".to_string()).into());
     }
 
-    let Some(remote) = event.remote_data.as_ref() else {
-        return Err(bad_request!("missing remoteData"));
-    };
+    update_timestamp(provider, timestamp, vehicle_id).await?;
 
-    let Some(vehicle_id) = remote.external_id.as_deref() else {
-        return Err(bad_request!("missing remoteData.externalId"));
-    };
-
-    let event_timestamp = event
-        .timestamp_unix()
-        .ok_or_else(|| bad_request!("invalid timestamp: {}", event.message_data.timestamp))?;
-
-    let Some(serial_data) = event.serial_data.as_ref() else {
+    let Some(serial_data) = message.serial_data.as_ref() else {
         return Err(bad_request!("missing serialData"));
     };
-
     let Some(decoded) = serial_data.decoded_serial_data.as_ref() else {
-        return Err(bad_request!("missing serialData.decodedSerialData"));
+        return Err(bad_request!("missing decoded serial data"));
     };
 
-    //let _guard = lock(&format!("serialData:{vehicle_id}")).await;
-
-    if mark_serial_timestamp(provider, vehicle_id, event_timestamp).await? {
-        warn!(vehicle_id, "received older serial data event");
-        return Ok(());
-    }
-
-    allocate_vehicle_to_trip(provider, vehicle_id, decoded, event_timestamp).await
+    allocate_vehicle(provider, vehicle_id, decoded, timestamp).await
 }
 
-async fn mark_serial_timestamp(
-    provider: &impl Provider, vehicle_id: &str, timestamp: i64,
-) -> Result<bool> {
-    let key = format!("smartrakGtfs:serialTimestamp:{}", &vehicle_id);
-    let previous_bytes = StateStore::get(provider, &key).await?;
-    if serde_json::from_value::<i64>(previous_bytes.into())
-        .is_ok_and(|previous| previous >= timestamp)
-    {
-        return Ok(true);
+// Updates the timestamp if it is newer than the previously stored timestamp.
+async fn update_timestamp(store: &impl StateStore, timestamp: i64, vehicle_id: &str) -> Result<()> {
+    let key = format!("smartrakGtfs:serialTimestamp:{vehicle_id}");
+
+    // check previous timestamp
+    let previous = StateStore::get(store, &key).await?;
+    if serde_json::from_value::<i64>(previous.into()).is_ok_and(|prev| prev >= timestamp) {
+        return Err(SmarTrakError::BadTime("outdated serial data message".to_string()).into());
     }
 
-    let timestamp_bytes =
-        serde_json::to_vec(&timestamp).context("failed to serialize timestamp")?;
-    StateStore::set(provider, &key, &timestamp_bytes, Some(TTL_SERIAL_TIMESTAMP_SECS)).await?;
-    Ok(false)
+    // store new timestamp
+    let value = serde_json::to_vec(&timestamp).context("failed to serialize timestamp")?;
+    StateStore::set(store, &key, &value, Some(TTL_SERIAL_TIMESTAMP_SECS)).await?;
+
+    Ok(())
 }
 
-fn is_serial_event_valid(event: &SmarTrakMessage) -> bool {
-    let Some(remote) = event.remote_data.as_ref() else {
-        return false;
-    };
-
-    let has_vehicle = remote.external_id.is_some();
-    let has_serial =
-        event.serial_data.as_ref().and_then(|serial| serial.decoded_serial_data.as_ref()).is_some();
-
-    if !has_vehicle || !has_serial {
-        return false;
-    }
-
-    let Some(timestamp) = event.timestamp_unix() else {
-        return false;
-    };
-
-    let future_delta = timestamp - Utc::now().timestamp();
-    if future_delta > env_i64("SERIAL_DATA_FILTER_THRESHOLD", 900) {
-        warn!(future_delta, "serial data event rejected because it is from the future");
-        return false;
-    }
-
-    true
-}
-
-async fn allocate_vehicle_to_trip(
+async fn allocate_vehicle(
     provider: &impl Provider, vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64,
 ) -> Result<()> {
-    let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
-    let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
-    let serial_timestamp_key = format!("smartrakGtfs:serialTimestamp:{}", &vehicle_id);
+    let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
+    let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{vehicle_id}");
+    let serial_timestamp_key = format!("smartrakGtfs:serialTimestamp:{vehicle_id}");
 
     let Some(trip_id) = decoded.trip_id.as_deref() else {
-        debug!(vehicle_id, "serial data without trip id, clearing state");
+        tracing::debug!(vehicle_id, "no trip id found, clearing state");
+
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         StateStore::delete(provider, &serial_timestamp_key).await?;
+
         return Ok(());
     };
 
-    let previous_bytes = StateStore::get(provider, &trip_key).await?;
-
-    if serde_json::from_value::<TripInstance>(previous_bytes.into())
-        .is_ok_and(|previous| previous.trip_id == trip_id)
+    let prev_trip = StateStore::get(provider, &trip_key).await?;
+    if serde_json::from_value::<TripInstance>(prev_trip.into())
+        .is_ok_and(|prev| prev.trip_id == trip_id)
     {
         return Ok(());
     }
 
     let trip = trip::get_nearest_trip_instance(provider, trip_id, event_timestamp).await?;
-
     match trip {
-        Some(instance) if instance.has_error() => {
-            StateStore::delete(provider, &sign_on_key).await?;
-            StateStore::delete(provider, &trip_key).await?;
-            StateStore::delete(provider, &serial_timestamp_key).await?;
-            Ok(())
+        Some(instance) if !instance.has_error() => {
+            save_trip(provider, vehicle_id, event_timestamp, instance).await
         }
-        Some(instance) => persist_trip(provider, vehicle_id, event_timestamp, instance).await,
-        None => {
+        _ => {
             StateStore::delete(provider, &sign_on_key).await?;
             StateStore::delete(provider, &trip_key).await?;
             StateStore::delete(provider, &serial_timestamp_key).await?;
+
             Ok(())
         }
     }
 }
 
-async fn persist_trip(
+async fn save_trip(
     provider: &impl Provider, vehicle_id: &str, event_timestamp: i64, trip: TripInstance,
 ) -> Result<()> {
-    let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
-    let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
+    let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
+    let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{vehicle_id}");
 
     let trip_bytes = serde_json::to_vec(&trip).context("failed to serialize trip")?;
     StateStore::set(provider, &trip_key, &trip_bytes, Some(TTL_TRIP_SERIAL_SECS)).await?;
 
     let timestamp_bytes =
-        serde_json::to_vec(&event_timestamp).context("failed to serialize event timestamp")?;
+        serde_json::to_vec(&event_timestamp).context("failed to serialize message timestamp")?;
     StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(TTL_SIGN_ON_SECS)).await?;
+
     Ok(())
 }

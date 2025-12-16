@@ -163,12 +163,6 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
         if let Err(e) = match &topic {
             t if t.contains("realtime-r9k.v1") => process_r9k(&message.data()).await,
             t if t.contains("realtime-dilax-apc.v2") => process_dilax(&message.data()).await,
-            // t if t.contains("realtime-r9k-to-smartrak.v1")
-            //     || t.contains("realtime-caf-avl.v1")
-            //     || t.contains("realtime-smartrak-train-avl.v1") =>
-            // {
-            //     process_smartrak(&message.data()).await
-            // }
             t if t.contains("realtime-r9k-to-smartrak.v1") => {
                 process_smartrak(&message.data()).await
             }

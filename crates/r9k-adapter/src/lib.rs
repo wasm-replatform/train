@@ -16,7 +16,6 @@ pub use self::stops::StopInfo;
 
 /// Provider entry point implemented by the host application.
 pub trait Provider: Config + HttpRequest + Identity + Publisher {}
-
 impl<T> Provider for T where T: Config + HttpRequest + Identity + Publisher {}
 
 // TODO: use for internal methods

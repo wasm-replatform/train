@@ -19,9 +19,8 @@ async fn handle(
     // create state key
     let vehicle_id = &request.vehicle.id;
     let Trip { trip_id, start_date, start_time } = &request.trip;
-    let key = format!(
-        "smartrakGtfs:occupancyStatus:{vehicle_id}:{trip_id}:{start_date}:{start_time}",
-    );
+    let key =
+        format!("smartrakGtfs:occupancyStatus:{vehicle_id}:{trip_id}:{start_date}:{start_time}",);
 
     // save occupancy status to state if set, otherwise remove
     if let Some(occupancy_status) = request.occupancy_status {

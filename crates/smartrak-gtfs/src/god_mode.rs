@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 
 use dashmap::DashMap;
 
-use crate::models::{EventType, SmarTrakMessage};
+use crate::{EventType, SmarTrakMessage};
 
 #[derive(Default)]
 pub struct GodMode {

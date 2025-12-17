@@ -58,7 +58,7 @@ async fn update_timestamp(store: &impl StateStore, timestamp: i64, vehicle_id: &
 }
 
 async fn allocate<P>(
-     vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64, provider: &P,
+    vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64, provider: &P,
 ) -> Result<()>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
@@ -98,7 +98,7 @@ where
 }
 
 async fn save_trip<P>(
-     vehicle_id: &str, event_timestamp: i64, trip: TripInstance, provider: &P,
+    vehicle_id: &str, event_timestamp: i64, trip: TripInstance, provider: &P,
 ) -> Result<()>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,

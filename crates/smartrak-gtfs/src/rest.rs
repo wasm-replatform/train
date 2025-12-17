@@ -1,11 +1,10 @@
 // use common::block_mgt;
 use common::fleet::{self, Vehicle};
+use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::{error, info, instrument};
-
-use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
 
 use crate::god_mode::god_mode;
 use crate::trip::TripInstance;

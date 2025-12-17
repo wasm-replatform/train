@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
+use realtime::{
+    Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::location::Location;

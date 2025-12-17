@@ -3,9 +3,8 @@ use bytes::Bytes;
 use http::Method;
 use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
-use serde::{Deserialize, Serialize};
-
 use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
+use serde::{Deserialize, Serialize};
 
 const KEY_TRAIN_STOPS: &str = "gtfs:trainStops";
 

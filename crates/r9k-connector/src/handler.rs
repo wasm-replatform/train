@@ -7,19 +7,15 @@ use std::fmt::{self, Display};
 use std::str::FromStr;
 
 use credibil_api::{Handler, Request, Response};
-use realtime::bad_request;
+use realtime::{Error, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
-
-use realtime::{Error, Message, Publisher, Result};
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
     Fault { status_code: 500, response: FaultMessage { message: "Internal Server Error" } };
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(
-    _owner: &str, request: R9kRequest, provider: &P,
-) -> Result<Response<R9kResponse>>
+async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Response<R9kResponse>>
 where
     P: Publisher,
 {

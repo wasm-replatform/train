@@ -5,10 +5,9 @@ use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
 use common::block_mgt::{self, BlockInstance};
 use common::fleet::{self, Vehicle};
+use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
-
-use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 
 use crate::trip::{
     self, DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor, TripInstance,

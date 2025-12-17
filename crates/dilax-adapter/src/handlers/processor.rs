@@ -2,11 +2,11 @@ use anyhow::Context;
 use common::block_mgt;
 use common::fleet::{self, Vehicle};
 use credibil_api::{Handler, Request, Response};
-use realtime::bad_request;
+use realtime::{
+    Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
+};
 
 use crate::gtfs::{self, StopType, StopTypeEntry};
-use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore};
-
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
 
@@ -142,9 +142,7 @@ fn vehicle_capacity(vehicle: &Vehicle) -> Option<(i64, i64)> {
 ///
 /// Returns an error when the waypoint is missing, provider requests fail, or no stop
 /// matching the Dilax waypoint can be determined.
-async fn stop_id<P>(
-    vehicle_id: &str, event: &DilaxMessage, provider: &P,
-) -> Result<String>
+async fn stop_id<P>(vehicle_id: &str, event: &DilaxMessage, provider: &P) -> Result<String>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {

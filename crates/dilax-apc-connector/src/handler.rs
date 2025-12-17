@@ -2,9 +2,8 @@ use std::fmt::Display;
 
 use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
-use serde::{Deserialize, Serialize};
-
 use realtime::{Error, Message, Publisher, Result};
+use serde::{Deserialize, Serialize};
 
 use crate::DilaxMessage;
 

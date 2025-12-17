@@ -270,10 +270,6 @@ criteria = "safe-to-deploy"
 version = "0.5.5"
 criteria = "safe-to-deploy"
 
-[[exemptions.diff]]
-version = "0.1.13"
-criteria = "safe-to-run"
-
 [[exemptions.digest]]
 version = "0.9.0"
 criteria = "safe-to-deploy"
@@ -422,10 +418,6 @@ criteria = "safe-to-deploy"
 version = "0.2.21"
 criteria = "safe-to-deploy"
 
-[[exemptions.pretty_assertions]]
-version = "1.4.1"
-criteria = "safe-to-run"
-
 [[exemptions.proptest]]
 version = "1.9.0"
 criteria = "safe-to-deploy"
@@ -483,7 +475,7 @@ version = "0.23.35"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-pki-types]]
-version = "1.13.1"
+version = "1.13.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-webpki]]
@@ -761,10 +753,6 @@ criteria = "safe-to-deploy"
 [[exemptions.wit-bindgen-rust-macro]]
 version = "0.48.1"
 criteria = "safe-to-deploy"
-
-[[exemptions.yansi]]
-version = "1.0.1"
-criteria = "safe-to-run"
 
 [[exemptions.zerocopy]]
 version = "0.8.31"

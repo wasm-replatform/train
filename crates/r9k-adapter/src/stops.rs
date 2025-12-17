@@ -4,9 +4,8 @@ use std::sync::LazyLock;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http_body_util::Empty;
-use serde::{Deserialize, Serialize};
-
 use realtime::{Config, HttpRequest, Identity, Publisher};
+use serde::{Deserialize, Serialize};
 
 /// Stop information from GTFS
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -4,10 +4,9 @@ use std::fmt::{Display, Formatter};
 
 use chrono::{NaiveDate, Utc};
 use chrono_tz::Pacific;
+use realtime::{Error, Result};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-
-use realtime::{Error, Result};
 
 use crate::R9kError;
 

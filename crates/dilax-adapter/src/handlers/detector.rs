@@ -3,9 +3,8 @@ use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
 use credibil_api::{Handler, Request, Response};
-use serde::{Deserialize, Serialize};
-
 use realtime::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use serde::{Deserialize, Serialize};
 
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 
@@ -96,9 +95,7 @@ where
 /// # Errors
 ///
 /// Returns an error when Redis access or candidate deserialization fails.
-async fn detect<P>(
-    allocs: Vec<Allocation>, provider: &P,
-) -> anyhow::Result<Vec<Detection>>
+async fn detect<P>(allocs: Vec<Allocation>, provider: &P) -> anyhow::Result<Vec<Detection>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {

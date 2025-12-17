@@ -35,7 +35,8 @@ where
     Ok(PassengerCountResponse.into())
 }
 
-impl<P> Handler<PassengerCountResponse, P> for Request<PassengerCountMessage> where
+impl<P> Handler<PassengerCountResponse, P> for Request<PassengerCountMessage>
+where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = Error;

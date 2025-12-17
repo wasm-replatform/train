@@ -34,7 +34,7 @@ pub async fn process(message: &SmarTrakMessage, provider: &impl Provider) -> Res
         return Err(bad_request!("missing decoded serial data"));
     };
 
-    allocate_vehicle(provider, vehicle_id, decoded, timestamp).await
+    allocate(vehicle_id, decoded, timestamp, provider).await
 }
 
 // Updates the timestamp if it is newer than the previously stored timestamp.
@@ -54,8 +54,8 @@ async fn update_timestamp(store: &impl StateStore, timestamp: i64, vehicle_id: &
     Ok(())
 }
 
-async fn allocate_vehicle(
-    provider: &impl Provider, vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64,
+async fn allocate(
+     vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64,provider: &impl Provider,
 ) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{vehicle_id}");
@@ -71,30 +71,28 @@ async fn allocate_vehicle(
         return Ok(());
     };
 
-    let prev_trip = StateStore::get(provider, &trip_key).await?;
-    if serde_json::from_value::<TripInstance>(prev_trip.into())
-        .is_ok_and(|prev| prev.trip_id == trip_id)
-    {
+    let Some(prev) = StateStore::get(provider, &trip_key).await? else {
+        return Ok(());
+    };
+    if serde_json::from_slice::<TripInstance>(&prev).is_ok_and(|t| t.trip_id == trip_id) {
         return Ok(());
     }
 
-    let trip = trip::get_nearest_trip_instance(provider, trip_id, event_timestamp).await?;
-    match trip {
-        Some(instance) if !instance.has_error() => {
-            save_trip(provider, vehicle_id, event_timestamp, instance).await
-        }
-        _ => {
-            StateStore::delete(provider, &sign_on_key).await?;
-            StateStore::delete(provider, &trip_key).await?;
-            StateStore::delete(provider, &serial_timestamp_key).await?;
-
-            Ok(())
-        }
+    if let Some(trip) = trip::get_nearest(trip_id, event_timestamp, provider).await?
+        && !trip.has_error()
+    {
+        return save_trip(vehicle_id, event_timestamp, trip, provider).await;
     }
+
+    StateStore::delete(provider, &sign_on_key).await?;
+    StateStore::delete(provider, &trip_key).await?;
+    StateStore::delete(provider, &serial_timestamp_key).await?;
+
+    Ok(())
 }
 
 async fn save_trip(
-    provider: &impl Provider, vehicle_id: &str, event_timestamp: i64, trip: TripInstance,
+     vehicle_id: &str, event_timestamp: i64, trip: TripInstance,provider: &impl Provider,
 ) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{vehicle_id}");

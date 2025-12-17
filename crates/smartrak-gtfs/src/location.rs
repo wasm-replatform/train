@@ -132,58 +132,58 @@ async fn allocate(
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle.id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle.id);
 
-    let Some(block_instance) = allocation else {
+    // no allocation for this vehicle
+    let Some(alloc) = allocation else {
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         return Ok(());
     };
 
-    if block_instance.has_error() {
+    if alloc.has_error() {
         return Ok(());
     }
 
-    if block_instance.vehicle_ids.first() != Some(&vehicle.id) {
+    // is the allocated vehicle this vehicle?
+    if alloc.vehicle_ids.first() != Some(&vehicle.id) {
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         return Ok(());
     }
 
-    let previous_bytes = StateStore::get(provider, &trip_key).await?;
-
-    if let Some(previous) = deserialize_optional::<TripInstance>(previous_bytes.as_deref()) {
-        let same_trip = previous.trip_id == block_instance.trip_id
-            && previous.start_time == block_instance.start_time
-            && previous.service_date == block_instance.service_date;
-        if same_trip {
-            return Ok(());
+    // is this trip the same as the previous one?
+    if let Some(bytes) = StateStore::get(provider, &trip_key).await? {
+        let prev = serde_json::from_slice::<TripInstance>(&bytes)?;
+        if prev.trip_id == alloc.trip_id
+            && prev.start_time == alloc.start_time
+            && prev.service_date == alloc.service_date
+        {
+            return Ok(());   
         }
     }
 
-    let new_trip = trip::get_trip_instance(
-        provider,
-        &block_instance.trip_id,
-        &block_instance.service_date,
-        &block_instance.start_time,
-    )
-    .await?;
-
-    let Some(trip) = new_trip else {
+    // try and get the new trip
+    let Some(new_trip) =
+        trip::get_instance(&alloc.trip_id, &alloc.service_date, &alloc.start_time, provider)
+            .await?
+    else {
         StateStore::delete(provider, &sign_on_key).await?;
         StateStore::delete(provider, &trip_key).await?;
         return Ok(());
     };
 
-    if trip.has_error() {
+    if new_trip.has_error() {
         return Ok(());
     }
 
-    let trip_bytes = serde_json::to_vec(&trip).context("failed to serialize trip")?;
-    StateStore::set(provider, &trip_key, &trip_bytes, Some(duration_secs(TTL_TRIP_TRAIN))).await?;
+    // save the new trip
+    let bytes = serde_json::to_vec(&new_trip).context("failed to serialize trip")?;
+    StateStore::set(provider, &trip_key, &bytes, Some(duration_secs(TTL_TRIP_TRAIN))).await?;
 
-    let timestamp_bytes =
+    let bytes =
         serde_json::to_vec(&timestamp).context("failed to serialize message timestamp")?;
-    StateStore::set(provider, &sign_on_key, &timestamp_bytes, Some(duration_secs(TTL_SIGN_ON)))
+    StateStore::set(provider, &sign_on_key, &bytes, Some(duration_secs(TTL_SIGN_ON)))
         .await?;
+
     Ok(())
 }
 

@@ -3,15 +3,16 @@ use std::env;
 use anyhow::Context;
 use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
+use common::block_mgt::{self, BlockInstance};
+use common::fleet::{self, Vehicle};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
-use crate::block_mgt::BlockInstance;
-use crate::models::{
+use crate::trip::{
     DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor, TripInstance,
-    VehicleDescriptor, VehicleDr, VehicleInfo, VehiclePosition,
+    VehicleDescriptor, VehicleDr, VehiclePosition,
 };
-use crate::{EventType, Provider, Result, SmarTrakMessage, StateStore, block_mgt, trip};
+use crate::{EventType, Provider, Result, SmarTrakMessage, StateStore, trip};
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
@@ -57,15 +58,15 @@ pub async fn process(
         tracing::debug!("no vehicle identifier found");
         return Ok(None);
     };
-    let Some(vehicle) = block_mgt::vehicle(&vehicle_id.parse()?, provider).await? else {
+    let Some(vehicle) = fleet::vehicle(vehicle_id, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
         return Ok(None);
     };
 
     let timestamp = message.timestamp()?;
 
-    if vehicle.vehicle_type.is_train() {
-        let allocation = block_mgt::allocation(&vehicle.id, timestamp, provider).await?;
+    if vehicle.is_train() {
+        let allocation = block_mgt::cached_allocation(&vehicle.id, timestamp, provider).await?;
         allocate(&vehicle, allocation, timestamp, provider).await?;
     }
     let trip_inst = current_trip(provider, &vehicle.id, timestamp).await?;
@@ -126,8 +127,7 @@ where
 }
 
 async fn allocate(
-    vehicle: &VehicleInfo, allocation: Option<BlockInstance>, timestamp: i64,
-    provider: &impl Provider,
+    vehicle: &Vehicle, allocation: Option<BlockInstance>, timestamp: i64, provider: &impl Provider,
 ) -> Result<()> {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle.id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle.id);
@@ -217,7 +217,7 @@ async fn current_trip(
 }
 
 async fn get_occupancy_status(
-    provider: &impl Provider, vehicle: &VehicleInfo, trip: &TripDescriptor,
+    provider: &impl Provider, vehicle: &Vehicle, trip: &TripDescriptor,
 ) -> Result<Option<String>> {
     let Some(start_date) = trip.start_date.as_ref() else {
         return Ok(None);

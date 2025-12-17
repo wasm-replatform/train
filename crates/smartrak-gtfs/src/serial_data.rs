@@ -2,10 +2,8 @@ use anyhow::Context;
 use chrono::Utc;
 use realtime::bad_request;
 
-use crate::{
-    DecodedSerialData, Provider, Result, SmarTrakError, SmarTrakMessage, StateStore, TripInstance,
-    trip,
-};
+use crate::trip::{self, TripInstance};
+use crate::{DecodedSerialData, Provider, Result, SmarTrakError, SmarTrakMessage, StateStore};
 
 const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
 const TTL_SIGN_ON_SECS: u64 = 24 * 60 * 60;

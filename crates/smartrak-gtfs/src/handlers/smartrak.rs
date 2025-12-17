@@ -4,15 +4,19 @@ use realtime::bad_request;
 use serde::{Deserialize, Serialize};
 
 use crate::location::Location;
-use crate::{Error, Message, Provider, Publisher, Result, god_mode, location, serial_data};
+use crate::{Error, Message, Publisher, Result, god_mode, location, serial_data};
+use realtime::{Config, HttpRequest, Identity, StateStore};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
 pub struct SmarTrakResponse;
 
-async fn handle(
-    _owner: &str, message: SmarTrakMessage, provider: &impl Provider,
-) -> Result<Response<SmarTrakResponse>> {
+async fn handle<P>(
+    _owner: &str, message: SmarTrakMessage, provider: &P,
+) -> Result<Response<SmarTrakResponse>>
+where
+    P: Config + HttpRequest + Identity + Publisher + StateStore,
+{
     // serial data event
     if message.event_type == EventType::SerialData {
         let mut message = message.clone();
@@ -46,7 +50,10 @@ async fn handle(
     Ok(SmarTrakResponse.into())
 }
 
-impl<P: Provider> Handler<SmarTrakResponse, P> for Request<SmarTrakMessage> {
+impl<P> Handler<SmarTrakResponse, P> for Request<SmarTrakMessage>
+where
+    P: Config + HttpRequest + Identity + Publisher + StateStore,
+{
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<SmarTrakResponse>> {

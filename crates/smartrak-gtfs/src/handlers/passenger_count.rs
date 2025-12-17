@@ -3,9 +3,10 @@
 //! This module stores occupancy status for a given vehicle and trip.
 
 use credibil_api::{Handler, Request, Response};
+use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
 use serde::{Deserialize, Serialize};
 
-use crate::{Error, Provider, Result, StateStore};
+use crate::{Error, Result};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
@@ -13,9 +14,12 @@ pub struct PassengerCountResponse;
 
 const OCCUPANY_STATUS_TTL: u64 = 3 * 60 * 60; // 3 hours
 
-async fn handle(
-    _owner: &str, request: PassengerCountMessage, provider: &impl Provider,
-) -> Result<Response<PassengerCountResponse>> {
+async fn handle<P>(
+    _owner: &str, request: PassengerCountMessage, provider: &P,
+) -> Result<Response<PassengerCountResponse>>
+where
+    P: Config + HttpRequest + Identity + Publisher + StateStore,
+{
     // create state key
     let vehicle_id = &request.vehicle.id;
     let Trip { trip_id, start_date, start_time } = &request.trip;
@@ -33,7 +37,9 @@ async fn handle(
     Ok(PassengerCountResponse.into())
 }
 
-impl<P: Provider> Handler<PassengerCountResponse, P> for Request<PassengerCountMessage> {
+impl<P> Handler<PassengerCountResponse, P> for Request<PassengerCountMessage> where
+    P: Config + HttpRequest + Identity + Publisher + StateStore,
+{
     type Error = Error;
 
     // TODO: implement "owner"

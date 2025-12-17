@@ -1,10 +1,10 @@
 use anyhow::Context;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
+use common::block_mgt::{self, Allocation};
 use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 
-use common::block_mgt::{self, Allocation};
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 use crate::{Error, Provider, Result, StateStore};
 

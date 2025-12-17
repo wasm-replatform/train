@@ -1,6 +1,5 @@
 //! Dilax domain library
 
-
 mod gtfs;
 mod handlers;
 mod trip_state;

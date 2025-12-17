@@ -1,17 +1,14 @@
 //! SmarTrak GTFS adapter.
 
-mod block_mgt;
 mod god_mode;
 mod handlers;
 mod location;
-mod models;
 pub mod rest;
 mod serial_data;
 mod trip;
 
 pub use god_mode::*;
 pub use handlers::*;
-pub use models::*;
 pub use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore};
 use thiserror::Error;
 

@@ -1,7 +1,8 @@
+use crate::{Error, Result, SmarTrakMessage};
+use common::fleet;
 use credibil_api::{Handler, Request, Response};
+use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
 use serde::Deserialize;
-
-use crate::{Error, Provider, Result, SmarTrakMessage, block_mgt};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(transparent)]
@@ -11,9 +12,12 @@ pub struct CafAvlMessage(SmarTrakMessage);
 #[derive(Debug, Clone)]
 pub struct CafAvlResponse;
 
-async fn handle(
-    owner: &str, request: CafAvlMessage, provider: &impl Provider,
-) -> Result<Response<CafAvlResponse>> {
+async fn handle<P>(
+    owner: &str, request: CafAvlMessage, provider: &P,
+) -> Result<Response<CafAvlResponse>>
+where
+    P: Config + HttpRequest + Identity + Publisher + StateStore,
+{
     let request = request.0;
 
     // verify vehicle tag is 'caf'
@@ -21,7 +25,7 @@ async fn handle(
         tracing::debug!("no vehicle identifier found");
         return Ok(CafAvlResponse.into());
     };
-    let Some(vehicle) = block_mgt::vehicle(&vehicle_id.parse()?, provider).await? else {
+    let Some(vehicle) = fleet::vehicle(vehicle_id, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
         return Ok(CafAvlResponse.into());
     };
@@ -37,7 +41,10 @@ async fn handle(
     Ok(CafAvlResponse.into())
 }
 
-impl<P: Provider> Handler<CafAvlResponse, P> for Request<CafAvlMessage> {
+impl<P> Handler<CafAvlResponse, P> for Request<CafAvlMessage>
+where
+    P: Config + HttpRequest + Identity + Publisher + StateStore,
+{
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<CafAvlResponse>> {

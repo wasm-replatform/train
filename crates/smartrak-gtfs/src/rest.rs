@@ -1,16 +1,17 @@
+// use common::block_mgt;
+use common::fleet::{self, Vehicle};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::{error, info, instrument};
 
-use crate::block_mgt::VehicleIdentifier;
 use crate::god_mode::god_mode;
-use crate::models::{TripInstance, VehicleInfo};
-use crate::{Provider, StateStore, block_mgt};
+use crate::trip::TripInstance;
+use crate::{Provider, StateStore};
 
 const PROCESS_ID: u32 = 0;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VehicleInfoResponse {
     pub pid: u32,
@@ -20,7 +21,7 @@ pub struct VehicleInfoResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trip_info: Option<TripInstance>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub fleet_info: Option<VehicleInfo>,
+    pub fleet_info: Option<Vehicle>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -85,9 +86,7 @@ where
         }
     };
 
-    let identifier = vehicle_id.parse::<VehicleIdentifier>().unwrap_or_default();
-
-    let fleet_info = match block_mgt::vehicle(&identifier, provider).await {
+    let fleet_info = match fleet::vehicle(vehicle_id, provider).await {
         Ok(info) => info,
         Err(err) => {
             error!(vehicle_id, ?err, "failed to fetch fleet info");

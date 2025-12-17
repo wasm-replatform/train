@@ -3,48 +3,13 @@ use bytes::Bytes;
 use http::Method;
 use http::header::{AUTHORIZATION, CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
-use serde::{Deserialize, Serialize};
-
 use realtime::{Config, HttpRequest, Identity};
-
-/// Retrieves a vehicle (train) by label.
-/// 
-/// # Errors
-/// 
-/// Returns an error when the fleet API request fails or the
-/// response cannot be deserialized.
-pub async fn vehicle<P>(label: &str, provider: &P) -> Result<Option<Vehicle>>
-where
-    P: Config + HttpRequest + Identity,
-{
-    let fleet_api_url = Config::get(provider, "FLEET_URL").await.context("getting `FLEET_URL`")?;
-    let url = format!("{fleet_api_url}/vehicles?label={}", urlencoding::encode(label));
-
-    let request = http::Request::builder()
-        .method(Method::GET)
-        .uri(url)
-        .header(CACHE_CONTROL, "max-age=300") // 5 minutes
-        .header(IF_NONE_MATCH, label)
-        .header("Content-Type", "application/json")
-        .body(Empty::<Bytes>::new())
-        .context("building train_by_label request")?;
-
-    let response =
-        HttpRequest::fetch(provider, request).await.context("Fleet API request failed")?;
-
-    let body = response.into_body();
-    let records: Vec<Vehicle> =
-        serde_json::from_slice(&body).context("Failed to deserialize Fleet API response")?;
-
-    // get first vehicle that is a train
-    let vehicle = records.into_iter().find(Vehicle::is_train);
-    Ok(vehicle)
-}
+use serde::{Deserialize, Serialize};
 
 /// Retrieves the block allocation for a specific vehicle.
 ///
 /// # Errors
-/// 
+///
 /// Returns an error when the block management API request fails or the
 /// response cannot be deserialized.
 pub async fn allocation<P>(vehicle_id: &str, provider: &P) -> Result<Option<Allocation>>
@@ -75,10 +40,50 @@ where
     Ok(envelope.current.into_iter().next())
 }
 
+/// Retrieves the cached block allocation for a specific vehicle.
+///
+/// # Errors
+///
+/// Returns an error when the block management API request fails or the
+/// response cannot be deserialized.
+pub async fn cached_allocation<P>(
+    vehicle_id: &str, timestamp: i64, provider: &P,
+) -> Result<Option<BlockInstance>>
+where
+    P: Config + HttpRequest + Identity,
+{
+    let url = Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
+
+    let token = Identity::access_token(provider).await?;
+    let endpoint = format!(
+        "{url}/allocations/vehicles/{vehicle_id}?currentTrip=true&siblings=true&nowUnixTimeSeconds={timestamp}"
+    );
+
+    let request = http::Request::builder()
+        .uri(&endpoint)
+        .method(Method::GET)
+        .header(CACHE_CONTROL, "max-age=20") // 20 seconds
+        .header(IF_NONE_MATCH, vehicle_id)
+        .header(AUTHORIZATION, format!("Bearer {token}"))
+        .body(Empty::<Bytes>::new())
+        .context("building block management request")?;
+    let response = HttpRequest::fetch(provider, request).await.context("fetching allocations")?;
+
+    if !response.status().is_success() {
+        return Ok(None);
+    }
+
+    let body = response.into_body();
+    let allocation: Option<BlockInstance> =
+        serde_json::from_slice(&body).context("deserializing allocations")?;
+
+    Ok(allocation)
+}
+
 /// Retrieves all block allocations.
 ///
 /// # Errors
-/// 
+///
 /// Returns an error when the block management API request fails or the
 /// response cannot be deserialized.
 pub async fn allocations<P>(provider: &P) -> Result<Vec<Allocation>>
@@ -118,68 +123,41 @@ struct AllocationResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Allocation {
-    #[serde(rename = "operationalBlockId")]
     pub operational_block_id: String,
-    #[serde(rename = "tripId")]
     pub trip_id: String,
-    #[serde(rename = "serviceDate")]
     pub service_date: String,
-    #[serde(rename = "startTime")]
     pub start_time: String,
-    #[serde(rename = "vehicleId")]
     pub vehicle_id: String,
-    #[serde(rename = "vehicleLabel")]
     pub vehicle_label: String,
-    #[serde(rename = "routeId")]
     pub route_id: String,
-    #[serde(rename = "directionId")]
     pub direction_id: Option<u32>,
-    #[serde(rename = "referenceId")]
     pub reference_id: String,
-    #[serde(rename = "endTime")]
     pub end_time: String,
     pub delay: i64,
-    #[serde(rename = "startDatetime")]
     pub start_datetime: i64,
-    #[serde(rename = "endDatetime")]
     pub end_datetime: i64,
-    #[serde(rename = "isCanceled")]
     pub is_canceled: bool,
-    #[serde(rename = "isCopied")]
     pub is_copied: bool,
     pub timezone: String,
-    #[serde(rename = "creationDatetime")]
     pub creation_datetime: String,
 }
 
-#[derive(Deserialize)]
-pub struct Vehicle {
-    pub id: String,
-    pub capacity: Option<Capacity>,
-
-    #[serde(rename = "type")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    type_: Option<VehicleType>,
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+#[serde(default)]
+pub struct BlockInstance {
+    pub trip_id: String,
+    pub start_time: String,
+    pub service_date: String,
+    pub vehicle_ids: Vec<String>,
+    pub error: bool,
 }
 
-impl Vehicle {
-    fn is_train(&self) -> bool {
-        self.type_
-            .as_ref()
-            .and_then(|type_| type_.kind.as_deref())
-            .is_some_and(|value| value.eq_ignore_ascii_case("train"))
+impl BlockInstance {
+    #[must_use]
+    pub const fn has_error(&self) -> bool {
+        self.error
     }
-}
-
-#[derive(Deserialize)]
-struct VehicleType {
-    #[serde(rename = "type")]
-    kind: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Capacity {
-    pub seating: i64,
-    pub total: i64,
 }

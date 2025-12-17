@@ -9,12 +9,8 @@ mod trip;
 
 pub use god_mode::*;
 pub use handlers::*;
-pub use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore};
+use realtime::Error;
 use thiserror::Error;
-
-/// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + Publisher + StateStore + Identity + Config {}
-impl<T> Provider for T where T: HttpRequest + Publisher + StateStore + Identity + Config {}
 
 // TODO: use for internal methods
 #[derive(Error, Debug)]

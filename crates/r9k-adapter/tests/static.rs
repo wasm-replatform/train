@@ -8,7 +8,8 @@ use std::ops::Sub;
 use chrono::{Duration, Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use credibil_api::Client;
-use r9k_adapter::{ChangeType, Error, EventType, R9kMessage};
+use r9k_adapter::{ChangeType, EventType, R9kMessage};
+use realtime::Error;
 
 use self::provider::MockProvider;
 

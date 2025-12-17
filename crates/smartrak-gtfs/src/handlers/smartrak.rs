@@ -1,11 +1,10 @@
 use chrono::{DateTime, Utc};
 use credibil_api::{Handler, Request, Response};
-use realtime::bad_request;
+use realtime::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
 use crate::location::Location;
-use crate::{Error, Message, Publisher, Result, god_mode, location, serial_data};
-use realtime::{Config, HttpRequest, Identity, StateStore};
+use crate::{god_mode, location, serial_data};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
@@ -54,7 +53,7 @@ impl<P> Handler<SmarTrakResponse, P> for Request<SmarTrakMessage>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = Error;
+    type Error = realtime::Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<SmarTrakResponse>> {
         handle(owner, self.body, provider).await

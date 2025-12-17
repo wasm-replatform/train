@@ -8,11 +8,13 @@ use common::fleet::{self, Vehicle};
 use serde::de::DeserializeOwned;
 use uuid::Uuid;
 
+use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
+
 use crate::trip::{
-    DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor, TripInstance,
+    self, DeadReckoningMessage, FeedEntity, Position, PositionDr, TripDescriptor, TripInstance,
     VehicleDescriptor, VehicleDr, VehiclePosition,
 };
-use crate::{EventType, Provider, Result, SmarTrakMessage, StateStore, trip};
+use crate::{EventType, SmarTrakMessage};
 
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
@@ -37,9 +39,10 @@ pub enum Location {
 ///
 /// Returns an error when the incoming payload cannot be parsed or when domain logic
 /// encounters an unrecoverable condition.
-pub async fn process(
-    message: &SmarTrakMessage, provider: &impl Provider,
-) -> Result<Option<Location>> {
+pub async fn process<P>(message: &SmarTrakMessage, provider: &P) -> Result<Option<Location>>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     // check for location event
     if message.event_type != EventType::Location {
         tracing::debug!("unsupported request type: {:?}", message.event_type);
@@ -126,9 +129,12 @@ where
     bytes.and_then(|raw| serde_json::from_slice::<T>(raw).ok())
 }
 
-async fn allocate(
-    vehicle: &Vehicle, allocation: Option<BlockInstance>, timestamp: i64, provider: &impl Provider,
-) -> Result<()> {
+async fn allocate<P>(
+    vehicle: &Vehicle, allocation: Option<BlockInstance>, timestamp: i64, provider: &P,
+) -> Result<()>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle.id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle.id);
 
@@ -157,7 +163,7 @@ async fn allocate(
             && prev.start_time == alloc.start_time
             && prev.service_date == alloc.service_date
         {
-            return Ok(());   
+            return Ok(());
         }
     }
 
@@ -179,17 +185,18 @@ async fn allocate(
     let bytes = serde_json::to_vec(&new_trip).context("failed to serialize trip")?;
     StateStore::set(provider, &trip_key, &bytes, Some(duration_secs(TTL_TRIP_TRAIN))).await?;
 
-    let bytes =
-        serde_json::to_vec(&timestamp).context("failed to serialize message timestamp")?;
-    StateStore::set(provider, &sign_on_key, &bytes, Some(duration_secs(TTL_SIGN_ON)))
-        .await?;
+    let bytes = serde_json::to_vec(&timestamp).context("failed to serialize message timestamp")?;
+    StateStore::set(provider, &sign_on_key, &bytes, Some(duration_secs(TTL_SIGN_ON))).await?;
 
     Ok(())
 }
 
-async fn current_trip(
-    provider: &impl Provider, vehicle_id: &str, timestamp: i64,
-) -> Result<Option<TripInstance>> {
+async fn current_trip<P>(
+    provider: &P, vehicle_id: &str, timestamp: i64,
+) -> Result<Option<TripInstance>>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let trip_key = format!("smartrakGtfs:trip:vehicle:{}", &vehicle_id);
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{}", &vehicle_id);
     let bytes = StateStore::get(provider, &trip_key).await?;
@@ -216,9 +223,12 @@ async fn current_trip(
     Ok(None)
 }
 
-async fn get_occupancy_status(
-    provider: &impl Provider, vehicle: &Vehicle, trip: &TripDescriptor,
-) -> Result<Option<String>> {
+async fn get_occupancy_status<P>(
+    provider: &P, vehicle: &Vehicle, trip: &TripDescriptor,
+) -> Result<Option<String>>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let Some(start_date) = trip.start_date.as_ref() else {
         return Ok(None);
     };

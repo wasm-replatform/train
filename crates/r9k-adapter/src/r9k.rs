@@ -7,7 +7,9 @@ use chrono_tz::Pacific;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{Error, R9kError, Result};
+use realtime::{Error, Result};
+
+use crate::R9kError;
 
 const MAX_DELAY_SECS: i64 = 60;
 const MIN_DELAY_SECS: i64 = -30;

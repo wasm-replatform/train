@@ -5,9 +5,3 @@
 mod handler;
 
 pub use handler::*;
-pub use realtime::{Error, Message, Publisher, Result};
-
-/// Provider entry point implemented by the host application.
-pub trait Provider: Publisher {}
-
-impl<T: Publisher> Provider for T {}

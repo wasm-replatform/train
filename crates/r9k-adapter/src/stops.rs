@@ -6,7 +6,7 @@ use bytes::Bytes;
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
 
-use crate::{Config, HttpRequest, Provider};
+use realtime::{Config, HttpRequest, Identity, Publisher};
 
 /// Stop information from GTFS
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,9 +16,12 @@ pub struct StopInfo {
     pub stop_lon: f64,
 }
 
-pub async fn stop_info(
-    _owner: &str, provider: &impl Provider, station: u32, is_arrival: bool,
-) -> Result<Option<StopInfo>> {
+pub async fn stop_info<P>(
+    _owner: &str, provider: &P, station: u32, is_arrival: bool,
+) -> Result<Option<StopInfo>>
+where
+    P: Config + HttpRequest + Identity + Publisher,
+{
     if !ACTIVE_STATIONS.contains(&station) {
         return Ok(None);
     }

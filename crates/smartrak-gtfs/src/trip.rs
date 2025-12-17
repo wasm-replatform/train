@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::warn;
 
-use crate::{HttpRequest, Provider};
+use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
 
 const CACHE_DIRECTIVE_PRIMARY: &str = "max-age=20, stale-if-error=10";
 
@@ -22,9 +22,12 @@ const CACHE_DIRECTIVE_PRIMARY: &str = "max-age=20, stale-if-error=10";
 ///
 /// Returns an error when the Trip Management API request fails or the response payload cannot
 /// be deserialized.
-pub async fn get_instance(
-    trip_id: &str, service_date: &str, start_time: &str, provider: &impl Provider,
-) -> Result<Option<TripInstance>> {
+pub async fn get_instance<P>(
+    trip_id: &str, service_date: &str, start_time: &str, provider: &P,
+) -> Result<Option<TripInstance>>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let trips = fetch(trip_id, service_date, provider).await?;
     let mut iter = trips.into_iter();
 
@@ -52,9 +55,12 @@ pub async fn get_instance(
 /// # Errors
 ///
 /// Returns an error when Trip Management lookups fail or the payload cannot be decoded.
-pub async fn get_nearest(
-    trip_id: &str, event_timestamp: i64, provider: &impl Provider,
-) -> Result<Option<TripInstance>> {
+pub async fn get_nearest<P>(
+    trip_id: &str, event_timestamp: i64, provider: &P,
+) -> Result<Option<TripInstance>>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let tz = chrono_tz::Pacific::Auckland;
     let Some(event_dt) = tz.timestamp_opt(event_timestamp, 0).single() else {
         return Ok(None);

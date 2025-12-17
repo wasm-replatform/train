@@ -5,8 +5,9 @@ use common::block_mgt::{self, Allocation};
 use credibil_api::{Handler, Request, Response};
 use serde::{Deserialize, Serialize};
 
+use realtime::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
-use crate::{Error, Provider, Result, StateStore};
 
 const DIESEL_TRAIN_PREFIX: &str = "ADL";
 const THRESHOLD: Duration = Duration::hours(1);
@@ -23,15 +24,21 @@ pub struct DetectionResponse {
     pub detections: Vec<Detection>,
 }
 
-async fn handle(
-    _owner: &str, _: DetectionRequest, provider: &impl Provider,
-) -> Result<Response<DetectionResponse>> {
+async fn handle<P>(
+    _owner: &str, _: DetectionRequest, provider: &P,
+) -> Result<Response<DetectionResponse>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let detections = lost_connections(provider).await.context("detecting lost connections")?;
 
     Ok(DetectionResponse { detections }.into())
 }
 
-impl<P: Provider> Handler<DetectionResponse, P> for Request<DetectionRequest> {
+impl<P> Handler<DetectionResponse, P> for Request<DetectionRequest>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     type Error = Error;
 
     // TODO: implement "owner"
@@ -40,7 +47,10 @@ impl<P: Provider> Handler<DetectionResponse, P> for Request<DetectionRequest> {
     }
 }
 
-async fn lost_connections(provider: &impl Provider) -> anyhow::Result<Vec<Detection>> {
+async fn lost_connections<P>(provider: &P) -> anyhow::Result<Vec<Detection>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let allocs: Vec<Allocation> =
         allocations(provider).await.context("refreshing Dilax allocations")?;
     let detections = detect(allocs, provider).await.context("detecting lost connections")?;
@@ -59,7 +69,10 @@ pub struct Detection {
 /// # Errors
 ///
 /// Returns an error if the block management provider or backing store cannot be queried.
-async fn allocations(provider: &impl Provider) -> Result<Vec<Allocation>> {
+async fn allocations<P>(provider: &P) -> Result<Vec<Allocation>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let allocations =
         block_mgt::allocations(provider).await.context("fetching Dilax allocations")?;
 
@@ -83,9 +96,12 @@ async fn allocations(provider: &impl Provider) -> Result<Vec<Allocation>> {
 /// # Errors
 ///
 /// Returns an error when Redis access or candidate deserialization fails.
-async fn detect(
-    allocs: Vec<Allocation>, provider: &impl Provider,
-) -> anyhow::Result<Vec<Detection>> {
+async fn detect<P>(
+    allocs: Vec<Allocation>, provider: &P,
+) -> anyhow::Result<Vec<Detection>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     tracing::debug!("Starting Dilax lost connection detection pass");
     let candidates = detect_candidates(allocs, provider).await?;
 
@@ -141,9 +157,12 @@ async fn detect(
     Ok(new_detections)
 }
 
-async fn detect_candidates(
-    allocs: Vec<Allocation>, provider: &impl Provider,
-) -> anyhow::Result<Vec<Detection>> {
+async fn detect_candidates<P>(
+    allocs: Vec<Allocation>, provider: &P,
+) -> anyhow::Result<Vec<Detection>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let now_ts = Utc::now().with_timezone(&Pacific::Auckland).timestamp();
 
     let active: Vec<Allocation> = allocs

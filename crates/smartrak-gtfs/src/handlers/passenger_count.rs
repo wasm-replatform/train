@@ -3,10 +3,8 @@
 //! This module stores occupancy status for a given vehicle and trip.
 
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
+use realtime::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
-
-use crate::{Error, Result};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]

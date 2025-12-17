@@ -7,7 +7,8 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
-use r9k_adapter::{Config, HttpRequest, Identity, Publisher, SmarTrakEvent, StopInfo};
+use r9k_adapter::{SmarTrakEvent, StopInfo};
+use realtime::{Config, HttpRequest, Identity, Message, Publisher};
 use serde::Deserialize;
 
 #[allow(dead_code)]
@@ -28,7 +29,7 @@ pub struct Static {
 pub struct Replay {
     pub input: String,
     pub output: Option<Vec<String>>,
-    pub error: Option<r9k_adapter::Error>,
+    pub error: Option<realtime::Error>,
     pub delay: Option<i32>,
     pub stop_info: Option<StopInfo>,
     pub vehicles: Option<Vec<String>>,
@@ -115,7 +116,7 @@ impl HttpRequest for MockProvider {
 }
 
 impl Publisher for MockProvider {
-    async fn send(&self, _topic: &str, message: &r9k_adapter::Message) -> Result<()> {
+    async fn send(&self, _topic: &str, message: &Message) -> Result<()> {
         let event: SmarTrakEvent =
             serde_json::from_slice(&message.payload).context("deserializing event")?;
         self.events.lock().map_err(|e| anyhow!("{e}"))?.push(event);

@@ -1,8 +1,9 @@
-use crate::{Error, Result, SmarTrakMessage};
 use common::fleet;
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
+use realtime::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
+
+use crate::SmarTrakMessage;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(transparent)]

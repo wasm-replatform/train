@@ -5,9 +5,10 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::{error, info, instrument};
 
+use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
+
 use crate::god_mode::god_mode;
 use crate::trip::TripInstance;
-use crate::{Provider, StateStore};
 
 const PROCESS_ID: u32 = 0;
 
@@ -66,7 +67,7 @@ pub fn log_root(user_agent: Option<&str>) {
 /// Retrieves the cached vehicle/trip information used by the legacy REST endpoint.
 pub async fn vehicle_info<P>(provider: &P, vehicle_id: &str) -> VehicleInfoResponse
 where
-    P: Provider,
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
     let trip_info = match StateStore::get(provider, &trip_key).await {

@@ -1,8 +1,9 @@
-use crate::{Error, Result, SmarTrakMessage};
 use common::fleet;
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
+use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
+
+use crate::SmarTrakMessage;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(transparent)]
@@ -45,7 +46,7 @@ impl<P> Handler<TrainAvlResponse, P> for Request<TrainAvlMessage>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = Error;
+    type Error = realtime::Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<TrainAvlResponse>> {
         handle(owner, self.body, provider).await

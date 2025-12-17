@@ -5,9 +5,10 @@ use credibil_api::{Handler, Request, Response};
 use realtime::bad_request;
 
 use crate::gtfs::{self, StopType, StopTypeEntry};
-use crate::trip_state::{VehicleInfo, VehicleTripInfo};
+use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore};
+
+use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 use crate::types::{DilaxMessage, EnrichedEvent};
-use crate::{Error, Message, Provider, Publisher, Result, trip_state};
 
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
@@ -16,14 +17,20 @@ const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
 #[derive(Debug, Clone)]
 pub struct DilaxResponse;
 
-async fn handle(
-    _owner: &str, request: DilaxMessage, provider: &impl Provider,
-) -> Result<Response<DilaxResponse>> {
+async fn handle<P>(
+    _owner: &str, request: DilaxMessage, provider: &P,
+) -> Result<Response<DilaxResponse>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     process(request, provider).await?;
     Ok(DilaxResponse.into())
 }
 
-impl<P: Provider> Handler<DilaxResponse, P> for Request<DilaxMessage> {
+impl<P> Handler<DilaxResponse, P> for Request<DilaxMessage>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     type Error = Error;
 
     // TODO: implement "owner"
@@ -38,7 +45,10 @@ impl<P: Provider> Handler<DilaxResponse, P> for Request<DilaxMessage> {
 ///
 /// Returns an error when one of the providers or the key-value store reports a failure
 /// while augmenting the incoming Dilax event.
-pub async fn process(event: DilaxMessage, provider: &impl Provider) -> Result<()> {
+pub async fn process<P>(event: DilaxMessage, provider: &P) -> Result<()>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let vehicle_label = vehicle_label(&event)
         .ok_or_else(|| bad_request!("vehicle label missing for device {:?}", event.device))?;
 
@@ -132,9 +142,12 @@ fn vehicle_capacity(vehicle: &Vehicle) -> Option<(i64, i64)> {
 ///
 /// Returns an error when the waypoint is missing, provider requests fail, or no stop
 /// matching the Dilax waypoint can be determined.
-async fn stop_id(
-    vehicle_id: &str, event: &DilaxMessage, provider: &impl Provider,
-) -> Result<String> {
+async fn stop_id<P>(
+    vehicle_id: &str, event: &DilaxMessage, provider: &P,
+) -> Result<String>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let vehicle_id_owned = vehicle_id.to_string();
 
     let Some(waypoint) = event.wpt.as_ref() else {

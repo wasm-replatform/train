@@ -7,16 +7,12 @@ mod r9k;
 mod smartrak;
 mod stops;
 
-pub use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
+use realtime::Error;
 use thiserror::Error;
 
 pub use self::r9k::*;
 pub use self::smartrak::*;
 pub use self::stops::StopInfo;
-
-/// Provider entry point implemented by the host application.
-pub trait Provider: Config + HttpRequest + Identity + Publisher {}
-impl<T> Provider for T where T: Config + HttpRequest + Identity + Publisher {}
 
 // TODO: use for internal methods
 #[derive(Error, Debug)]

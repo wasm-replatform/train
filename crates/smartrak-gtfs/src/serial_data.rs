@@ -1,9 +1,9 @@
 use anyhow::Context;
 use chrono::Utc;
-use realtime::bad_request;
+use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
 
 use crate::trip::{self, TripInstance};
-use crate::{DecodedSerialData, Provider, Result, SmarTrakError, SmarTrakMessage, StateStore};
+use crate::{DecodedSerialData, SmarTrakError, SmarTrakMessage};
 
 const TTL_TRIP_SERIAL_SECS: u64 = 4 * 60 * 60;
 const TTL_SIGN_ON_SECS: u64 = 24 * 60 * 60;
@@ -12,7 +12,10 @@ const TTL_SERIAL_TIMESTAMP_SECS: u64 = 24 * 60 * 60;
 const SERIAL_DATA_THRESHOLD: i64 = 900;
 
 // Processes SmarTrak serial data events, updating allocations and  state.
-pub async fn process(message: &SmarTrakMessage, provider: &impl Provider) -> Result<()> {
+pub async fn process<P>(message: &SmarTrakMessage, provider: &P) -> Result<()>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let Some(vehicle_id) = message.vehicle_id() else {
         return Err(bad_request!("missing vehicle identifier"));
     };
@@ -54,9 +57,12 @@ async fn update_timestamp(store: &impl StateStore, timestamp: i64, vehicle_id: &
     Ok(())
 }
 
-async fn allocate(
-     vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64,provider: &impl Provider,
-) -> Result<()> {
+async fn allocate<P>(
+     vehicle_id: &str, decoded: &DecodedSerialData, event_timestamp: i64, provider: &P,
+) -> Result<()>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{vehicle_id}");
     let serial_timestamp_key = format!("smartrakGtfs:serialTimestamp:{vehicle_id}");
@@ -91,9 +97,12 @@ async fn allocate(
     Ok(())
 }
 
-async fn save_trip(
-     vehicle_id: &str, event_timestamp: i64, trip: TripInstance,provider: &impl Provider,
-) -> Result<()> {
+async fn save_trip<P>(
+     vehicle_id: &str, event_timestamp: i64, trip: TripInstance, provider: &P,
+) -> Result<()>
+where
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
+{
     let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
     let sign_on_key = format!("smartrakGtfs:vehicle:signOn:{vehicle_id}");
 

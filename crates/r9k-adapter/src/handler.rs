@@ -9,9 +9,11 @@ use credibil_api::{Handler, Request, Response};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
 
+use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
+
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
-use crate::{Config, Error, HttpRequest, Identity, Message, Provider, Publisher, Result, stops};
+use crate::stops;
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 
@@ -19,9 +21,12 @@ const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 #[derive(Debug, Clone)]
 pub struct R9kResponse;
 
-async fn handle(
-    owner: &str, request: R9kMessage, provider: &impl Provider,
-) -> Result<Response<R9kResponse>> {
+async fn handle<P>(
+    owner: &str, request: R9kMessage, provider: &P,
+) -> Result<Response<R9kResponse>>
+where
+    P: Config + HttpRequest + Identity + Publisher,
+{
     // validate message
     let update = request.train_update;
     update.validate()?;
@@ -52,7 +57,10 @@ async fn handle(
     Ok(R9kResponse.into())
 }
 
-impl<P: Provider> Handler<R9kResponse, P> for Request<R9kMessage> {
+impl<P> Handler<R9kResponse, P> for Request<R9kMessage>
+where
+    P: Config + HttpRequest + Identity + Publisher,
+{
     type Error = Error;
 
     // TODO: implement "owner"
@@ -63,9 +71,12 @@ impl<P: Provider> Handler<R9kResponse, P> for Request<R9kMessage> {
 
 impl TrainUpdate {
     /// Transform the R9K message to SmarTrak events
-    async fn into_events(
-        self, owner: &str, provider: &impl Provider,
-    ) -> Result<Vec<SmarTrakEvent>> {
+    async fn into_events<P>(
+        self, owner: &str, provider: &P,
+    ) -> Result<Vec<SmarTrakEvent>>
+    where
+        P: Config + HttpRequest + Identity + Publisher,
+    {
         let changes = &self.changes;
         let change_type = changes[0].r#type;
 

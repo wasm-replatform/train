@@ -7,7 +7,7 @@ import * as NodeCache from "node-cache";
 import { Config } from "../../../src/config";
 import { DilaxLostConnectionsDetector } from "../../../src/dilax-adapter-lost-connections-detector";
 import BlockMgtClientAPI from "../../../src/services/block-mgt-client-api";
-import { VehicleAllocation } from "../../../src/types/vehicle-allocation";
+import { Allocation } from "../../../src/types/vehicle-allocation";
 
 class RedisHelperStub extends Redis {
     private entries: Map<string, string> = new Map<string, string>();
@@ -35,13 +35,13 @@ class RedisHelperStub extends Redis {
 }
 
 class BlockMgtClientApiStub extends BlockMgtClientAPI {
-    private allocations: VehicleAllocation[] = [];
+    private allocations: Allocation[] = [];
 
-    public async getAllAllocations(): Promise<VehicleAllocation[]> {
+    public async getAllAllocations(): Promise<Allocation[]> {
         return this.allocations;
     }
 
-    public mockAllocations(allocations: VehicleAllocation[]) {
+    public mockAllocations(allocations: Allocation[]) {
         this.allocations = allocations;
     }
 
@@ -50,7 +50,7 @@ class BlockMgtClientApiStub extends BlockMgtClientAPI {
     }
 }
 
-const createAllocation = (vehicleId: string, startTimeUnix: number, endTimeUnix: number): VehicleAllocation => ({
+const createAllocation = (vehicleId: string, startTimeUnix: number, endTimeUnix: number): Allocation => ({
     operationalBlockId: "101",
     tripId: "246-850029-18540-2-M200101-cd17a4ce",
     serviceDate: moment.tz(Config.timezone).format("YYYYMMDD"),
@@ -292,7 +292,7 @@ describe("DilaxLostConnectionsDetector", () => {
             dilaxLostConnectionsDetector = new DilaxLostConnectionsDetector(redisHelperMock, blockManagementClientApiMock, nodeCache);
             await dilaxLostConnectionsDetector.init();
 
-            const cachedTrips = nodeCache.get<VehicleAllocation[]>(dilaxLostConnectionsDetector.allocationsCacheKey);
+            const cachedTrips = nodeCache.get<Allocation[]>(dilaxLostConnectionsDetector.allocationsCacheKey);
 
             expect(cachedTrips?.length).toEqual(0);
         });

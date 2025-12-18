@@ -65,8 +65,8 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.bumpalo]]
-version = "3.19.0"
-when = "2025-06-24"
+version = "3.19.1"
+when = "2025-12-16"
 user-id = 696
 user-login = "fitzgen"
 user-name = "Nick Fitzgerald"
@@ -452,13 +452,6 @@ user-id = 3726
 user-login = "cfallin"
 user-name = "Chris Fallin"
 
-[[publisher.regex]]
-version = "1.12.2"
-when = "2025-10-13"
-user-id = 189
-user-login = "BurntSushi"
-user-name = "Andrew Gallant"
-
 [[publisher.regex-automata]]
 version = "0.4.13"
 when = "2025-10-13"
@@ -474,8 +467,8 @@ user-login = "BurntSushi"
 user-name = "Andrew Gallant"
 
 [[publisher.reqwest]]
-version = "0.12.25"
-when = "2025-12-08"
+version = "0.12.26"
+when = "2025-12-15"
 user-id = 359
 user-login = "seanmonstar"
 user-name = "Sean McArthur"

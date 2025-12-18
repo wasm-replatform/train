@@ -2,16 +2,20 @@ use std::fmt::Display;
 
 use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
+use fabric::{Error, Message, Publisher, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{DilaxMessage, Error, Message, Provider, Publisher, Result};
+use crate::DilaxMessage;
 
 const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
 #[allow(clippy::unused_async)]
-async fn handle(
-    _owner: &str, request: DilaxRequest, provider: &impl Provider,
-) -> Result<Response<DilaxResponse>> {
+async fn handle<P>(
+    _owner: &str, request: DilaxRequest, provider: &P,
+) -> Result<Response<DilaxResponse>>
+where
+    P: Publisher,
+{
     let message = &request.message;
 
     // TODO: forward to replication topic/endpoint
@@ -29,7 +33,7 @@ async fn handle(
     Ok(DilaxResponse("OK").into())
 }
 
-impl<P: Provider> Handler<DilaxResponse, P> for Request<DilaxRequest> {
+impl<P: Publisher> Handler<DilaxResponse, P> for Request<DilaxRequest> {
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {

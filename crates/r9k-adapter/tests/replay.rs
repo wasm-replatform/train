@@ -51,8 +51,7 @@ async fn replay(replay: Replay) -> Result<()> {
     }
 
     if let Err(e) = client.request(request).owner("owner").await {
-        assert_eq!(e, replay.error.unwrap());
-        return Ok(());
+        assert_eq!(e.to_string(), replay.error.unwrap().to_string());
     }
 
     let curr_events = provider.events();

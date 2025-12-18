@@ -1,0 +1,226 @@
+[
+    {
+        "id": "59144",
+        "label": "AMP        144",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "144"
+        },
+        "vehicle": "59144"
+    },
+    {
+        "id": "59157",
+        "label": "AMP        157",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "157"
+        },
+        "vehicle": "59157"
+    },
+    {
+        "id": "59172",
+        "label": "AMP        172",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "172"
+        },
+        "vehicle": "59172"
+    },
+    {
+        "id": "59185",
+        "label": "AMP        185",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "185"
+        },
+        "vehicle": "59185"
+    },
+    {
+        "id": "59198",
+        "label": "AMP        198",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "198"
+        },
+        "vehicle": "59198"
+    },
+    {
+        "id": "59212",
+        "label": "AMP        212",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "212"
+        },
+        "vehicle": "59212"
+    },
+    {
+        "id": "59225",
+        "label": "AMP        225",
+        "agency": {
+            "agencyId": "AM",
+            "agencyName": "AT Metro",
+            "depot": {
+                "name": "21"
+            }
+        },
+        "attributes": {
+            "loweringFloor": true
+        },
+        "capacity": {
+            "total": 373,
+            "seating": 232,
+            "standing": 141
+        },
+        "type": {
+            "type": "Train"
+        },
+        "tag": "CAF",
+        "eod": {
+            "generated": {},
+            "activated": {},
+            "latestActionlist": "Yes",
+            "latestEOD": "Yes",
+            "beId": 201,
+            "vehicleId": "225"
+        },
+        "vehicle": "59225"
+    }
+]

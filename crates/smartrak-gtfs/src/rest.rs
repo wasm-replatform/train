@@ -1,15 +1,17 @@
+// use common::block_mgt;
+use common::fleet::{self, Vehicle};
+use fabric::{Config, HttpRequest, Identity, Publisher, StateStore};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tracing::{error, info, instrument};
 
 use crate::god_mode::god_mode;
-use crate::models::{TripInstance, VehicleInfo};
-use crate::{Provider, StateStore, fleet};
+use crate::trip::TripInstance;
 
 const PROCESS_ID: u32 = 0;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VehicleInfoResponse {
     pub pid: u32,
@@ -19,7 +21,7 @@ pub struct VehicleInfoResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trip_info: Option<TripInstance>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub fleet_info: Option<VehicleInfo>,
+    pub fleet_info: Option<Vehicle>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -64,7 +66,7 @@ pub fn log_root(user_agent: Option<&str>) {
 /// Retrieves the cached vehicle/trip information used by the legacy REST endpoint.
 pub async fn vehicle_info<P>(provider: &P, vehicle_id: &str) -> VehicleInfoResponse
 where
-    P: Provider,
+    P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
     let trip_key = format!("smartrakGtfs:trip:vehicle:{vehicle_id}");
     let trip_info = match StateStore::get(provider, &trip_key).await {
@@ -84,7 +86,7 @@ where
         }
     };
 
-    let fleet_info = match fleet::get_vehicle_by_id_or_label(provider, vehicle_id).await {
+    let fleet_info = match fleet::vehicle(vehicle_id, provider).await {
         Ok(info) => info,
         Err(err) => {
             error!(vehicle_id, ?err, "failed to fetch fleet info");

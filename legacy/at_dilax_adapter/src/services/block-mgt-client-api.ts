@@ -3,7 +3,7 @@ import * as newrelic from "newrelic";
 import { AuthTokenRetriever } from "at-realtime-common/auth";
 import { Config } from "../config";
 import { HttpClient } from "at-realtime-common/http-client";
-import { VehicleAllocation } from "../types/vehicle-allocation";
+import { Allocation } from "../types/vehicle-allocation";
 
 export default class BlockMgtClientAPI {
     private log = Config.logger;
@@ -26,7 +26,7 @@ export default class BlockMgtClientAPI {
         }
     }
 
-    public async getAllAllocations(): Promise<VehicleAllocation[]> {
+    public async getAllAllocations(): Promise<Allocation[]> {
         try {
             const accessToken = await this.tokenRetriever.getToken();
             const response = await this.httpClient.get(`${Config.blockMgtClientApiUrl}/allocations`, {

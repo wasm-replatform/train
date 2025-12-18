@@ -1,11 +1,10 @@
 use anyhow::{Context, Result};
 use bytes::Bytes;
+use fabric::{Config, HttpRequest, Identity, Publisher, StateStore};
 use http::Method;
 use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
-
-use crate::{Config, HttpRequest, Provider};
 
 const KEY_TRAIN_STOPS: &str = "gtfs:trainStops";
 
@@ -19,9 +18,12 @@ struct CcStopResponse {
     stop_code: Option<String>,
 }
 
-pub async fn location_stops(
-    lat: &str, lon: &str, distance: u32, provider: &impl Provider,
-) -> Result<Vec<StopInfo>> {
+pub async fn location_stops<P>(
+    lat: &str, lon: &str, distance: u32, provider: &P,
+) -> Result<Vec<StopInfo>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let cc_static_addr =
         Config::get(provider, "CC_STATIC_URL").await.context("getting `CC_STATIC_URL`")?;
 
@@ -49,7 +51,10 @@ pub async fn location_stops(
         .collect())
 }
 
-pub async fn stop_types(provider: &impl Provider) -> Result<Vec<StopTypeEntry>> {
+pub async fn stop_types<P>(provider: &P) -> Result<Vec<StopTypeEntry>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
     let gtfs_static_url =
         Config::get(provider, "GTFS_STATIC_URL").await.context("getting `GTFS_STATIC_URL`")?;
     let url = format!("{gtfs_static_url}/stopstypes/");

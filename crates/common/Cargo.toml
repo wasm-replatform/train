@@ -1,6 +1,6 @@
 [package]
-name = "realtime"
-description = "Core realtime modules"
+name = "common"
+description = "Common train domain logic"
 readme = "README.md"
 version.workspace = true
 edition.workspace = true
@@ -17,14 +17,12 @@ workspace = true
 anyhow.workspace = true
 axum.workspace = true
 bytes.workspace = true
+fabric.workspace = true
 http.workspace = true
 http-body.workspace = true
-quick-xml.workspace = true
+http-body-util.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
-
-[dev-dependencies]
-# tokio.workspace = true
-tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }
+urlencoding.workspace = true

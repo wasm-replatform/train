@@ -54,7 +54,7 @@ impl Provider {
     }
 }
 
-impl realtime::Config for Provider {
+impl fabric::Config for Provider {
     async fn get(&self, key: &str) -> Result<String> {
         Ok(match key {
             "ENV" => &self.config.environment,
@@ -69,31 +69,30 @@ impl realtime::Config for Provider {
     }
 }
 
-impl realtime::Publisher for Provider {
-    async fn send(&self, topic: &str, message: &realtime::Message) -> Result<()> {
+impl fabric::Publisher for Provider {
+    async fn send(&self, topic: &str, message: &fabric::Message) -> Result<()> {
         tracing::debug!("sending to topic: {topic}");
 
-        let client = Client::connect("").context("connecting to broker")?;
+        let client = Client::connect("kafka".to_string()).await.context("connecting to broker")?;
         let msg = Message::new(&message.payload);
         let topic = format!("{}-{topic}", self.config.environment);
 
-        wit_bindgen::block_on(async move {
-            if let Err(e) = producer::send(&client, topic.clone(), msg).await {
-                error!(
-                    monotonic_counter.publishing_errors = 1, error = %e, topic = %topic, service = %SERVICE
-                );
-            } else {
-                tracing::info!(
-                    monotonic_counter.messages_sent = 1, topic = %topic, service = %SERVICE
-                );
-            }
-        });
+        // TODO: move to wrt
+        if let Err(e) = producer::send(&client, topic.clone(), msg).await {
+            error!(
+                monotonic_counter.publishing_errors = 1, error = %e, topic = %topic, service = %SERVICE
+            );
+        } else {
+            tracing::info!(
+                monotonic_counter.messages_sent = 1, topic = %topic, service = %SERVICE
+            );
+        }
 
         Ok(())
     }
 }
 
-impl realtime::HttpRequest for Provider {
+impl fabric::HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
@@ -105,7 +104,7 @@ impl realtime::HttpRequest for Provider {
     }
 }
 
-impl realtime::Identity for Provider {
+impl fabric::Identity for Provider {
     async fn access_token(&self) -> Result<String> {
         let identity = self.config.azure_identity.clone();
         let identity = block_on(get_identity(identity))?;
@@ -114,19 +113,19 @@ impl realtime::Identity for Provider {
     }
 }
 
-impl realtime::StateStore for Provider {
+impl fabric::StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
-        let bucket = cache::open("train_cache").context("opening cache")?;
-        bucket.get(key).context("reading state from cache")
+        let bucket = cache::open("train_cache").await.context("opening cache")?;
+        bucket.get(key).await.context("reading state from cache")
     }
 
     async fn set(&self, key: &str, value: &[u8], ttl_secs: Option<u64>) -> Result<Option<Vec<u8>>> {
-        let bucket = cache::open("train_cache").context("opening cache")?;
-        bucket.set(key, value, ttl_secs).context("reading state from cache")
+        let bucket = cache::open("train_cache").await.context("opening cache")?;
+        bucket.set(key, value, ttl_secs).await.context("reading state from cache")
     }
 
     async fn delete(&self, key: &str) -> Result<()> {
-        let bucket = cache::open("train_cache").context("opening cache")?;
-        bucket.delete(key).context("deleting state from cache")
+        let bucket = cache::open("train_cache").await.context("opening cache")?;
+        bucket.delete(key).await.context("deleting state from cache")
     }
 }

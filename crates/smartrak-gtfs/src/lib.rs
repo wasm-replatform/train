@@ -1,20 +1,35 @@
-//! SmarTrak GTFS adapter domain logic.
+//! SmarTrak GTFS adapter.
 
-pub mod block_mgt;
-pub mod fleet;
-pub mod god_mode;
-pub mod models;
-pub mod processor;
+mod god_mode;
+mod handlers;
+mod location;
 pub mod rest;
-pub mod trip;
-pub mod workflow;
+mod serial_data;
+mod trip;
 
+use fabric::Error;
 pub use god_mode::*;
-pub use models::*;
-/// Result type for handlers.
-pub use realtime::{Error, HttpRequest, Identity, Message, Publisher, Result, StateStore};
-pub use workflow::*;
+pub use handlers::*;
+use thiserror::Error;
 
-/// Provider entry point implemented by the host application.
-pub trait Provider: HttpRequest + Publisher + StateStore + Identity {}
-impl<T> Provider for T where T: HttpRequest + Publisher + StateStore + Identity {}
+// TODO: use for internal methods
+#[derive(Error, Debug)]
+enum SmarTrakError {
+    /// The message timestamp is invalid (too old or future-dated).
+    #[error("{0}")]
+    BadTime(String),
+}
+
+impl SmarTrakError {
+    fn code(&self) -> String {
+        match self {
+            Self::BadTime(_) => "bad_time".to_string(),
+        }
+    }
+}
+
+impl From<SmarTrakError> for Error {
+    fn from(err: SmarTrakError) -> Self {
+        Self::BadRequest { code: err.code(), description: err.to_string() }
+    }
+}

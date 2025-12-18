@@ -26,12 +26,12 @@ bytes.workspace = true
 credibil-api.workspace = true
 dilax-adapter = { path = "crates/dilax-adapter" }
 dilax-apc-connector = { path = "crates/dilax-apc-connector" }
+fabric.workspace = true
 fromenv = "0.1.0"
 http.workspace = true
 http-body.workspace = true
 r9k-adapter = { path = "crates/r9k-adapter" }
 r9k-connector = { path = "crates/r9k-connector" }
-realtime.workspace = true
 serde_json.workspace = true
 smartrak-gtfs = { path = "crates/smartrak-gtfs" }
 tracing.workspace = true
@@ -42,6 +42,9 @@ wasi-messaging.workspace = true
 wasi-otel.workspace = true
 wasip3.workspace = true
 wit-bindgen.workspace = true
+
+[dev-dependencies]
+cfg-if = "1.0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 buildgen.workspace = true
@@ -112,10 +115,8 @@ anyhow = "1.0.99"
 async-trait = "0.1"
 axum = { version = "0.8.4", default-features = false }
 bytes = "1.10.1"
-cfg-if = "1.0.3"
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10.4"
-dashmap = "5.5.3"
 futures = "0.3.31"
 http = "1.3.1"
 http-body = "1.0.1"
@@ -142,6 +143,7 @@ wit-bindgen = { version = "0.49.0", features = ["async-spawn"] }
 # Credibil registry
 buildgen = { version = "0.19.0", registry = "credibil" }
 credibil-api = { version = "0.6.0", registry = "credibil" }
+fabric = { version = "0.19.0", registry = "credibil" }
 kernel = { version = "0.19.0", registry = "credibil" }
 wasi-http = { version = "0.19.0", registry = "credibil" }
 wasi-identity = { version = "0.19.0", registry = "credibil" }
@@ -150,10 +152,11 @@ wasi-messaging = { version = "0.19.0", registry = "credibil" }
 wasi-otel = { version = "0.19.0", registry = "credibil" }
 
 # Internally referenced crates
-realtime = { path = "crates/realtime" }
+common = { path = "crates/common" }
 
 [patch.credibil]
 buildgen = { git = "https://github.com/credibil/wrt" }
+fabric = { git = "https://github.com/credibil/wrt" }
 kernel = { git = "https://github.com/credibil/wrt" }
 wasi-http = { git = "https://github.com/credibil/wrt" }
 wasi-identity = { git = "https://github.com/credibil/wrt" }
@@ -170,7 +173,3 @@ wasmtime-wasi-http = { git = "https://github.com/bytecodealliance/wasmtime", ver
 lto = "thin"
 opt-level = "s"
 strip = "symbols"
-
-# [[bin]]
-# name = "train"
-# path = "examples/train.rs"

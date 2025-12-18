@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 
 use dashmap::DashMap;
 
-use crate::models::{EventType, SmartrakEvent};
+use crate::{EventType, SmarTrakMessage};
 
 #[derive(Default)]
 pub struct GodMode {
@@ -33,7 +33,7 @@ impl GodMode {
         serde_json::to_string(&map).unwrap_or_default()
     }
 
-    pub fn preprocess(&self, event: &mut SmartrakEvent) {
+    pub fn preprocess(&self, event: &mut SmarTrakMessage) {
         if event.event_type != EventType::SerialData {
             return;
         }

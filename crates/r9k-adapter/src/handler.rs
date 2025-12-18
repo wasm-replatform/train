@@ -6,9 +6,9 @@ use anyhow::Context;
 use bytes::Bytes;
 use chrono::Utc;
 use credibil_api::{Handler, Request, Response};
+use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
-use realtime::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};

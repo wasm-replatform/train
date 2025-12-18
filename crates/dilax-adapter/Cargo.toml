@@ -19,15 +19,15 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-common.workspace = true
 bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
+common.workspace = true
 credibil-api.workspace = true
+fabric.workspace = true
 http.workspace = true
 http-body.workspace = true
 http-body-util.workspace = true
-realtime.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

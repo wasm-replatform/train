@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 
 use chrono::{NaiveDate, Utc};
 use chrono_tz::Pacific;
-use realtime::{Error, Result};
+use fabric::Result;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -24,7 +24,7 @@ pub struct R9kMessage {
 }
 
 impl TryFrom<String> for R9kMessage {
-    type Error = Error;
+    type Error = R9kError;
 
     fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_str(&xml).map_err(Into::into)
@@ -32,7 +32,7 @@ impl TryFrom<String> for R9kMessage {
 }
 
 impl TryFrom<&[u8]> for R9kMessage {
-    type Error = Error;
+    type Error = R9kError;
 
     fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_reader(xml).map_err(Into::into)

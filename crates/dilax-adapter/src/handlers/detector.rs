@@ -3,7 +3,7 @@ use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use anyhow::Context;
 use credibil_api::{Handler, Request, Response};
-use realtime::{Error, Message, Publisher, Result};
+use fabric::{Error, Message, Publisher, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::DilaxMessage;

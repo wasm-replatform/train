@@ -1,6 +1,6 @@
 // use common::block_mgt;
 use common::fleet::{self, Vehicle};
-use realtime::{Config, HttpRequest, Identity, Publisher, StateStore};
+use fabric::{Config, HttpRequest, Identity, Publisher, StateStore};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;

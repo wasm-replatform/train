@@ -1,8 +1,6 @@
 use chrono::{DateTime, Utc};
 use credibil_api::{Handler, Request, Response};
-use realtime::{
-    Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
-};
+use fabric::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
 use crate::location::Location;
@@ -55,7 +53,7 @@ impl<P> Handler<SmarTrakResponse, P> for Request<SmarTrakMessage>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = realtime::Error;
+    type Error = fabric::Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<SmarTrakResponse>> {
         handle(owner, self.body, provider).await

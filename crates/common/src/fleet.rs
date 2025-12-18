@@ -3,10 +3,10 @@ use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
+use fabric::{Config, HttpRequest, Identity};
 use http::Method;
 use http::header::{CACHE_CONTROL, IF_NONE_MATCH};
 use http_body_util::Empty;
-use realtime::{Config, HttpRequest, Identity};
 use serde::{Deserialize, Serialize};
 
 /// Retrieves a vehicle (train) by label.

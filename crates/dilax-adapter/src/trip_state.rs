@@ -1,7 +1,7 @@
 use std::fmt::{self, Display};
 
 use anyhow::{Context, Result};
-use realtime::StateStore;
+use fabric::StateStore;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 

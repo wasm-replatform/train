@@ -1,6 +1,6 @@
 use common::fleet;
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
+use fabric::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
 
 use crate::SmarTrakMessage;
@@ -46,7 +46,7 @@ impl<P> Handler<TrainAvlResponse, P> for Request<TrainAvlMessage>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = realtime::Error;
+    type Error = fabric::Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<TrainAvlResponse>> {
         handle(owner, self.body, provider).await

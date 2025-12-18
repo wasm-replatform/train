@@ -7,9 +7,9 @@ pub mod rest;
 mod serial_data;
 mod trip;
 
+use fabric::Error;
 pub use god_mode::*;
 pub use handlers::*;
-use realtime::Error;
 use thiserror::Error;
 
 // TODO: use for internal methods

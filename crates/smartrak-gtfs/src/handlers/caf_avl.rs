@@ -1,6 +1,6 @@
 use common::fleet;
 use credibil_api::{Handler, Request, Response};
-use realtime::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
 
 use crate::SmarTrakMessage;

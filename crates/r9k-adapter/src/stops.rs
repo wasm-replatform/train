@@ -3,8 +3,8 @@ use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
+use fabric::{Config, HttpRequest, Identity, Publisher};
 use http_body_util::Empty;
-use realtime::{Config, HttpRequest, Identity, Publisher};
 use serde::{Deserialize, Serialize};
 
 /// Stop information from GTFS

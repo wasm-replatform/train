@@ -7,7 +7,7 @@ mod r9k;
 mod smartrak;
 mod stops;
 
-use realtime::Error;
+use fabric::Error;
 use thiserror::Error;
 
 pub use self::r9k::*;
@@ -16,7 +16,7 @@ pub use self::stops::StopInfo;
 
 // TODO: use for internal methods
 #[derive(Error, Debug)]
-enum R9kError {
+pub enum R9kError {
     /// The message timestamp is invalid (too old or future-dated).
     #[error("{0}")]
     BadTime(String),
@@ -25,6 +25,10 @@ enum R9kError {
     /// invalid (negative or 0).
     #[error("{0}")]
     NoUpdate(String),
+
+    /// The XML is invalid.
+    #[error("{0}")]
+    InvalidXml(String),
 }
 
 impl R9kError {
@@ -32,6 +36,7 @@ impl R9kError {
         match self {
             Self::BadTime(_) => "bad_time".to_string(),
             Self::NoUpdate(_) => "no_update".to_string(),
+            Self::InvalidXml(_) => "invalid_message".to_string(),
         }
     }
 }
@@ -39,5 +44,11 @@ impl R9kError {
 impl From<R9kError> for Error {
     fn from(err: R9kError) -> Self {
         Self::BadRequest { code: err.code(), description: err.to_string() }
+    }
+}
+
+impl From<quick_xml::DeError> for R9kError {
+    fn from(err: quick_xml::DeError) -> Self {
+        Self::InvalidXml(err.to_string())
     }
 }

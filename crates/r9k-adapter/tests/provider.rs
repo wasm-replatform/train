@@ -6,9 +6,9 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
+use fabric::{Config, HttpRequest, Identity, Message, Publisher};
 use http::{Request, Response};
 use r9k_adapter::{SmarTrakEvent, StopInfo};
-use realtime::{Config, HttpRequest, Identity, Message, Publisher};
 use serde::Deserialize;
 
 #[allow(dead_code)]
@@ -29,7 +29,7 @@ pub struct Static {
 pub struct Replay {
     pub input: String,
     pub output: Option<Vec<String>>,
-    pub error: Option<realtime::Error>,
+    pub error: Option<fabric::Error>,
     pub delay: Option<i32>,
     pub stop_info: Option<StopInfo>,
     pub vehicles: Option<Vec<String>>,

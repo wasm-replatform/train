@@ -7,8 +7,10 @@ use std::fmt::{self, Display};
 use std::str::FromStr;
 
 use credibil_api::{Handler, Request, Response};
-use realtime::{Error, Message, Publisher, Result, bad_request};
+use fabric::{Error, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
+
+use crate::R9kError;
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
@@ -56,7 +58,7 @@ pub struct R9kRequest {
 }
 
 impl FromStr for R9kRequest {
-    type Err = Error;
+    type Err = R9kError;
 
     fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
         quick_xml::de::from_str(xml).map_err(Into::into)

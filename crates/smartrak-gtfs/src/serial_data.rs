@@ -1,6 +1,6 @@
 use anyhow::Context;
 use chrono::Utc;
-use realtime::{Config, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
+use fabric::{Config, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
 
 use crate::trip::{self, TripInstance};
 use crate::{DecodedSerialData, SmarTrakError, SmarTrakMessage};

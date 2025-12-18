@@ -2,7 +2,7 @@ use anyhow::Context;
 use common::block_mgt;
 use common::fleet::{self, Vehicle};
 use credibil_api::{Handler, Request, Response};
-use realtime::{
+use fabric::{
     Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
 };
 

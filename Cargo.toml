@@ -155,19 +155,10 @@ wasi-otel = { version = "0.19.0", registry = "credibil" }
 common = { path = "crates/common" }
 
 [patch.credibil]
-buildgen = { git = "https://github.com/credibil/wrt" }
-fabric = { git = "https://github.com/credibil/wrt" }
-kernel = { git = "https://github.com/credibil/wrt" }
-wasi-http = { git = "https://github.com/credibil/wrt" }
-wasi-identity = { git = "https://github.com/credibil/wrt" }
-wasi-keyvalue = { git = "https://github.com/credibil/wrt" }
-wasi-messaging = { git = "https://github.com/credibil/wrt" }
-wasi-otel = { git = "https://github.com/credibil/wrt" }
+# buildgen = { git = "https://github.com/credibil/wrt" }
 
 [patch.crates-io]
-wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
-wasmtime-wasi = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
-wasmtime-wasi-http = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
+# wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
 
 [profile.release]
 lto = "thin"

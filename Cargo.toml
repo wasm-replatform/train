@@ -68,7 +68,7 @@ keywords = ["realtime", "train"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/AucklandTransportCode/train"
-rust-version = "1.91"
+rust-version = "1.92"
 version = "0.3.0"
 
 [workspace.lints.rust]
@@ -141,15 +141,15 @@ wasmtime-wasi = { version = "40.0.0", features = ["p3"] }
 wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 
 # Credibil registry
-buildgen = { version = "0.20.0", registry = "credibil" }
+buildgen = { version = "0.20.1", registry = "credibil" }
 credibil-api = { version = "0.6.0", registry = "credibil" }
-fabric = { version = "0.20.0", registry = "credibil" }
-kernel = { version = "0.20.0", registry = "credibil" }
-wasi-http = { version = "0.20.0", registry = "credibil" }
-wasi-identity = { version = "0.20.0", registry = "credibil" }
-wasi-keyvalue = { version = "0.20.0", registry = "credibil" }
-wasi-messaging = { version = "0.20.0", registry = "credibil" }
-wasi-otel = { version = "0.20.0", registry = "credibil" }
+fabric = { version = "0.20.1", registry = "credibil" }
+kernel = { version = "0.20.1", registry = "credibil" }
+wasi-http = { version = "0.20.1", registry = "credibil" }
+wasi-identity = { version = "0.20.1", registry = "credibil" }
+wasi-keyvalue = { version = "0.20.1", registry = "credibil" }
+wasi-messaging = { version = "0.20.1", registry = "credibil" }
+wasi-otel = { version = "0.20.1", registry = "credibil" }
 
 # Internally referenced crates
 common = { path = "crates/common" }

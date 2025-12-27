@@ -214,9 +214,9 @@ dependencies = [
 
 [[package]]
 name = "buildgen"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "0e510865e9321514fc22fc253fb7300e55e49a1858ac1a0215d9762b9acadfd6"
+checksum = "e8afb970bdf5c791ee6e07c24c4a407b9f4d8c99dababdf2be475428bb4c1247"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -880,9 +880,9 @@ dependencies = [
 
 [[package]]
 name = "fabric"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "1bc19f36146a2bacfb3dc66cde34099ff42bbf266eee48b6e26031329bff8a6d"
+checksum = "c92d3fb71c5bd8c0f0b4bdf6f3f4b36529587cedbaaf702bbe7b9ffce2f94e43"
 dependencies = [
  "anyhow",
  "axum",
@@ -1537,9 +1537,9 @@ dependencies = [
 
 [[package]]
 name = "kernel"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "d2fcf5d751f71de9c0a5db0f56289a0d74277862c82aeaa5d3e13b1a6491023b"
+checksum = "1c17ee899cb990f68a2cb6fe499bac562fba8c4e3f24d81062060e58c0fdd49e"
 dependencies = [
  "anyhow",
  "clap",
@@ -3437,9 +3437,9 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasi-http"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "8608e0510de5502dba267210d4ce67930ffc681d1db9c699a81c4c8be13d400f"
+checksum = "81fe9abce9b814246964a0296d445bb36ecd6dfc215f834247cabe9e0dc7c716"
 dependencies = [
  "anyhow",
  "axum",
@@ -3470,9 +3470,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-identity"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "06184cc66253fa5ea95836b73318e86b56c4f3ab681b5b492200bf24a230879c"
+checksum = "bff69b3f7ac82f7d2a6b35e88555ff33a5a0204137dd837b43a3ddd8f8d5f914"
 dependencies = [
  "anyhow",
  "fromenv",
@@ -3488,15 +3488,17 @@ dependencies = [
 
 [[package]]
 name = "wasi-keyvalue"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "939c696c559597f4fdf26319d7bcd0fcff30e06f46c58fd566816d2e5300e261"
+checksum = "cb4b77d977eb7d86b3c705eec6b080759d795151c3dd163fcb10612b33f5c8da"
 dependencies = [
  "anyhow",
+ "chrono",
  "futures",
  "kernel",
  "parking_lot",
  "serde",
+ "serde_json",
  "tracing",
  "wasmtime",
  "wasmtime-wasi",
@@ -3505,9 +3507,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-messaging"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "9ab4042b6e8de4d3128c794e6146ed29515cb29b04a58b4ce68baa8cb8b69334"
+checksum = "8024cd3e27be0903b861e998acb0e2b474fd7d65cfd448e24431f79dfffded37"
 dependencies = [
  "anyhow",
  "futures",
@@ -3525,9 +3527,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "cc234c08a28dfcc1d163726442b5dace657081a07a8b6db6e997bc1514254751"
+checksum = "4d24a538a8c52ce0595d9244fbe33d1335eea97a936deec2cd7e50ec0e203ba4"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -3550,9 +3552,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel-attr"
-version = "0.20.0"
+version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "53bc8da409c3d69122b6de6bddff0ebdb8a52de30d63a20e71433ef9846b8268"
+checksum = "0ffb268d3fa74b286ae75e394df0bbdacdcc2176cc60dc28810ba47ed41bda09"
 dependencies = [
  "proc-macro2",
  "quote",

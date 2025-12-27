@@ -6,19 +6,19 @@ on:
 jobs:
   ci:
     name: CI
-    uses: credibil/pipeline/.github/workflows/ci.yaml@main
+    uses: augentic/pipeline/.github/workflows/ci.yaml@main
     secrets:
       CARGO_REGISTRIES_CREDIBIL_TOKEN: ${{ secrets.CARGO_REGISTRIES_CREDIBIL_TOKEN }}
 
   publish:
     name: Publish
     needs: ci
-    uses: credibil/pipeline/.github/workflows/publish.yaml@main
+    uses: augentic/pipeline/.github/workflows/publish.yaml@main
 
   deploy:
     name: Deploy
     needs: publish
-    uses: credibil/pipeline/.github/workflows/wasm.yaml@main
+    uses: augentic/pipeline/.github/workflows/wasm.yaml@main
     secrets:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}

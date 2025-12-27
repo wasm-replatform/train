@@ -18,9 +18,10 @@ const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DetectionResponse {
-    pub detections: Vec<Detection>,
+    pub status: &'static str,
+    pub detections: usize,
 }
 
 async fn handle<P>(
@@ -30,8 +31,7 @@ where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     let detections = lost_connections(provider).await.context("detecting lost connections")?;
-
-    Ok(DetectionResponse { detections }.into())
+    Ok(DetectionResponse { status: "job detection triggered", detections: detections.len() }.into())
 }
 
 impl<P> Handler<DetectionResponse, P> for Request<DetectionRequest>

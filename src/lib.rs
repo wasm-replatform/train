@@ -5,6 +5,7 @@ mod provider;
 
 use std::str::FromStr;
 
+use crate::provider::Provider;
 use anyhow::{Context, Result};
 use axum::extract::Path;
 use axum::http::header::USER_AGENT;
@@ -12,12 +13,12 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use credibil_api::Client;
+use dilax_adapter::DetectionResponse;
 use dilax_adapter::{DetectionRequest, DilaxMessage};
 use dilax_apc_connector::DilaxRequest;
 use fabric::HttpError;
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
-use serde_json::{Value, json};
 use smartrak_gtfs::rest::{self, ApiResponse, GodModeOutcome, VehicleInfoResponse};
 use smartrak_gtfs::{CafAvlMessage, PassengerCountMessage, SmarTrakMessage, TrainAvlMessage};
 use tracing::{Level, debug, error, info, warn};
@@ -26,8 +27,6 @@ use wasi_messaging::types;
 use wasi_messaging::types::Message;
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
-
-use crate::provider::Provider;
 
 const SERVICE: &str = "train";
 
@@ -60,15 +59,12 @@ async fn index(headers: HeaderMap) -> Result<&'static str, HttpError> {
 }
 
 #[axum::debug_handler]
-async fn detector() -> Result<Json<Value>, HttpError> {
+async fn detector() -> Result<Json<DetectionResponse>, HttpError> {
     let api = Client::new(Provider::new());
     let router = api.request(DetectionRequest).owner("at");
     let response = router.await.context("Issue running connection detector")?;
 
-    Ok(Json(json!({
-        "status": "job detection triggered",
-        "detections": response.detections.len()
-    })))
+    Ok(Json(response.body))
 }
 
 #[axum::debug_handler]

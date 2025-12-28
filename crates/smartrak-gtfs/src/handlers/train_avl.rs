@@ -9,6 +9,14 @@ use crate::SmarTrakMessage;
 #[serde(transparent)]
 pub struct TrainAvlMessage(SmarTrakMessage);
 
+impl TryFrom<&[u8]> for TrainAvlMessage {
+    type Error = serde_json::Error;
+
+    fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
+        serde_json::from_slice(value)
+    }
+}
+
 /// Train AVL response.
 #[derive(Debug, Clone)]
 pub struct TrainAvlResponse;

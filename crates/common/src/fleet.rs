@@ -44,7 +44,7 @@ where
     Ok(vehicle)
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Vehicle {
     pub id: String,
@@ -74,7 +74,7 @@ pub struct Capacity {
     pub total: i64,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VehicleType {
     #[serde(rename = "type")]
     pub kind: Option<String>,

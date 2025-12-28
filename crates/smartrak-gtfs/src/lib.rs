@@ -3,7 +3,7 @@
 mod god_mode;
 mod handlers;
 mod location;
-pub mod rest;
+// pub mod rest;
 mod serial_data;
 mod trip;
 

@@ -445,16 +445,12 @@ name = "common"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "axum",
  "bytes",
  "fabric",
  "http",
- "http-body",
  "http-body-util",
  "serde",
  "serde_json",
- "thiserror 2.0.17",
- "tracing",
  "urlencoding",
 ]
 
@@ -801,14 +797,11 @@ dependencies = [
  "credibil-api",
  "fabric",
  "http",
- "http-body",
  "http-body-util",
  "serde",
  "serde_json",
- "thiserror 2.0.17",
  "tokio",
  "tracing",
- "urlencoding",
 ]
 
 [[package]]
@@ -820,7 +813,6 @@ dependencies = [
  "fabric",
  "serde",
  "serde_json",
- "thiserror 2.0.17",
  "tokio",
 ]
 
@@ -2245,7 +2237,6 @@ dependencies = [
  "fabric",
  "quick-xml",
  "serde",
- "serde_json",
  "thiserror 2.0.17",
  "tokio",
 ]
@@ -2796,7 +2787,6 @@ name = "smartrak-gtfs"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "bytes",
  "chrono",
  "chrono-tz",
@@ -2804,17 +2794,12 @@ dependencies = [
  "credibil-api",
  "dashmap",
  "fabric",
- "futures",
  "http",
- "http-body",
  "http-body-util",
- "once_cell",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
- "tokio",
  "tracing",
- "urlencoding",
  "uuid",
 ]
 
@@ -3288,7 +3273,6 @@ name = "train"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "axum",
  "buildgen",
  "bytes",
@@ -3304,7 +3288,6 @@ dependencies = [
  "kernel",
  "r9k-adapter",
  "r9k-connector",
- "serde_json",
  "smartrak-gtfs",
  "tokio",
  "tracing",

@@ -88,6 +88,14 @@ impl SmarTrakMessage {
     }
 }
 
+impl TryFrom<&[u8]> for SmarTrakMessage {
+    type Error = serde_json::Error;
+
+    fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
+        serde_json::from_slice(value)
+    }
+}
+
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum EventType {
     #[serde(rename = "serialData", alias = "SERIAL_DATA")]

@@ -49,6 +49,14 @@ pub struct DilaxRequest {
     pub message: DilaxMessage,
 }
 
+impl TryFrom<&[u8]> for DilaxRequest {
+    type Error = serde_json::Error;
+
+    fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
+        serde_json::from_slice(value)
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
 pub struct DilaxResponse(pub &'static str);

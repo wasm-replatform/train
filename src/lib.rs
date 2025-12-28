@@ -3,32 +3,29 @@
 
 mod provider;
 
-use std::str::FromStr;
-
-use crate::provider::Provider;
 use anyhow::{Context, Result};
 use axum::extract::Path;
-use axum::http::header::USER_AGENT;
-use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use bytes::Bytes;
 use credibil_api::Client;
-use dilax_adapter::DetectionResponse;
-use dilax_adapter::{DetectionRequest, DilaxMessage};
+use dilax_adapter::{DetectionRequest, DetectionResponse, DilaxMessage};
 use dilax_apc_connector::DilaxRequest;
 use fabric::HttpError;
 use r9k_adapter::R9kMessage;
 use r9k_connector::R9kRequest;
-use smartrak_gtfs::rest::{self, ApiResponse, GodModeOutcome, VehicleInfoResponse};
-use smartrak_gtfs::{CafAvlMessage, PassengerCountMessage, SmarTrakMessage, TrainAvlMessage};
-use tracing::{Level, debug, error, info, warn};
+use smartrak_gtfs::{
+    CafAvlMessage, PassengerCountMessage, ResetRequest, ResetResponse, SetTripRequest,
+    SetTripResponse, SmarTrakMessage, TrainAvlMessage, VehicleInfoRequest, VehicleInfoResponse,
+};
+use tracing::{Level, debug};
 use wasi_http::Result as HttpResult;
 use wasi_messaging::types;
 use wasi_messaging::types::Message;
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types::{ErrorCode, Request, Response};
 
-const SERVICE: &str = "train";
+use crate::provider::Provider;
 
 // --------------------------------------------------------
 // HTTP Handler
@@ -40,49 +37,33 @@ impl Guest for Http {
     #[wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
     async fn handle(request: Request) -> HttpResult<Response, ErrorCode> {
         let router = Router::new()
-            .route("/", get(index))
             .route("/jobs/detector", get(detector))
             .route("/inbound/xml", post(r9k_message))
+            .route("/api/apc", post(dilax_message))
             .route("/info/{vehicle_id}", get(vehicle_info))
-            .route("/god-mode/set-trip/{vehicle_id}/{trip_id}", get(god_mode_set_trip))
-            .route("/god-mode/reset/{vehicle_id}", get(god_mode_reset))
-            .route("/api/apc", post(dilax_message));
+            .route("/god-mode/set-trip/{vehicle_id}/{trip_id}", get(set_trip))
+            .route("/god-mode/reset/{vehicle_id}", get(reset));
         wasi_http::serve(router, request).await
     }
 }
 
 #[axum::debug_handler]
-async fn index(headers: HeaderMap) -> Result<&'static str, HttpError> {
-    let user_agent = headers.get(USER_AGENT).and_then(|v| v.to_str().ok());
-    rest::log_root(user_agent);
-    Ok("OK")
-}
-
-#[axum::debug_handler]
 async fn detector() -> Result<Json<DetectionResponse>, HttpError> {
-    let api = Client::new(Provider::new());
-    let router = api.request(DetectionRequest).owner("at");
-    let response = router.await.context("Issue running connection detector")?;
-
+    let client = Client::new(Provider::new());
+    let response =
+        client.request(DetectionRequest).owner("at").await.context("processing request")?;
     Ok(Json(response.body))
 }
 
 #[axum::debug_handler]
-async fn r9k_message(req: String) -> Result<String, HttpError> {
-    info!(monotonic_counter.message_counter = 1, service = SERVICE);
-
+async fn r9k_message(body: Bytes) -> Result<String, HttpError> {
     let api_client = Client::new(Provider::new());
-    let request = R9kRequest::from_str(&req).context("parsing envelope")?;
+    let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
     let result = api_client.request(request).owner("at").await;
 
     let response = match result {
         Ok(ok) => ok,
         Err(err) => {
-            error!(
-                monotonic_counter.processing_errors = 1,
-                error = %err,
-                service = SERVICE
-            );
             return Ok(err.description());
         }
     };
@@ -91,42 +72,39 @@ async fn r9k_message(req: String) -> Result<String, HttpError> {
 }
 
 #[axum::debug_handler]
+async fn dilax_message(body: Bytes) -> Result<String, HttpError> {
+    let client = Client::new(Provider::new());
+    let request = DilaxRequest::try_from(body.as_ref()).context("parsing request")?;
+    let response = client.request(request).owner("at").await.context("processing request")?;
+    Ok(response.body.to_string())
+}
+
+#[axum::debug_handler]
 async fn vehicle_info(
     Path(vehicle_id): Path<String>,
 ) -> Result<Json<VehicleInfoResponse>, HttpError> {
-    let provider = Provider::new();
-    let response = rest::vehicle_info(&provider, &vehicle_id).await;
-    Ok(Json(response))
-}
-
-#[axum::debug_handler]
-async fn god_mode_set_trip(
-    Path((vehicle_id, trip_id)): Path<(String, String)>,
-) -> HttpResult<(StatusCode, Json<ApiResponse>)> {
-    match rest::god_mode_set_trip(&vehicle_id, &trip_id) {
-        GodModeOutcome::Enabled(response) => Ok((StatusCode::OK, Json(response))),
-        GodModeOutcome::Disabled(response) => Ok((StatusCode::NOT_FOUND, Json(response))),
-    }
-}
-
-#[axum::debug_handler]
-async fn god_mode_reset(
-    Path(vehicle_id): Path<String>,
-) -> HttpResult<(StatusCode, Json<ApiResponse>)> {
-    match rest::god_mode_reset(&vehicle_id) {
-        GodModeOutcome::Enabled(response) => Ok((StatusCode::OK, Json(response))),
-        GodModeOutcome::Disabled(response) => Ok((StatusCode::NOT_FOUND, Json(response))),
-    }
-}
-
-#[axum::debug_handler]
-async fn dilax_message(Json(req): Json<DilaxRequest>) -> Result<String, HttpError> {
-    info!(monotonic_counter.message_counter = 1, service = SERVICE);
-
     let client = Client::new(Provider::new());
-    let response =
-        client.request(req).owner("at").await.context("Error receiving Dilax request")?;
-    Ok(response.body.to_string())
+    let request = VehicleInfoRequest::try_from(vehicle_id).context("parsing vehicle id")?;
+    let response = client.request(request).owner("at").await.context("processing request")?;
+    Ok(Json(response.body))
+}
+
+#[axum::debug_handler]
+async fn set_trip(
+    Path((vehicle_id, trip_id)): Path<(String, String)>,
+) -> Result<Json<SetTripResponse>, HttpError> {
+    let client = Client::new(Provider::new());
+    let request = SetTripRequest::try_from((vehicle_id, trip_id)).context("parsing vehicle id")?;
+    let response = client.request(request).owner("at").await.context("processing request")?;
+    Ok(Json(response.body))
+}
+
+#[axum::debug_handler]
+async fn reset(Path(vehicle_id): Path<String>) -> Result<Json<ResetResponse>, HttpError> {
+    let client = Client::new(Provider::new());
+    let request = ResetRequest::try_from(vehicle_id).context("parsing vehicle id")?;
+    let response = client.request(request).owner("at").await.context("processing request")?;
+    Ok(Json(response.body))
 }
 
 // --------------------------------------------------------
@@ -146,13 +124,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
         // check we're processing topics for the correct environment
         let env = &Provider::new().config.environment;
         let Some(topic) = topic.strip_prefix(&format!("{env}-")) else {
-            warn!(
-                monotonic_counter.unhandled_topics = 1,
-                topic = %topic,
-                service = SERVICE,
-                "Incorrect environment {env}"
-            );
-            return Ok(());
+            return Err(types::Error::Other("Incorrect environment".to_string()));
         };
 
         // process message based on topic
@@ -168,16 +140,10 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
                 process_passenger_count(&message.data()).await
             }
             _ => {
-                warn!(monotonic_counter.unhandled_topics = 1, topic = %topic, service = SERVICE);
-                Ok(())
+                return Err(types::Error::Other("Unhandled topic".to_string()));
             }
         } {
-            error!(
-                monotonic_counter.processing_errors = 1,
-                error = %e,
-                topic = %topic,
-                service = SERVICE
-            );
+            return Err(types::Error::Other(e.to_string()));
         }
 
         Ok(())
@@ -195,7 +161,7 @@ async fn process_r9k(message: &[u8]) -> Result<()> {
 #[wasi_otel::instrument]
 async fn process_dilax(payload: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider::new());
-    let request: DilaxMessage = serde_json::from_slice(payload).context("deserializing event")?;
+    let request = DilaxMessage::try_from(payload).context("deserializing event")?;
     api_client.request(request).owner("at").await?;
     Ok(())
 }
@@ -203,8 +169,7 @@ async fn process_dilax(payload: &[u8]) -> Result<()> {
 #[wasi_otel::instrument]
 async fn process_passenger_count(payload: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider::new());
-    let request: PassengerCountMessage =
-        serde_json::from_slice(payload).context("deserializing event")?;
+    let request = PassengerCountMessage::try_from(payload).context("deserializing event")?;
     api_client.request(request).owner("at").await?;
     Ok(())
 }
@@ -212,8 +177,7 @@ async fn process_passenger_count(payload: &[u8]) -> Result<()> {
 #[wasi_otel::instrument]
 async fn process_smartrak(payload: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider::new());
-    let request: SmarTrakMessage =
-        serde_json::from_slice(payload).context("deserializing event")?;
+    let request = SmarTrakMessage::try_from(payload).context("deserializing event")?;
     api_client.request(request).owner("at").await?;
     Ok(())
 }
@@ -221,7 +185,7 @@ async fn process_smartrak(payload: &[u8]) -> Result<()> {
 #[wasi_otel::instrument]
 async fn process_caf_avl(payload: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider::new());
-    let request: CafAvlMessage = serde_json::from_slice(payload).context("deserializing event")?;
+    let request = CafAvlMessage::try_from(payload).context("deserializing event")?;
     api_client.request(request).owner("at").await?;
     Ok(())
 }
@@ -229,8 +193,7 @@ async fn process_caf_avl(payload: &[u8]) -> Result<()> {
 #[wasi_otel::instrument]
 async fn process_train_avl(payload: &[u8]) -> Result<()> {
     let api_client = Client::new(Provider::new());
-    let request: TrainAvlMessage =
-        serde_json::from_slice(payload).context("deserializing event")?;
+    let request = TrainAvlMessage::try_from(payload).context("deserializing event")?;
     api_client.request(request).owner("at").await?;
     Ok(())
 }

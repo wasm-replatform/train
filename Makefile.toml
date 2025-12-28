@@ -11,117 +11,86 @@ skip_crate_env_info = true
 skip_git_env_info = true
 skip_rust_env_info = true
 
-# -----------------------------------------------------------------------------
-# Build and test
-# -----------------------------------------------------------------------------
+# -------------------------------------
+# CI Checks
+# -------------------------------------
+[tasks.check]
+dependencies = ["audit", "fmt", "lint", "outdated", "deps"]
 
-[tasks.clean]
-command = "cargo"
-args = ["clean"]
+[tasks.ci]
+dependencies = ["lint", "test", "test-doc", "vet", "outdated", "deny", "fmt"]
 
-[tasks.build]
-command = "cargo"
-args = ["build"]
-dependencies = ["clean"]
+# -------------------------------------
+# Individual Actions
+# -------------------------------------
 
-[tasks.test]
-command = "cargo"
-args = ["nextest", "run", "--all", "--no-fail-fast", "--all-features"]
-env = { RUSTFLAGS = "-Dwarnings" }
-
-[tasks.test-doc]
-command = "cargo"
-args = ["test", "doc"]
-env = { RUSTFLAGS = "-Dwarnings" }
-
-# -----------------------------------------------------------------------------
-# Hygiene
-# -----------------------------------------------------------------------------
-
-[tasks.fmt]
-script = "cargo +nightly fmt --all"
-
-[tasks.lint]
-command = "cargo"
-args = ["clippy", "--all-features", "--target", "wasm32-wasip2"]
-install_crate = { rustup_component_name = "clippy" }
-
-[tasks.update]
-command = "cargo"
-args = ["update"]
-
-[tasks.upgrade]
-command = "cargo"
-args = ["upgrade"]
-install_crate = "cargo-edit"
-
+# Audit
 [tasks.audit]
 command = "cargo"
 args = ["audit"]
 
-[tasks.vet-imports]
+# Clean
+[tasks.clean]
 command = "cargo"
-args = ["vet", "regenerate", "imports"]
-install_crate = "cargo-vet"
+args = ["clean"]
 
-[tasks.vet-exempt]
-command = "cargo"
-args = ["vet", "regenerate", "exemptions"]
-install_crate = "cargo-vet"
-
-[tasks.vet-unpub]
-command = "cargo"
-args = ["vet", "regenerate", "unpublished"]
-install_crate = "cargo-vet"
-
-[tasks.vet]
-command = "cargo"
-args = ["vet", "--locked"]
-install_crate = "cargo-vet"
-dependencies = ["vet-imports", "vet-exempt", "vet-unpub"]
-
+# Deny
 [tasks.deny]
 command = "cargo"
 args = ["deny", "--workspace", "check"]
 install_crate = "cargo-deny"
 
-[tasks.unused]
-command = "cargo"
-args = ["machete", "--skip-target-dir"]
-install_crate = "cargo-machete"
+# Deps
+[tasks.deps]
+script = '''
+cargo +nightly udeps --all-targets
+'''
+install_crate = "cargo-udeps"
+# args = ["machete", "--skip-target-dir"]
+# install_crate = "cargo-machete"
 
-[tasks.outdated]
+# Fmt
+[tasks.fmt]
+script = "cargo +nightly fmt --all"
+
+# Lint
+[tasks.lint]
 command = "cargo"
-args = ["outdated", "--workspace", "--exit-code", "1"]
+args = ["clippy", "--all-features"]
+install_crate = { rustup_component_name = "clippy" }
+
+# Miri
+[tasks.miri]
+script = '''
+cargo +nightly miri setup
+cargo +nightly miri nextest run --no-tests=pass
+'''
+
+# Outdated
+[tasks.outdated]
+script = '''
+cargo outdated --workspace --exit-code 1 --depth 1
+'''
 install_crate = "cargo-outdated"
 
-[tasks.check]
-dependencies = ["audit", "fmt", "lint", "unused"]
-
-# Emulate CI (mostly - miri and outdated are missing)
-[tasks.ci]
-dependencies = ["lint", "test", "test-doc", "vet", "deny", "fmt"]
-
-# -----------------------------------------------------------------------------
-# Publishing
-# -----------------------------------------------------------------------------
-
-[tasks.semver]
+# Test
+[tasks.test]
 command = "cargo"
-args = ["semver-checks"]
-install_crate = "cargo-semver-checks"
+args = ["nextest", "run", "--all", "--all-features", "--no-tests=pass"]
+dependencies = ["clean"]
+env = { RUSTFLAGS = "-Dwarnings" }
 
-[tasks.prepub]
+# Test Doc
+[tasks.test-doc]
 command = "cargo"
-args = ["publish", "--allow-dirty", "--dry-run", "--all-features"]
+args = ["test", "--doc", "--all-features", "--workspace"]
 
-# args: one of `release`, `major`, `minor`, `patch`, `alpha`, `beta`, `rc`
-[tasks.dryrun]
-command = "cargo"
-args = ["release", "${@}", "--all-features"]
-install_crate = "cargo-release"
-
-[tasks.release]
-command = "cargo"
-args = ["release", "${@}", "--execute", "--all-features"]
-install_crate = "cargo-release"
+# Vet
+[tasks.vet]
+script = '''
+cargo vet regenerate imports
+cargo vet regenerate exemptions
+cargo vet regenerate unpublished
+cargo vet --locked
+'''
+install_crate = "cargo-vet"

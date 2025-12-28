@@ -4,7 +4,6 @@
 //! for validation and transformation to SmarTrak events.
 
 use std::fmt::{self, Display};
-use std::str::FromStr;
 
 use credibil_api::{Handler, Request, Response};
 use fabric::{Error, Message, Publisher, Result, bad_request};
@@ -57,13 +56,21 @@ pub struct R9kRequest {
     pub body: Body,
 }
 
-impl FromStr for R9kRequest {
-    type Err = R9kError;
+impl TryFrom<&[u8]> for R9kRequest {
+    type Error = R9kError;
 
-    fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
-        quick_xml::de::from_str(xml).map_err(Into::into)
+    fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
+        quick_xml::de::from_reader(value).map_err(Into::into)
     }
 }
+
+// impl FromStr for R9kRequest {
+//     type Err = R9kError;
+
+//     fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
+//         quick_xml::de::from_str(xml).map_err(Into::into)
+//     }
+// }
 
 /// R9K SOAP Body for [`ReceiveMessage`] requests
 #[derive(Debug, Clone, Deserialize)]
@@ -113,14 +120,13 @@ pub struct FaultMessage {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
 
     use super::*;
 
     #[test]
     fn deserialize_soap() {
         let xml = include_str!("../data/receive-message.xml");
-        let envelope = R9kRequest::from_str(xml).expect("should deserialize");
+        let envelope = R9kRequest::try_from(xml.as_bytes()).expect("should deserialize");
 
         let receive_message = envelope.body.receive_message;
         let message = receive_message.axml_message;

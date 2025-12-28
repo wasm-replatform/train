@@ -1,11 +1,9 @@
-use std::fmt::Display;
-
+use crate::DilaxMessage;
 use anyhow::Context;
-use credibil_api::{Handler, Request, Response};
+use bytes::Bytes;
+use fabric::api::{Handler, Request, Response};
 use fabric::{Error, Message, Publisher, Result};
 use serde::{Deserialize, Serialize};
-
-use crate::DilaxMessage;
 
 const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
@@ -61,9 +59,11 @@ impl TryFrom<&[u8]> for DilaxRequest {
 #[serde(transparent)]
 pub struct DilaxResponse(pub &'static str);
 
-impl Display for DilaxResponse {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+impl TryInto<Bytes> for DilaxResponse {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
+        Ok(Bytes::from(self.0))
     }
 }
 

@@ -1,8 +1,7 @@
 use std::convert::Infallible;
 
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
-use http::StatusCode;
+use fabric::api::{Handler, Request, Response};
+use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
 use crate::god_mode::god_mode;
@@ -18,8 +17,6 @@ impl TryFrom<String> for ResetRequest {
         Ok(Self(value))
     }
 }
-
-// const PROCESS_ID: u32 = 0;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ResetResponse {
@@ -37,8 +34,7 @@ where
     let vehicle_id = request.0;
 
     let Some(god_mode) = god_mode() else {
-        let response = ResetResponse { message: "God mode not enabled".to_string(), process: 0 };
-        return Ok(Response { status: StatusCode::NOT_FOUND, body: response, headers: None });
+        return Err(bad_request!("God mode not enabled"));
     };
 
     if vehicle_id == "all" {

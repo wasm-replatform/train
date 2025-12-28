@@ -158,9 +158,9 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59446ce19cd142f8833f856eb31f3eb097812d1479ab224f54d72428ca21ea22"
+checksum = "08c78f31d7b1291f7ee735c1c6780ccde7785daae9a9206026862dab7d8792d1"
 dependencies = [
  "bytes",
  "futures-core",
@@ -639,20 +639,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "credibil-api"
-version = "0.6.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "e15c3dfc071801b6a13dab923409b3b6c4910c43148c1709bee66b0d8dfa127a"
-dependencies = [
- "bytes",
- "http",
- "http-body",
- "http-body-util",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "credibil-encoding"
 version = "0.6.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
@@ -794,7 +780,6 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "common",
- "credibil-api",
  "fabric",
  "http",
  "http-body-util",
@@ -809,7 +794,7 @@ name = "dilax-apc-connector"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "credibil-api",
+ "bytes",
  "fabric",
  "serde",
  "serde_json",
@@ -872,15 +857,14 @@ dependencies = [
 
 [[package]]
 name = "fabric"
-version = "0.20.1"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "c92d3fb71c5bd8c0f0b4bdf6f3f4b36529587cedbaaf702bbe7b9ffce2f94e43"
+version = "0.21.0"
 dependencies = [
  "anyhow",
  "axum",
  "bytes",
  "http",
  "http-body",
+ "http-body-util",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
@@ -1513,9 +1497,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ee5b5339afb4c41626dde77b7a611bd4f2c202b897852b4bcf5d03eddc61010"
+checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "js-sys"
@@ -1532,6 +1516,21 @@ name = "kernel"
 version = "0.20.1"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
 checksum = "1c17ee899cb990f68a2cb6fe499bac562fba8c4e3f24d81062060e58c0fdd49e"
+dependencies = [
+ "anyhow",
+ "clap",
+ "credibil-otel",
+ "futures",
+ "serde",
+ "tokio",
+ "tracing",
+ "wasmtime",
+ "wasmtime-wasi",
+]
+
+[[package]]
+name = "kernel"
+version = "0.21.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -2037,9 +2036,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.103"
+version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ee95bc4ef87b8d5ba32e8b7714ccc834865276eab0aed5c9958d00ec45f49e8"
+checksum = "9695f8df41bb4f3d222c95a67532365f569318332d03d5f3f67f37b20e6ebdf0"
 dependencies = [
  "unicode-ident",
 ]
@@ -2213,7 +2212,6 @@ dependencies = [
  "bytes",
  "chrono",
  "chrono-tz",
- "credibil-api",
  "fabric",
  "http",
  "http-body",
@@ -2233,7 +2231,7 @@ name = "r9k-connector"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "credibil-api",
+ "bytes",
  "fabric",
  "quick-xml",
  "serde",
@@ -2587,9 +2585,9 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
 name = "ryu"
-version = "1.0.21"
+version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62049b2877bf12821e8f9ad256ee38fdc31db7387ec2d3b3f403024de2034aea"
+checksum = "a50f4cf475b65d88e057964e0e9bb1f0aa9bbb2036dc65c64596b42932536984"
 
 [[package]]
 name = "schannel"
@@ -2671,9 +2669,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.147"
+version = "1.0.148"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6af14725505314343e673e9ecb7cd7e8a36aa9791eb936235a3567cc31447ae4"
+checksum = "3084b546a1dd6289475996f182a22aba973866ea8e8b02c51d9f46b1336a22da"
 dependencies = [
  "itoa",
  "memchr",
@@ -2791,7 +2789,6 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "common",
- "credibil-api",
  "dashmap",
  "fabric",
  "http",
@@ -3277,7 +3274,6 @@ dependencies = [
  "buildgen",
  "bytes",
  "cfg-if",
- "credibil-api",
  "dilax-adapter",
  "dilax-apc-connector",
  "fabric",
@@ -3285,7 +3281,7 @@ dependencies = [
  "futures",
  "http",
  "http-body",
- "kernel",
+ "kernel 0.20.1",
  "r9k-adapter",
  "r9k-connector",
  "smartrak-gtfs",
@@ -3293,7 +3289,7 @@ dependencies = [
  "tracing",
  "wasi-http",
  "wasi-identity",
- "wasi-keyvalue",
+ "wasi-keyvalue 0.20.1",
  "wasi-messaging",
  "wasi-otel",
  "wasip3",
@@ -3420,22 +3416,21 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasi-http"
-version = "0.20.1"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "81fe9abce9b814246964a0296d445bb36ecd6dfc215f834247cabe9e0dc7c716"
+version = "0.21.0"
 dependencies = [
  "anyhow",
  "axum",
  "base64ct",
  "bytes",
  "credibil-encoding",
+ "fabric",
  "fromenv",
  "futures",
  "http",
  "http-body",
  "http-body-util",
  "hyper",
- "kernel",
+ "kernel 0.21.0",
  "percent-encoding",
  "reqwest",
  "rkyv",
@@ -3444,7 +3439,7 @@ dependencies = [
  "tokio",
  "tower",
  "tracing",
- "wasi-keyvalue",
+ "wasi-keyvalue 0.21.0",
  "wasip3",
  "wasmtime",
  "wasmtime-wasi",
@@ -3460,7 +3455,7 @@ dependencies = [
  "anyhow",
  "fromenv",
  "futures",
- "kernel",
+ "kernel 0.20.1",
  "oauth2",
  "serde",
  "tracing",
@@ -3478,7 +3473,24 @@ dependencies = [
  "anyhow",
  "chrono",
  "futures",
- "kernel",
+ "kernel 0.20.1",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tracing",
+ "wasmtime",
+ "wasmtime-wasi",
+ "wit-bindgen 0.50.0",
+]
+
+[[package]]
+name = "wasi-keyvalue"
+version = "0.21.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "futures",
+ "kernel 0.21.0",
  "parking_lot",
  "serde",
  "serde_json",
@@ -3497,7 +3509,7 @@ dependencies = [
  "anyhow",
  "futures",
  "http",
- "kernel",
+ "kernel 0.20.1",
  "serde",
  "time",
  "tokio",
@@ -3519,7 +3531,7 @@ dependencies = [
  "credibil-otel",
  "futures",
  "hex",
- "kernel",
+ "kernel 0.20.1",
  "num-traits",
  "opentelemetry",
  "opentelemetry-proto",
@@ -4672,6 +4684,6 @@ dependencies = [
 
 [[package]]
 name = "zmij"
-version = "0.1.10"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4af59da1029247450b54ba43e0b62c8e376582464bbe5504dd525fe521e7e8fd"
+checksum = "f5858cd3a46fff31e77adea2935e357e3a2538d870741617bfb7c943e218fee6"

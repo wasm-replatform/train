@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use credibil_api::{Handler, Request, Response};
+use fabric::api::{Handler, Request, Response};
 use fabric::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 

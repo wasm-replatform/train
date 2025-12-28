@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use common::fleet::{self, Vehicle};
-use credibil_api::{Handler, Request, Response};
+use fabric::api::{Handler, Request, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 

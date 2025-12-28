@@ -5,7 +5,7 @@
 use anyhow::Context;
 use bytes::Bytes;
 use chrono::Utc;
-use credibil_api::{Handler, Request, Response};
+use fabric::api::{Handler, Request, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;

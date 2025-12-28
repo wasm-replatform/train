@@ -7,8 +7,8 @@ use std::ops::Sub;
 
 use chrono::{Duration, Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
-use credibil_api::Client;
 use fabric::Error;
+use fabric::api::Client;
 use r9k_adapter::{ChangeType, EventType, R9kMessage};
 
 use self::provider::MockProvider;

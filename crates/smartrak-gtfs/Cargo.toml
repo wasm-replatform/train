@@ -20,7 +20,6 @@ bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 common.workspace = true
-credibil-api.workspace = true
 dashmap = "6.1.0"
 fabric.workspace = true
 http.workspace = true

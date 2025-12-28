@@ -1,8 +1,9 @@
 use anyhow::Context;
+use bytes::Bytes;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
-use credibil_api::{Handler, Request, Response};
+use fabric::api::{Handler, Request, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -18,10 +19,18 @@ const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectionResponse {
     pub status: &'static str,
     pub detections: usize,
+}
+
+impl TryInto<Bytes> for DetectionResponse {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
+        Ok(Bytes::from(serde_json::to_vec(&self)?))
+    }
 }
 
 async fn handle<P>(

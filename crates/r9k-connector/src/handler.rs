@@ -5,7 +5,9 @@
 
 use std::fmt::{self, Display};
 
-use credibil_api::{Handler, Request, Response};
+use anyhow::Context;
+use bytes::Bytes;
+use fabric::api::{Handler, Request, Response};
 use fabric::{Error, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -64,14 +66,6 @@ impl TryFrom<&[u8]> for R9kRequest {
     }
 }
 
-// impl FromStr for R9kRequest {
-//     type Err = R9kError;
-
-//     fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
-//         quick_xml::de::from_str(xml).map_err(Into::into)
-//     }
-// }
-
 /// R9K SOAP Body for [`ReceiveMessage`] requests
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -91,10 +85,12 @@ pub struct ReceiveMessage {
 #[serde(rename = "Return")]
 pub struct R9kResponse(pub &'static str);
 
-impl Display for R9kResponse {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let xml = quick_xml::se::to_string(&self).map_err(|_e| fmt::Error)?;
-        write!(f, "{xml}",)
+impl TryInto<Bytes> for R9kResponse {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
+        let xml = quick_xml::se::to_string(&self).context("serializing R9kResponse")?;
+        Ok(Bytes::from(xml))
     }
 }
 
@@ -120,7 +116,6 @@ pub struct FaultMessage {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
@@ -137,7 +132,8 @@ mod tests {
 
     #[test]
     fn serialize_ok() {
-        let xml = R9kResponse("OK").to_string();
+        let xml: Bytes = R9kResponse("OK").try_into().expect("should serialize");
+        let xml = String::from_utf8(xml.to_vec()).expect("should be UTF-8");
         assert_eq!(xml, "<Return>OK</Return>");
     }
 

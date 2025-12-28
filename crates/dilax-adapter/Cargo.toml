@@ -23,7 +23,6 @@ bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 common.workspace = true
-credibil-api.workspace = true
 fabric.workspace = true
 http.workspace = true
 http-body-util.workspace = true

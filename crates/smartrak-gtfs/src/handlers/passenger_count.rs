@@ -2,7 +2,7 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use credibil_api::{Handler, Request, Response};
+use fabric::api::{Handler, Request, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 

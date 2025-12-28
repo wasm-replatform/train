@@ -22,7 +22,6 @@ crate-type = ["cdylib"]
 anyhow.workspace = true
 axum = { workspace = true, features = ["json", "macros", "query"] }
 bytes.workspace = true
-credibil-api.workspace = true
 dilax-adapter = { path = "crates/dilax-adapter" }
 dilax-apc-connector = { path = "crates/dilax-apc-connector" }
 fabric.workspace = true
@@ -122,7 +121,7 @@ http-body-util = "0.1.3"
 pretty_assertions = "1.4.1"
 quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.144"
+serde_json = "1.0.148"
 serde_repr = "0.1"
 serde_yaml = "0.9"
 thiserror = "2.0"
@@ -140,10 +139,10 @@ wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 
 # Credibil registry
 buildgen = { version = "0.20.1", registry = "credibil" }
-credibil-api = { version = "0.6.0", registry = "credibil" }
-fabric = { version = "0.20.1", registry = "credibil" }
+# credibil-api = { version = "0.6.0", registry = "credibil" }
+fabric = { version = "0.21.0", registry = "credibil" }
 kernel = { version = "0.20.1", registry = "credibil" }
-wasi-http = { version = "0.20.1", registry = "credibil" }
+wasi-http = { version = "0.21.0", registry = "credibil" }
 wasi-identity = { version = "0.20.1", registry = "credibil" }
 wasi-keyvalue = { version = "0.20.1", registry = "credibil" }
 wasi-messaging = { version = "0.20.1", registry = "credibil" }
@@ -153,7 +152,8 @@ wasi-otel = { version = "0.20.1", registry = "credibil" }
 common = { path = "crates/common" }
 
 [patch.credibil]
-# buildgen = { git = "https://github.com/credibil/wrt" }
+fabric = { path = "../../augentic/warp/crates/fabric" }
+wasi-http  = { path = "../../augentic/warp/crates/wasi-http" }
 
 [patch.crates-io]
 # wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }

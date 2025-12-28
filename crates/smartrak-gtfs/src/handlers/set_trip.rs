@@ -1,8 +1,7 @@
 use std::convert::Infallible;
 
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
-use http::StatusCode;
+use fabric::api::{Handler, Request, Response};
+use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
 use crate::god_mode::god_mode;
@@ -18,8 +17,6 @@ impl TryFrom<(String, String)> for SetTripRequest {
         Ok(Self(value.0, value.1))
     }
 }
-
-// const PROCESS_ID: u32 = 0;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SetTripResponse {
@@ -38,12 +35,9 @@ where
     let trip_id = request.1;
 
     let Some(god_mode) = god_mode() else {
-        let response = SetTripResponse { message: "God mode not enabled".to_string(), process: 0 };
-        return Ok(Response { status: StatusCode::NOT_FOUND, body: response, headers: None });
+        return Err(bad_request!("God mode not enabled"));
     };
-
     god_mode.set_vehicle_to_trip(vehicle_id, trip_id);
-
     Ok(SetTripResponse { message: "Ok".to_string(), process: 0 }.into())
 }
 

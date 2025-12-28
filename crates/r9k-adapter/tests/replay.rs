@@ -8,7 +8,7 @@ use std::fs::{self, File};
 use anyhow::{Result, bail};
 use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
-use credibil_api::Client;
+use fabric::api::Client;
 use r9k_adapter::{R9kMessage, SmarTrakEvent};
 
 use self::provider::MockProvider;

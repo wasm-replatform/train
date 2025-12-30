@@ -5,9 +5,9 @@
 
 use std::fmt::{self, Display};
 
-use anyhow::Context;
+use anyhow::Context as _;
 use bytes::Bytes;
-use fabric::api::{Handler, Response};
+use fabric::api::{Context, Handler, Headers, Response};
 use fabric::{Error, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -45,12 +45,15 @@ impl<P> Handler<P> for R9kRequest
 where
     P: Publisher,
 {
-    type Output = R9kResponse;
     type Error = Error;
+    type Output = R9kResponse;
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<R9kResponse>> {
-        handle(owner, self, provider).await
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<R9kResponse>>
+    where
+        H: Headers,
+    {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

@@ -1,9 +1,9 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use bytes::Bytes;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
-use fabric::api::{Handler, Response};
+use fabric::api::{Context, Handler, Headers, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -47,12 +47,15 @@ impl<P> Handler<P> for DetectionRequest
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
-    type Output = DetectionResponse;
     type Error = Error;
+    type Output = DetectionResponse;
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DetectionResponse>> {
-        handle(owner, self, provider).await
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<DetectionResponse>>
+    where
+        H: Headers,
+    {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

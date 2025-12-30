@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use fabric::api::{Handler, Response};
+use fabric::api::{Context, Handler, Headers, Response};
 use fabric::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -53,11 +53,14 @@ impl<P> Handler<P> for SmarTrakMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Output = SmarTrakResponse;
     type Error = fabric::Error;
+    type Output = SmarTrakResponse;
 
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<SmarTrakResponse>> {
-        handle(owner, self, provider).await
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<SmarTrakResponse>>
+    where
+        H: Headers,
+    {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

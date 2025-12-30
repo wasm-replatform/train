@@ -1,6 +1,6 @@
 use std::convert::Infallible;
 
-use fabric::api::{Handler, Response};
+use fabric::api::{Context, Handler, Headers, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -50,10 +50,13 @@ impl<P> Handler<P> for ResetRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Output = ResetResponse;
     type Error = Error;
+    type Output = ResetResponse;
 
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<ResetResponse>> {
-        handle(owner, self, provider).await
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<ResetResponse>>
+    where
+        H: Headers,
+    {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }

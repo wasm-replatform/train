@@ -1,9 +1,10 @@
-use crate::DilaxMessage;
-use anyhow::Context;
+use anyhow::Context as _;
 use bytes::Bytes;
-use fabric::api::{Handler, Response};
+use fabric::api::{Context, Handler, Headers, Response};
 use fabric::{Error, Message, Publisher, Result};
 use serde::{Deserialize, Serialize};
+
+use crate::DilaxMessage;
 
 const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
@@ -35,11 +36,14 @@ impl<P> Handler<P> for DilaxRequest
 where
     P: Publisher,
 {
-    type Output = DilaxResponse;
     type Error = Error;
+    type Output = DilaxResponse;
 
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {
-        handle(owner, self, provider).await
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<DilaxResponse>>
+    where
+        H: Headers,
+    {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

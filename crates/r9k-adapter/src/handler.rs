@@ -2,10 +2,10 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use anyhow::Context;
+use anyhow::Context as _;
 use bytes::Bytes;
 use chrono::Utc;
-use fabric::api::{Handler, Response};
+use fabric::api::{Context, Handler, Headers, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
@@ -58,12 +58,15 @@ impl<P> Handler<P> for R9kMessage
 where
     P: Config + HttpRequest + Identity + Publisher,
 {
-    type Output = R9kResponse;
     type Error = Error;
+    type Output = R9kResponse;
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<R9kResponse>> {
-        handle(owner, self, provider).await
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<R9kResponse>>
+    where
+        H: Headers,
+    {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

@@ -1,6 +1,6 @@
 use std::env;
 
-use anyhow::Context;
+use anyhow::Context as _;
 use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
 use common::block_mgt::{self, BlockInstance};

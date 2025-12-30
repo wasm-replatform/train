@@ -5,7 +5,7 @@
 use anyhow::Context as _;
 use bytes::Bytes;
 use chrono::Utc;
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
@@ -20,7 +20,7 @@ const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 #[derive(Debug, Clone)]
 pub struct R9kResponse;
 
-async fn handle<P>(owner: &str, request: R9kMessage, provider: &P) -> Result<Response<R9kResponse>>
+async fn handle<P>(owner: &str, request: R9kMessage, provider: &P) -> Result<Reply<R9kResponse>>
 where
     P: Config + HttpRequest + Identity + Publisher,
 {
@@ -62,7 +62,7 @@ where
     type Output = R9kResponse;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<R9kResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<R9kResponse>>
     where
         H: Headers,
     {

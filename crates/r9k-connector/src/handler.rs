@@ -7,7 +7,7 @@ use std::fmt::{self, Display};
 
 use anyhow::Context as _;
 use bytes::Bytes;
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Error, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ const ERROR: Fault =
     Fault { status_code: 500, response: FaultMessage { message: "Internal Server Error" } };
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Response<R9kResponse>>
+async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Reply<R9kResponse>>
 where
     P: Publisher,
 {
@@ -49,7 +49,7 @@ where
     type Output = R9kResponse;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<R9kResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<R9kResponse>>
     where
         H: Headers,
     {

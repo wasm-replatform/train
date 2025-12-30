@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use bytes::Bytes;
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Error, Message, Publisher, Result};
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +11,7 @@ const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 #[allow(clippy::unused_async)]
 async fn handle<P>(
     _owner: &str, request: DilaxRequest, provider: &P,
-) -> Result<Response<DilaxResponse>>
+) -> Result<Reply<DilaxResponse>>
 where
     P: Publisher,
 {
@@ -39,7 +39,7 @@ where
     type Error = Error;
     type Output = DilaxResponse;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<DilaxResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxResponse>>
     where
         H: Headers,
     {

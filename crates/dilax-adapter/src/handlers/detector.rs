@@ -3,7 +3,7 @@ use bytes::Bytes;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +35,7 @@ impl TryInto<Bytes> for DetectionResponse {
 
 async fn handle<P>(
     _owner: &str, _: DetectionRequest, provider: &P,
-) -> Result<Response<DetectionResponse>>
+) -> Result<Reply<DetectionResponse>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
@@ -51,7 +51,7 @@ where
     type Output = DetectionResponse;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<DetectionResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DetectionResponse>>
     where
         H: Headers,
     {
@@ -64,7 +64,7 @@ where
     type Output = DetectionResponse;
     type Error = Error;
 
-    async fn handle(self, owner: &str, provider: &P, headers: Headers) -> Result<Response<Self::Output>> {
+    async fn handle(self, owner: &str, provider: &P, headers: Headers) -> Result<Reply<Self::Output>> {
         handle(owner, self.body, provider).await
     }
 }

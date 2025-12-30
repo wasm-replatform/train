@@ -1,7 +1,7 @@
 use anyhow::Context as _;
 use common::block_mgt;
 use common::fleet::{self, Vehicle};
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{
     Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
 };
@@ -19,7 +19,7 @@ pub struct DilaxResponse;
 
 async fn handle<P>(
     _owner: &str, request: DilaxMessage, provider: &P,
-) -> Result<Response<DilaxResponse>>
+) -> Result<Reply<DilaxResponse>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
@@ -35,7 +35,7 @@ where
     type Output = DilaxResponse;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<DilaxResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxResponse>>
     where
         H: Headers,
     {

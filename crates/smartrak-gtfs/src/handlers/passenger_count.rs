@@ -2,7 +2,7 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +14,7 @@ const OCCUPANY_STATUS_TTL: u64 = 3 * 60 * 60; // 3 hours
 
 async fn handle<P>(
     _owner: &str, request: PassengerCountMessage, provider: &P,
-) -> Result<Response<PassengerCountResponse>>
+) -> Result<Reply<PassengerCountResponse>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -43,7 +43,7 @@ where
     type Output = PassengerCountResponse;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<PassengerCountResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<PassengerCountResponse>>
     where
         H: Headers,
     {

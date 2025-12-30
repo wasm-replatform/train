@@ -1,5 +1,5 @@
 use common::fleet;
-use fabric::api::{Context, Handler, Headers, NoHeaders, Response};
+use fabric::api::{Context, Handler, Headers, NoHeaders, Reply};
 use fabric::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
 
@@ -23,7 +23,7 @@ pub struct TrainAvlResponse;
 
 async fn handle<P>(
     owner: &str, request: TrainAvlMessage, provider: &P,
-) -> Result<Response<TrainAvlResponse>>
+) -> Result<Reply<TrainAvlResponse>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -58,7 +58,7 @@ where
     type Error = fabric::Error;
     type Output = TrainAvlResponse;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<TrainAvlResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<TrainAvlResponse>>
     where
         H: Headers,
     {

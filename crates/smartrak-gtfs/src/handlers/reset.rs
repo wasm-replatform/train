@@ -1,6 +1,6 @@
 use std::convert::Infallible;
 
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -27,7 +27,7 @@ pub struct ResetResponse {
 #[allow(clippy::unused_async)]
 async fn handle<P>(
     _owner: &str, request: ResetRequest, _provider: &P,
-) -> Result<Response<ResetResponse>>
+) -> Result<Reply<ResetResponse>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
@@ -53,7 +53,7 @@ where
     type Error = Error;
     type Output = ResetResponse;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<ResetResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<ResetResponse>>
     where
         H: Headers,
     {

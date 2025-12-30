@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use common::fleet::{self, Vehicle};
-use fabric::api::{Context, Handler, Headers, Response};
+use fabric::api::{Context, Handler, Headers, Reply};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -36,7 +36,7 @@ pub struct VehicleInfoResponse {
 
 async fn handle<P>(
     _owner: &str, request: VehicleInfoRequest, provider: &P,
-) -> Result<Response<VehicleInfoResponse>>
+) -> Result<Reply<VehicleInfoResponse>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
@@ -67,7 +67,7 @@ where
     type Error = Error;
     type Output = VehicleInfoResponse;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Response<VehicleInfoResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<VehicleInfoResponse>>
     where
         H: Headers,
     {

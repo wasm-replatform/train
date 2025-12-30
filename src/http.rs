@@ -8,8 +8,7 @@ use dilax_apc_connector::DilaxRequest;
 use fabric::api::Client;
 use r9k_connector::R9kRequest;
 use smartrak_gtfs::{
-    ResetRequest, ResetResponse, SetTripRequest, SetTripResponse, VehicleInfoRequest,
-    VehicleInfoResponse,
+    ResetReply, ResetRequest, SetTripReply, SetTripRequest, VehicleInfoReply, VehicleInfoRequest,
 };
 use tracing::Level;
 use wasi_http::HttpError;
@@ -59,9 +58,7 @@ async fn detector() -> Result<Bytes, HttpError> {
 }
 
 #[axum::debug_handler]
-async fn vehicle_info(
-    Path(vehicle_id): Path<String>,
-) -> Result<Json<VehicleInfoResponse>, HttpError> {
+async fn vehicle_info(Path(vehicle_id): Path<String>) -> Result<Json<VehicleInfoReply>, HttpError> {
     let client = Client::new("at").provider(Provider::new());
     let request = VehicleInfoRequest::try_from(vehicle_id).context("parsing vehicle id")?;
     let response = client.request(request).await.context("processing request")?;
@@ -71,7 +68,7 @@ async fn vehicle_info(
 #[axum::debug_handler]
 async fn set_trip(
     Path((vehicle_id, trip_id)): Path<(String, String)>,
-) -> Result<Json<SetTripResponse>, HttpError> {
+) -> Result<Json<SetTripReply>, HttpError> {
     let client = Client::new("at").provider(Provider::new());
     let request = SetTripRequest::try_from((vehicle_id, trip_id)).context("parsing vehicle id")?;
     let response = client.request(request).await.context("processing request")?;
@@ -79,7 +76,7 @@ async fn set_trip(
 }
 
 #[axum::debug_handler]
-async fn reset(Path(vehicle_id): Path<String>) -> Result<Json<ResetResponse>, HttpError> {
+async fn reset(Path(vehicle_id): Path<String>) -> Result<Json<ResetReply>, HttpError> {
     let client = Client::new("at").provider(Provider::new());
     let request = ResetRequest::try_from(vehicle_id).context("parsing vehicle id")?;
     let response = client.request(request).await.context("processing request")?;

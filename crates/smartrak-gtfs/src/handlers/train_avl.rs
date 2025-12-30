@@ -19,11 +19,11 @@ impl TryFrom<&[u8]> for TrainAvlMessage {
 
 /// Train AVL response.
 #[derive(Debug, Clone)]
-pub struct TrainAvlResponse;
+pub struct TrainAvlReply;
 
 async fn handle<P>(
     owner: &str, request: TrainAvlMessage, provider: &P,
-) -> Result<Reply<TrainAvlResponse>>
+) -> Result<Reply<TrainAvlReply>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -32,23 +32,23 @@ where
     // verify vehicle tag is 'train'
     let Some(vehicle_id) = request.vehicle_id() else {
         tracing::debug!("no vehicle identifier found");
-        return Ok(TrainAvlResponse.into());
+        return Ok(TrainAvlReply.into());
     };
     let Some(vehicle) = fleet::vehicle(vehicle_id, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
-        return Ok(TrainAvlResponse.into());
+        return Ok(TrainAvlReply.into());
     };
     if let Some(tag) = vehicle.tag.as_deref().map(str::to_lowercase)
         && tag != "smartrak"
     {
         tracing::debug!("vehicle tag {tag} did not match rules");
-        return Ok(TrainAvlResponse.into());
+        return Ok(TrainAvlReply.into());
     }
 
     let headers = NoHeaders;
     SmarTrakMessage::handle(request, Context { owner, provider, headers: &headers }).await?;
 
-    Ok(TrainAvlResponse.into())
+    Ok(TrainAvlReply.into())
 }
 
 impl<P> Handler<P> for TrainAvlMessage
@@ -56,9 +56,9 @@ where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = fabric::Error;
-    type Output = TrainAvlResponse;
+    type Output = TrainAvlReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<TrainAvlResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<TrainAvlReply>>
     where
         H: Headers,
     {

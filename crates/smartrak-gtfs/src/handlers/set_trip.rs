@@ -19,7 +19,7 @@ impl TryFrom<(String, String)> for SetTripRequest {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct SetTripResponse {
+pub struct SetTripReply {
     pub message: String,
     pub process: u32,
 }
@@ -27,7 +27,7 @@ pub struct SetTripResponse {
 #[allow(clippy::unused_async)]
 async fn handle<P>(
     _owner: &str, request: SetTripRequest, _provider: &P,
-) -> Result<Reply<SetTripResponse>>
+) -> Result<Reply<SetTripReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
@@ -38,7 +38,7 @@ where
         return Err(bad_request!("God mode not enabled"));
     };
     god_mode.set_vehicle_to_trip(vehicle_id, trip_id);
-    Ok(SetTripResponse { message: "Ok".to_string(), process: 0 }.into())
+    Ok(SetTripReply { message: "Ok".to_string(), process: 0 }.into())
 }
 
 impl<P> Handler<P> for SetTripRequest
@@ -46,9 +46,9 @@ where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = Error;
-    type Output = SetTripResponse;
+    type Output = SetTripReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<SetTripResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<SetTripReply>>
     where
         H: Headers,
     {

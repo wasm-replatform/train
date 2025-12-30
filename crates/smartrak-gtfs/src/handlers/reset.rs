@@ -19,7 +19,7 @@ impl TryFrom<String> for ResetRequest {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ResetResponse {
+pub struct ResetReply {
     pub message: String,
     pub process: u32,
 }
@@ -27,7 +27,7 @@ pub struct ResetResponse {
 #[allow(clippy::unused_async)]
 async fn handle<P>(
     _owner: &str, request: ResetRequest, _provider: &P,
-) -> Result<Reply<ResetResponse>>
+) -> Result<Reply<ResetReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
@@ -43,7 +43,7 @@ where
         god_mode.reset_vehicle(&vehicle_id);
     }
 
-    Ok(ResetResponse { message: "Ok".to_string(), process: 0 }.into())
+    Ok(ResetReply { message: "Ok".to_string(), process: 0 }.into())
 }
 
 impl<P> Handler<P> for ResetRequest
@@ -51,9 +51,9 @@ where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = Error;
-    type Output = ResetResponse;
+    type Output = ResetReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<ResetResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<ResetReply>>
     where
         H: Headers,
     {

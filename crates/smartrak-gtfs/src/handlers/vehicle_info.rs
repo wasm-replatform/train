@@ -23,7 +23,7 @@ const PROCESS_ID: u32 = 0;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct VehicleInfoResponse {
+pub struct VehicleInfoReply {
     pub pid: u32,
     pub vehicle_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -36,7 +36,7 @@ pub struct VehicleInfoResponse {
 
 async fn handle<P>(
     _owner: &str, request: VehicleInfoRequest, provider: &P,
-) -> Result<Reply<VehicleInfoResponse>>
+) -> Result<Reply<VehicleInfoReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
@@ -56,7 +56,7 @@ where
 
     let fleet_info = fleet::vehicle(&vehicle_id, provider).await?;
 
-    Ok(VehicleInfoResponse { pid: PROCESS_ID, vehicle_id, sign_on_time, trip_info, fleet_info }
+    Ok(VehicleInfoReply { pid: PROCESS_ID, vehicle_id, sign_on_time, trip_info, fleet_info }
         .into())
 }
 
@@ -65,9 +65,9 @@ where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = Error;
-    type Output = VehicleInfoResponse;
+    type Output = VehicleInfoReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<VehicleInfoResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<VehicleInfoReply>>
     where
         H: Headers,
     {

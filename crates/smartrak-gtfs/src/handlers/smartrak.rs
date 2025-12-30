@@ -8,11 +8,11 @@ use crate::{god_mode, location, serial_data};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
-pub struct SmarTrakResponse;
+pub struct SmarTrakReply;
 
 async fn handle<P>(
     _owner: &str, message: SmarTrakMessage, provider: &P,
-) -> Result<Reply<SmarTrakResponse>>
+) -> Result<Reply<SmarTrakReply>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -24,12 +24,12 @@ where
         }
         serial_data::process(&message, provider).await?;
 
-        return Ok(SmarTrakResponse.into());
+        return Ok(SmarTrakReply.into());
     }
 
     // must be a location event
     let Some(location) = location::process(&message, provider).await? else {
-        return Ok(SmarTrakResponse.into());
+        return Ok(SmarTrakReply.into());
     };
 
     let (payload, key, topic) = match location {
@@ -46,7 +46,7 @@ where
     message.headers.insert("key".to_string(), key.clone());
     Publisher::send(provider, topic, &message).await?;
 
-    Ok(SmarTrakResponse.into())
+    Ok(SmarTrakReply.into())
 }
 
 impl<P> Handler<P> for SmarTrakMessage
@@ -54,9 +54,9 @@ where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = fabric::Error;
-    type Output = SmarTrakResponse;
+    type Output = SmarTrakReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<SmarTrakResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<SmarTrakReply>>
     where
         H: Headers,
     {

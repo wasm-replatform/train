@@ -15,16 +15,16 @@ const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
 
 /// Dilax empty response.
 #[derive(Debug, Clone)]
-pub struct DilaxResponse;
+pub struct DilaxReply;
 
 async fn handle<P>(
     _owner: &str, request: DilaxMessage, provider: &P,
-) -> Result<Reply<DilaxResponse>>
+) -> Result<Reply<DilaxReply>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     process(request, provider).await?;
-    Ok(DilaxResponse.into())
+    Ok(DilaxReply.into())
 }
 
 impl<P> Handler<P> for DilaxMessage
@@ -32,10 +32,10 @@ where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     type Error = Error;
-    type Output = DilaxResponse;
+    type Output = DilaxReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxReply>>
     where
         H: Headers,
     {

@@ -11,7 +11,7 @@ const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 #[allow(clippy::unused_async)]
 async fn handle<P>(
     _owner: &str, request: DilaxRequest, provider: &P,
-) -> Result<Reply<DilaxResponse>>
+) -> Result<Reply<DilaxReply>>
 where
     P: Publisher,
 {
@@ -29,7 +29,7 @@ where
     msg.headers.insert("key".to_string(), site.to_string());
     Publisher::send(provider, DILAX_TOPIC, &msg).await?;
 
-    Ok(DilaxResponse("OK").into())
+    Ok(DilaxReply("OK").into())
 }
 
 impl<P> Handler<P> for DilaxRequest
@@ -37,9 +37,9 @@ where
     P: Publisher,
 {
     type Error = Error;
-    type Output = DilaxResponse;
+    type Output = DilaxReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxReply>>
     where
         H: Headers,
     {
@@ -65,9 +65,9 @@ impl TryFrom<&[u8]> for DilaxRequest {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
-pub struct DilaxResponse(pub &'static str);
+pub struct DilaxReply(pub &'static str);
 
-impl TryInto<Bytes> for DilaxResponse {
+impl TryInto<Bytes> for DilaxReply {
     type Error = anyhow::Error;
 
     fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {

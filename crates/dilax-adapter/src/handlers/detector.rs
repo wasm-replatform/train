@@ -20,12 +20,12 @@ const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 pub struct DetectionRequest;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DetectionResponse {
+pub struct DetectionReply {
     pub status: &'static str,
     pub detections: usize,
 }
 
-impl TryInto<Bytes> for DetectionResponse {
+impl TryInto<Bytes> for DetectionReply {
     type Error = anyhow::Error;
 
     fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
@@ -35,12 +35,12 @@ impl TryInto<Bytes> for DetectionResponse {
 
 async fn handle<P>(
     _owner: &str, _: DetectionRequest, provider: &P,
-) -> Result<Reply<DetectionResponse>>
+) -> Result<Reply<DetectionReply>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     let detections = lost_connections(provider).await.context("detecting lost connections")?;
-    Ok(DetectionResponse { status: "job detection triggered", detections: detections.len() }.into())
+    Ok(DetectionReply { status: "job detection triggered", detections: detections.len() }.into())
 }
 
 impl<P> Handler<P> for DetectionRequest
@@ -48,10 +48,10 @@ where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     type Error = Error;
-    type Output = DetectionResponse;
+    type Output = DetectionReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DetectionResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DetectionReply>>
     where
         H: Headers,
     {
@@ -61,7 +61,7 @@ where
 
 /*
  impl Request for DetectionRequest {
-    type Output = DetectionResponse;
+    type Output = DetectionReply;
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P, headers: Headers) -> Result<Reply<Self::Output>> {

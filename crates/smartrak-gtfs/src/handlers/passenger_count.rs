@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
-pub struct PassengerCountResponse;
+pub struct PassengerCountReply;
 
 const OCCUPANY_STATUS_TTL: u64 = 3 * 60 * 60; // 3 hours
 
 async fn handle<P>(
     _owner: &str, request: PassengerCountMessage, provider: &P,
-) -> Result<Reply<PassengerCountResponse>>
+) -> Result<Reply<PassengerCountReply>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -32,7 +32,7 @@ where
         StateStore::delete(provider, &key).await?;
     }
 
-    Ok(PassengerCountResponse.into())
+    Ok(PassengerCountReply.into())
 }
 
 impl<P> Handler<P> for PassengerCountMessage
@@ -40,10 +40,10 @@ where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = Error;
-    type Output = PassengerCountResponse;
+    type Output = PassengerCountReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<PassengerCountResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<PassengerCountReply>>
     where
         H: Headers,
     {

@@ -37,25 +37,24 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn r9k_message(body: Bytes) -> Result<Bytes, HttpError> {
-    let client = Client::new(Provider::new());
+    let client = Client::new("at").provider(Provider::new());
     let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
-    let response = client.request(request).owner("at").await.context("processing request")?;
+    let response = client.request(request).await.context("processing request")?;
     Ok(response.body.try_into()?)
 }
 
 #[axum::debug_handler]
 async fn dilax_message(body: Bytes) -> Result<Bytes, HttpError> {
-    let client = Client::new(Provider::new());
+    let client = Client::new("at").provider(Provider::new());
     let request = DilaxRequest::try_from(body.as_ref()).context("parsing request")?;
-    let response = client.request(request).owner("at").await.context("processing request")?;
+    let response = client.request(request).await.context("processing request")?;
     Ok(response.body.try_into()?)
 }
 
 #[axum::debug_handler]
 async fn detector() -> Result<Bytes, HttpError> {
-    let client = Client::new(Provider::new());
-    let response =
-        client.request(DetectionRequest).owner("at").await.context("processing request")?;
+    let client = Client::new("at").provider(Provider::new());
+    let response = client.request(DetectionRequest).await.context("processing request")?;
     Ok(response.body.try_into()?)
 }
 
@@ -63,9 +62,9 @@ async fn detector() -> Result<Bytes, HttpError> {
 async fn vehicle_info(
     Path(vehicle_id): Path<String>,
 ) -> Result<Json<VehicleInfoResponse>, HttpError> {
-    let client = Client::new(Provider::new());
+    let client = Client::new("at").provider(Provider::new());
     let request = VehicleInfoRequest::try_from(vehicle_id).context("parsing vehicle id")?;
-    let response = client.request(request).owner("at").await.context("processing request")?;
+    let response = client.request(request).await.context("processing request")?;
     Ok(Json(response.body))
 }
 
@@ -73,16 +72,16 @@ async fn vehicle_info(
 async fn set_trip(
     Path((vehicle_id, trip_id)): Path<(String, String)>,
 ) -> Result<Json<SetTripResponse>, HttpError> {
-    let client = Client::new(Provider::new());
+    let client = Client::new("at").provider(Provider::new());
     let request = SetTripRequest::try_from((vehicle_id, trip_id)).context("parsing vehicle id")?;
-    let response = client.request(request).owner("at").await.context("processing request")?;
+    let response = client.request(request).await.context("processing request")?;
     Ok(Json(response.body))
 }
 
 #[axum::debug_handler]
 async fn reset(Path(vehicle_id): Path<String>) -> Result<Json<ResetResponse>, HttpError> {
-    let client = Client::new(Provider::new());
+    let client = Client::new("at").provider(Provider::new());
     let request = ResetRequest::try_from(vehicle_id).context("parsing vehicle id")?;
-    let response = client.request(request).owner("at").await.context("processing request")?;
+    let response = client.request(request).await.context("processing request")?;
     Ok(Json(response.body))
 }

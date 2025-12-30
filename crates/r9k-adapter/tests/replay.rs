@@ -30,7 +30,7 @@ async fn run() -> Result<()> {
 // current adapter.
 async fn replay(replay: Replay) -> Result<()> {
     let provider = MockProvider::new_replay(replay.clone());
-    let client = Client::new(provider.clone());
+    let client = Client::new("at").provider(provider.clone());
     let mut request = R9kMessage::try_from(replay.input)?;
 
     let Some(change) = request.train_update.changes.get_mut(0) else {
@@ -50,7 +50,7 @@ async fn replay(replay: Replay) -> Result<()> {
         change.actual_arrival_time = adjusted_secs;
     }
 
-    if let Err(e) = client.request(request).owner("owner").await {
+    if let Err(e) = client.request(request).await {
         assert_eq!(e.to_string(), replay.error.unwrap().to_string());
     }
 

@@ -45,48 +45,48 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 
 #[wasi_otel::instrument]
 async fn r9k(message: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider::new());
+    let api_client = Client::new("at").provider(Provider::new());
     let request = R9kMessage::try_from(message).context("parsing message")?;
-    api_client.request(request).owner("at").await?;
+    api_client.request(request).await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn dilax(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider::new());
+    let api_client = Client::new("at").provider(Provider::new());
     let request = DilaxMessage::try_from(payload).context("deserializing event")?;
-    api_client.request(request).owner("at").await?;
+    api_client.request(request).await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn passenger_count(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider::new());
+    let api_client = Client::new("at").provider(Provider::new());
     let request = PassengerCountMessage::try_from(payload).context("deserializing event")?;
-    api_client.request(request).owner("at").await?;
+    api_client.request(request).await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn smartrak(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider::new());
+    let api_client = Client::new("at").provider(Provider::new());
     let request = SmarTrakMessage::try_from(payload).context("deserializing event")?;
-    api_client.request(request).owner("at").await?;
+    api_client.request(request).await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn caf_avl(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider::new());
+    let api_client = Client::new("at").provider(Provider::new());
     let request = CafAvlMessage::try_from(payload).context("deserializing event")?;
-    api_client.request(request).owner("at").await?;
+    api_client.request(request).await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn train_avl(payload: &[u8]) -> Result<()> {
-    let api_client = Client::new(Provider::new());
+    let api_client = Client::new("at").provider(Provider::new());
     let request = TrainAvlMessage::try_from(payload).context("deserializing event")?;
-    api_client.request(request).owner("at").await?;
+    api_client.request(request).await?;
     Ok(())
 }

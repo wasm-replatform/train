@@ -30,12 +30,12 @@ async fn deserialize_xml() {
 #[tokio::test]
 async fn arrival_event() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider.clone());
+    let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    client.request(message).owner("owner").await.expect("should process");
+    client.request(message).await.expect("should process");
 
     let events = provider.events();
     assert_eq!(events.len(), 2);
@@ -53,12 +53,12 @@ async fn arrival_event() {
 #[tokio::test]
 async fn departure_event() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider.clone());
+    let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().arrival(false).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    client.request(message).owner("owner").await.expect("should process");
+    client.request(message).await.expect("should process");
     let events = provider.events();
     assert_eq!(events.len(), 2);
 
@@ -74,12 +74,12 @@ async fn departure_event() {
 #[tokio::test]
 async fn unmapped_station() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider.clone());
+    let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().station(5).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    client.request(message).owner("owner").await.expect("should process");
+    client.request(message).await.expect("should process");
     let events = provider.events();
     assert!(events.is_empty());
 }
@@ -88,12 +88,12 @@ async fn unmapped_station() {
 #[tokio::test]
 async fn no_matching_vehicle() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider.clone());
+    let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().vehicle("445").xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    client.request(message).owner("owner").await.expect("should process");
+    client.request(message).await.expect("should process");
     let events = provider.events();
     assert!(events.is_empty());
 }
@@ -102,12 +102,12 @@ async fn no_matching_vehicle() {
 #[tokio::test]
 async fn no_matching_stop() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider.clone());
+    let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().station(80).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    client.request(message).owner("owner").await.expect("should process");
+    client.request(message).await.expect("should process");
     let events = provider.events();
     assert!(events.is_empty());
 }
@@ -116,13 +116,12 @@ async fn no_matching_stop() {
 #[tokio::test]
 async fn no_train_update() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider);
+    let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::None).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
-    else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return BadRequest error");
     };
     assert_eq!(code, "no_update");
@@ -134,13 +133,12 @@ async fn no_train_update() {
 #[tokio::test]
 async fn no_changes() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider);
+    let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
-    else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return BadRequest error");
     };
     assert_eq!(code, "no_update");
@@ -152,13 +150,12 @@ async fn no_changes() {
 #[tokio::test]
 async fn no_actual_changes() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider);
+    let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
-    else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return BadRequest error");
     };
     assert_eq!(code, "no_update");
@@ -170,13 +167,12 @@ async fn no_actual_changes() {
 #[tokio::test]
 async fn too_late() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider);
+    let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().delay_secs(61).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
-    else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return no actual update error");
     };
     assert_eq!(code, "bad_time");
@@ -188,13 +184,12 @@ async fn too_late() {
 #[tokio::test]
 async fn too_early() {
     let provider = MockProvider::new_static();
-    let client = Client::new(provider);
+    let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().delay_secs(-32).xml();
     let message = R9kMessage::try_from(xml).expect("should deserialize");
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).owner("owner").await
-    else {
+    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return no actual update error");
     };
     assert_eq!(code, "bad_time");

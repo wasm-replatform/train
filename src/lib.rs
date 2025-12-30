@@ -1,9 +1,9 @@
 #![cfg(target_arch = "wasm32")]
 // #![allow(clippy::future_not_send)]
 
-mod provider;
 mod http;
 mod messaging;
+mod provider;
 
 // use anyhow::{Context, Result};
 // use axum::extract::Path;
@@ -49,17 +49,17 @@ mod messaging;
 
 // #[axum::debug_handler]
 // async fn detector() -> Result<Json<DetectionResponse>, HttpError> {
-//     let client = Client::new(Provider::new());
+//     let client = Client::new("at", Provider::new());
 //     let response =
-//         client.request(DetectionRequest).owner("at").await.context("processing request")?;
+//         client.request(DetectionRequest).await.context("processing request")?;
 //     Ok(Json(response.body))
 // }
 
 // #[axum::debug_handler]
 // async fn r9k_message(body: Bytes) -> Result<String, HttpError> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
-//     let result = api_client.request(request).owner("at").await;
+//     let result = api_client.request(request).await;
 
 //     let response = match result {
 //         Ok(ok) => ok,
@@ -73,9 +73,9 @@ mod messaging;
 
 // #[axum::debug_handler]
 // async fn dilax_message(body: Bytes) -> Result<String, HttpError> {
-//     let client = Client::new(Provider::new());
+//     let client = Client::new("at", Provider::new());
 //     let request = DilaxRequest::try_from(body.as_ref()).context("parsing request")?;
-//     let response = client.request(request).owner("at").await.context("processing request")?;
+//     let response = client.request(request).await.context("processing request")?;
 //     Ok(response.body.to_string())
 // }
 
@@ -83,9 +83,9 @@ mod messaging;
 // async fn vehicle_info(
 //     Path(vehicle_id): Path<String>,
 // ) -> Result<Json<VehicleInfoResponse>, HttpError> {
-//     let client = Client::new(Provider::new());
+//     let client = Client::new("at", Provider::new());
 //     let request = VehicleInfoRequest::try_from(vehicle_id).context("parsing vehicle id")?;
-//     let response = client.request(request).owner("at").await.context("processing request")?;
+//     let response = client.request(request).await.context("processing request")?;
 //     Ok(Json(response.body))
 // }
 
@@ -93,17 +93,17 @@ mod messaging;
 // async fn set_trip(
 //     Path((vehicle_id, trip_id)): Path<(String, String)>,
 // ) -> Result<Json<SetTripResponse>, HttpError> {
-//     let client = Client::new(Provider::new());
+//     let client = Client::new("at", Provider::new());
 //     let request = SetTripRequest::try_from((vehicle_id, trip_id)).context("parsing vehicle id")?;
-//     let response = client.request(request).owner("at").await.context("processing request")?;
+//     let response = client.request(request).await.context("processing request")?;
 //     Ok(Json(response.body))
 // }
 
 // #[axum::debug_handler]
 // async fn reset(Path(vehicle_id): Path<String>) -> Result<Json<ResetResponse>, HttpError> {
-//     let client = Client::new(Provider::new());
+//     let client = Client::new("at", Provider::new());
 //     let request = ResetRequest::try_from(vehicle_id).context("parsing vehicle id")?;
-//     let response = client.request(request).owner("at").await.context("processing request")?;
+//     let response = client.request(request).await.context("processing request")?;
 //     Ok(Json(response.body))
 // }
 
@@ -152,48 +152,48 @@ mod messaging;
 
 // #[wasi_otel::instrument]
 // async fn process_r9k(message: &[u8]) -> Result<()> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = R9kMessage::try_from(message).context("parsing message")?;
-//     api_client.request(request).owner("at").await?;
+//     api_client.request(request).await?;
 //     Ok(())
 // }
 
 // #[wasi_otel::instrument]
 // async fn process_dilax(payload: &[u8]) -> Result<()> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = DilaxMessage::try_from(payload).context("deserializing event")?;
-//     api_client.request(request).owner("at").await?;
+//     api_client.request(request).await?;
 //     Ok(())
 // }
 
 // #[wasi_otel::instrument]
 // async fn process_passenger_count(payload: &[u8]) -> Result<()> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = PassengerCountMessage::try_from(payload).context("deserializing event")?;
-//     api_client.request(request).owner("at").await?;
+//     api_client.request(request).await?;
 //     Ok(())
 // }
 
 // #[wasi_otel::instrument]
 // async fn process_smartrak(payload: &[u8]) -> Result<()> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = SmarTrakMessage::try_from(payload).context("deserializing event")?;
-//     api_client.request(request).owner("at").await?;
+//     api_client.request(request).await?;
 //     Ok(())
 // }
 
 // #[wasi_otel::instrument]
 // async fn process_caf_avl(payload: &[u8]) -> Result<()> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = CafAvlMessage::try_from(payload).context("deserializing event")?;
-//     api_client.request(request).owner("at").await?;
+//     api_client.request(request).await?;
 //     Ok(())
 // }
 
 // #[wasi_otel::instrument]
 // async fn process_train_avl(payload: &[u8]) -> Result<()> {
-//     let api_client = Client::new(Provider::new());
+//     let api_client = Client::new("at", Provider::new());
 //     let request = TrainAvlMessage::try_from(payload).context("deserializing event")?;
-//     api_client.request(request).owner("at").await?;
+//     api_client.request(request).await?;
 //     Ok(())
 // }

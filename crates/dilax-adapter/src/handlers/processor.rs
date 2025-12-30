@@ -17,9 +17,7 @@ const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
 #[derive(Debug, Clone)]
 pub struct DilaxReply;
 
-async fn handle<P>(
-    _owner: &str, request: DilaxMessage, provider: &P,
-) -> Result<Reply<DilaxReply>>
+async fn handle<P>(_owner: &str, request: DilaxMessage, provider: &P) -> Result<Reply<DilaxReply>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {

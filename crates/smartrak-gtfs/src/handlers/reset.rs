@@ -25,9 +25,7 @@ pub struct ResetReply {
 }
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(
-    _owner: &str, request: ResetRequest, _provider: &P,
-) -> Result<Reply<ResetReply>>
+async fn handle<P>(_owner: &str, request: ResetRequest, _provider: &P) -> Result<Reply<ResetReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {

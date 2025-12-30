@@ -3281,6 +3281,7 @@ dependencies = [
  "futures",
  "http",
  "http-body",
+ "http-body-util",
  "kernel 0.20.1",
  "r9k-adapter",
  "r9k-connector",

@@ -56,8 +56,7 @@ where
 
     let fleet_info = fleet::vehicle(&vehicle_id, provider).await?;
 
-    Ok(VehicleInfoReply { pid: PROCESS_ID, vehicle_id, sign_on_time, trip_info, fleet_info }
-        .into())
+    Ok(VehicleInfoReply { pid: PROCESS_ID, vehicle_id, sign_on_time, trip_info, fleet_info }.into())
 }
 
 impl<P> Handler<P> for VehicleInfoRequest

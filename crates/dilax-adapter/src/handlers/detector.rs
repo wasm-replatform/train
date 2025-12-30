@@ -1,5 +1,4 @@
 use anyhow::Context as _;
-use bytes::Bytes;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
@@ -25,17 +24,7 @@ pub struct DetectionReply {
     pub detections: usize,
 }
 
-impl TryInto<Bytes> for DetectionReply {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
-        Ok(Bytes::from(serde_json::to_vec(&self)?))
-    }
-}
-
-async fn handle<P>(
-    _owner: &str, _: DetectionRequest, provider: &P,
-) -> Result<Reply<DetectionReply>>
+async fn handle<P>(_owner: &str, _: DetectionRequest, provider: &P) -> Result<Reply<DetectionReply>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
@@ -58,17 +47,6 @@ where
         handle(ctx.owner, self, ctx.provider).await
     }
 }
-
-/*
- impl Request for DetectionRequest {
-    type Output = DetectionReply;
-    type Error = Error;
-
-    async fn handle(self, owner: &str, provider: &P, headers: Headers) -> Result<Reply<Self::Output>> {
-        handle(owner, self.body, provider).await
-    }
-}
-*/
 
 async fn lost_connections<P>(provider: &P) -> anyhow::Result<Vec<Detection>>
 where

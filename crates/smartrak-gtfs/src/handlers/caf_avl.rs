@@ -21,9 +21,7 @@ impl TryFrom<&[u8]> for CafAvlMessage {
 #[derive(Debug, Clone)]
 pub struct CafAvlReply;
 
-async fn handle<P>(
-    owner: &str, request: CafAvlMessage, provider: &P,
-) -> Result<Reply<CafAvlReply>>
+async fn handle<P>(owner: &str, request: CafAvlMessage, provider: &P) -> Result<Reply<CafAvlReply>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {

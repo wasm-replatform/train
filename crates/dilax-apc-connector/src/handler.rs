@@ -9,9 +9,7 @@ use crate::DilaxMessage;
 const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(
-    _owner: &str, request: DilaxRequest, provider: &P,
-) -> Result<Reply<DilaxReply>>
+async fn handle<P>(_owner: &str, request: DilaxRequest, provider: &P) -> Result<Reply<DilaxReply>>
 where
     P: Publisher,
 {

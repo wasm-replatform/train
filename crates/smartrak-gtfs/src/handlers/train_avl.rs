@@ -1,5 +1,5 @@
 use common::fleet;
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
 
@@ -45,18 +45,19 @@ where
         return Ok(TrainAvlResponse.into());
     }
 
-    Request::<SmarTrakMessage>::handle(request.into(), owner, provider).await?;
+    SmarTrakMessage::handle(request, owner, provider).await?;
 
     Ok(TrainAvlResponse.into())
 }
 
-impl<P> Handler<TrainAvlResponse, P> for Request<TrainAvlMessage>
+impl<P> Handler<P> for TrainAvlMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Output = TrainAvlResponse;
     type Error = fabric::Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<TrainAvlResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }

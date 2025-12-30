@@ -7,7 +7,7 @@ use std::fmt::{self, Display};
 
 use anyhow::Context;
 use bytes::Bytes;
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Error, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
 
@@ -41,12 +41,16 @@ where
     Ok(R9kResponse("OK").into())
 }
 
-impl<P: Publisher> Handler<R9kResponse, P> for Request<R9kRequest> {
+impl<P> Handler<P> for R9kRequest
+where
+    P: Publisher,
+{
+    type Output = R9kResponse;
     type Error = Error;
 
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<R9kResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }
 

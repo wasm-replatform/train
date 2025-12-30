@@ -3,7 +3,7 @@ use bytes::Bytes;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -43,17 +43,29 @@ where
     Ok(DetectionResponse { status: "job detection triggered", detections: detections.len() }.into())
 }
 
-impl<P> Handler<DetectionResponse, P> for Request<DetectionRequest>
+impl<P> Handler<P> for DetectionRequest
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
+    type Output = DetectionResponse;
     type Error = Error;
 
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<DetectionResponse>> {
+        handle(owner, self, provider).await
+    }
+}
+
+/*
+ impl Request for DetectionRequest {
+    type Output = DetectionResponse;
+    type Error = Error;
+
+    async fn handle(self, owner: &str, provider: &P, headers: Headers) -> Result<Response<Self::Output>> {
         handle(owner, self.body, provider).await
     }
 }
+*/
 
 async fn lost_connections<P>(provider: &P) -> anyhow::Result<Vec<Detection>>
 where

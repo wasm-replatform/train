@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use common::fleet::{self, Vehicle};
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -60,13 +60,14 @@ where
         .into())
 }
 
-impl<P> Handler<VehicleInfoResponse, P> for Request<VehicleInfoRequest>
+impl<P> Handler<P> for VehicleInfoRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Output = VehicleInfoResponse;
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<VehicleInfoResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }

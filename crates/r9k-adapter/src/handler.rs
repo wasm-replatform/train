@@ -5,7 +5,7 @@
 use anyhow::Context;
 use bytes::Bytes;
 use chrono::Utc;
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
@@ -54,15 +54,16 @@ where
     Ok(R9kResponse.into())
 }
 
-impl<P> Handler<R9kResponse, P> for Request<R9kMessage>
+impl<P> Handler<P> for R9kMessage
 where
     P: Config + HttpRequest + Identity + Publisher,
 {
+    type Output = R9kResponse;
     type Error = Error;
 
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<R9kResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }
 

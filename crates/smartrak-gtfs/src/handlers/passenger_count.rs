@@ -2,7 +2,7 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
@@ -35,15 +35,16 @@ where
     Ok(PassengerCountResponse.into())
 }
 
-impl<P> Handler<PassengerCountResponse, P> for Request<PassengerCountMessage>
+impl<P> Handler<P> for PassengerCountMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Output = PassengerCountResponse;
     type Error = Error;
 
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<PassengerCountResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }
 

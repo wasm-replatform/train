@@ -1,7 +1,7 @@
 use anyhow::Context;
 use common::block_mgt;
 use common::fleet::{self, Vehicle};
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{
     Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
 };
@@ -27,15 +27,16 @@ where
     Ok(DilaxResponse.into())
 }
 
-impl<P> Handler<DilaxResponse, P> for Request<DilaxMessage>
+impl<P> Handler<P> for DilaxMessage
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
+    type Output = DilaxResponse;
     type Error = Error;
 
     // TODO: implement "owner"
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }
 

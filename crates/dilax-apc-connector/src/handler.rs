@@ -1,7 +1,7 @@
 use crate::DilaxMessage;
 use anyhow::Context;
 use bytes::Bytes;
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Error, Message, Publisher, Result};
 use serde::{Deserialize, Serialize};
 
@@ -31,11 +31,15 @@ where
     Ok(DilaxResponse("OK").into())
 }
 
-impl<P: Publisher> Handler<DilaxResponse, P> for Request<DilaxRequest> {
+impl<P> Handler<P> for DilaxRequest
+where
+    P: Publisher,
+{
+    type Output = DilaxResponse;
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }
 

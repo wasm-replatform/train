@@ -1,5 +1,5 @@
 use common::fleet;
-use fabric::api::{Handler, Request, Response};
+use fabric::api::{Handler, Response};
 use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::Deserialize;
 
@@ -45,18 +45,18 @@ where
         return Ok(CafAvlResponse.into());
     }
 
-    Request::<SmarTrakMessage>::handle(request.into(), owner, provider).await?;
-
+    SmarTrakMessage::handle(request, owner, provider).await?;
     Ok(CafAvlResponse.into())
 }
 
-impl<P> Handler<CafAvlResponse, P> for Request<CafAvlMessage>
+impl<P> Handler<P> for CafAvlMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Output = CafAvlResponse;
     type Error = Error;
 
     async fn handle(self, owner: &str, provider: &P) -> Result<Response<CafAvlResponse>> {
-        handle(owner, self.body, provider).await
+        handle(owner, self, provider).await
     }
 }

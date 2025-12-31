@@ -3,7 +3,7 @@ use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
 use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use fabric::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
@@ -45,6 +45,12 @@ where
         H: Headers,
     {
         handle(ctx.owner, self, ctx.provider).await
+    }
+}
+
+impl IntoBody for DetectionReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        serde_json::to_vec(&self).context("serializing reply")
     }
 }
 

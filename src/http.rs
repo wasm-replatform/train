@@ -3,10 +3,9 @@ use axum::extract::Path;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use bytes::Bytes;
-use dilax_adapter::DetectionRequest;
+use dilax_adapter::{DetectionReply, DetectionRequest};
 use dilax_apc_connector::DilaxRequest;
-use fabric::api::Client;
-use fabric::{HttpResponse, IntoHttp};
+use fabric::api::{Client, Reply};
 use r9k_connector::R9kRequest;
 use smartrak_gtfs::{
     ResetReply, ResetRequest, SetTripReply, SetTripRequest, VehicleInfoReply, VehicleInfoRequest,
@@ -52,10 +51,10 @@ async fn dilax_message(body: Bytes) -> Result<Bytes, HttpError> {
 }
 
 #[axum::debug_handler]
-async fn detector() -> Result<HttpResponse, HttpError> {
+async fn detector() -> Result<Reply<DetectionReply>, HttpError> {
     let client = Client::new("at").provider(Provider::new());
     let reply = client.request(DetectionRequest).await.context("processing request")?;
-    Ok(reply.into_http())
+    Ok(reply)
 }
 
 #[axum::debug_handler]

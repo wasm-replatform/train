@@ -6,9 +6,8 @@
 use std::fmt::{self, Display};
 
 use anyhow::Context as _;
-use bytes::Bytes;
 use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Error, Message, Publisher, Result, bad_request};
+use fabric::{Error, IntoBody, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
 
 use crate::R9kError;
@@ -18,7 +17,7 @@ const ERROR: Fault =
     Fault { status_code: 500, response: FaultMessage { message: "Internal Server Error" } };
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Reply<R9kResponse>>
+async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Reply<R9kReply>>
 where
     P: Publisher,
 {
@@ -38,7 +37,7 @@ where
     let msg = Message::new(message.as_bytes());
     Publisher::send(provider, R9K_TOPIC, &msg).await?;
 
-    Ok(R9kResponse("OK").into())
+    Ok(R9kReply("OK").into())
 }
 
 impl<P> Handler<P> for R9kRequest
@@ -46,10 +45,10 @@ where
     P: Publisher,
 {
     type Error = Error;
-    type Output = R9kResponse;
+    type Output = R9kReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<R9kResponse>>
+    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<R9kReply>>
     where
         H: Headers,
     {
@@ -90,14 +89,12 @@ pub struct ReceiveMessage {
 /// R9K SOAP Response
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename = "Return")]
-pub struct R9kResponse(pub &'static str);
+pub struct R9kReply(pub &'static str);
 
-impl TryInto<Bytes> for R9kResponse {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
+impl IntoBody for R9kReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
         let xml = quick_xml::se::to_string(&self).context("serializing R9kResponse")?;
-        Ok(Bytes::from(xml))
+        Ok(xml.into_bytes())
     }
 }
 
@@ -139,8 +136,8 @@ mod tests {
 
     #[test]
     fn serialize_ok() {
-        let xml: Bytes = R9kResponse("OK").try_into().expect("should serialize");
-        let xml = String::from_utf8(xml.to_vec()).expect("should be UTF-8");
+        let xml = R9kReply("OK").into_body().expect("should serialize");
+        let xml = String::from_utf8(xml).expect("should be UTF-8");
         assert_eq!(xml, "<Return>OK</Return>");
     }
 

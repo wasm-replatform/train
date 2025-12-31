@@ -134,12 +134,20 @@ audit-as-crates-io = true
 version = "0.17.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.aws-lc-rs]]
+version = "1.15.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.aws-lc-sys]]
+version = "0.35.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.axum]]
 version = "0.8.8"
 criteria = "safe-to-deploy"
 
 [[exemptions.axum-core]]
-version = "0.5.5"
+version = "0.5.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.axum-macros]]
@@ -162,6 +170,10 @@ criteria = "safe-to-deploy"
 version = "1.2.51"
 criteria = "safe-to-deploy"
 
+[[exemptions.cesu8]]
+version = "1.1.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.chrono]]
 version = "0.4.42"
 criteria = "safe-to-deploy"
@@ -170,8 +182,20 @@ criteria = "safe-to-deploy"
 version = "0.10.4"
 criteria = "safe-to-deploy"
 
+[[exemptions.cmake]]
+version = "0.1.57"
+criteria = "safe-to-deploy"
+
+[[exemptions.combine]]
+version = "4.6.7"
+criteria = "safe-to-deploy"
+
 [[exemptions.const-hex]]
 version = "1.17.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.core-foundation]]
+version = "0.10.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.cpufeatures]]
@@ -238,6 +262,10 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.fs_extra]]
+version = "1.3.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.futures-task]]
 version = "0.3.31"
 criteria = "safe-to-deploy"
@@ -283,7 +311,7 @@ version = "2.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.iri-string]]
-version = "0.7.9"
+version = "0.7.10"
 criteria = "safe-to-deploy"
 
 [[exemptions.itertools]]
@@ -291,7 +319,15 @@ version = "0.10.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.itoa]]
-version = "1.0.16"
+version = "1.0.17"
+criteria = "safe-to-deploy"
+
+[[exemptions.jni-sys]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.jobserver]]
+version = "0.1.34"
 criteria = "safe-to-deploy"
 
 [[exemptions.js-sys]]
@@ -334,12 +370,8 @@ criteria = "safe-to-deploy"
 version = "1.21.3"
 criteria = "safe-to-deploy"
 
-[[exemptions.openssl]]
-version = "0.10.75"
-criteria = "safe-to-deploy"
-
-[[exemptions.openssl-sys]]
-version = "0.9.111"
+[[exemptions.openssl-probe]]
+version = "0.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.opentelemetry]]
@@ -368,10 +400,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.pin-project-internal]]
 version = "1.1.10"
-criteria = "safe-to-deploy"
-
-[[exemptions.pkg-config]]
-version = "0.3.31"
 criteria = "safe-to-deploy"
 
 [[exemptions.ppv-lite86]]
@@ -450,8 +478,20 @@ criteria = "safe-to-deploy"
 version = "0.23.35"
 criteria = "safe-to-deploy"
 
+[[exemptions.rustls-native-certs]]
+version = "0.8.3"
+criteria = "safe-to-deploy"
+
 [[exemptions.rustls-pki-types]]
 version = "1.13.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.rustls-platform-verifier]]
+version = "0.6.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.rustls-platform-verifier-android]]
+version = "0.1.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.rustls-webpki]]
@@ -462,12 +502,16 @@ criteria = "safe-to-deploy"
 version = "0.103.8"
 criteria = "safe-to-deploy"
 
+[[exemptions.same-file]]
+version = "1.0.6"
+criteria = "safe-to-deploy"
+
 [[exemptions.schannel]]
 version = "0.1.28"
 criteria = "safe-to-deploy"
 
 [[exemptions.security-framework]]
-version = "2.11.1"
+version = "3.5.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.security-framework-sys]]
@@ -504,10 +548,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.system-configuration-sys]]
 version = "0.6.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.tempfile]]
-version = "3.24.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.time]]
@@ -590,6 +630,10 @@ criteria = "safe-to-deploy"
 version = "0.9.5"
 criteria = "safe-to-deploy"
 
+[[exemptions.walkdir]]
+version = "2.5.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.wasm-bindgen]]
 version = "0.2.106"
 criteria = "safe-to-deploy"
@@ -616,6 +660,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.web-time]]
 version = "1.1.0"
+criteria = "safe-to-deploy"
+
+[[exemptions.webpki-root-certs]]
+version = "1.0.4"
 criteria = "safe-to-deploy"
 
 [[exemptions.webpki-roots]]
@@ -651,5 +699,5 @@ version = "0.8.31"
 criteria = "safe-to-deploy"
 
 [[exemptions.zmij]]
-version = "0.1.10"
+version = "1.0.5"
 criteria = "safe-to-deploy"

@@ -28,7 +28,6 @@ fabric.workspace = true
 fromenv = "0.1.0"
 http.workspace = true
 http-body.workspace = true
-http-body-util.workspace = true
 r9k-adapter = { path = "crates/r9k-adapter" }
 r9k-connector = { path = "crates/r9k-connector" }
 smartrak-gtfs = { path = "crates/smartrak-gtfs" }
@@ -124,7 +123,7 @@ quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 serde_repr = "0.1"
-serde_yaml = "0.9"
+serde_yaml = "0.9.34-deprecated"
 thiserror = "2.0"
 tokio = { version = "1.47.1", default-features = false, features = ["io-util", "macros", "rt", "sync", "time"] }
 tracing = "0.1.43"
@@ -139,25 +138,20 @@ wasmtime-wasi = { version = "40.0.0", features = ["p3"] }
 wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 
 # Credibil registry
-buildgen = { version = "0.20.1", registry = "credibil" }
-# credibil-api = { version = "0.6.0", registry = "credibil" }
+buildgen = { version = "0.21.0", registry = "credibil" }
 fabric = { version = "0.21.0", registry = "credibil" }
-kernel = { version = "0.20.1", registry = "credibil" }
+kernel = { version = "0.21.0", registry = "credibil" }
 wasi-http = { version = "0.21.0", registry = "credibil" }
-wasi-identity = { version = "0.20.1", registry = "credibil" }
-wasi-keyvalue = { version = "0.20.1", registry = "credibil" }
-wasi-messaging = { version = "0.20.1", registry = "credibil" }
-wasi-otel = { version = "0.20.1", registry = "credibil" }
+wasi-identity = { version = "0.21.0", registry = "credibil" }
+wasi-keyvalue = { version = "0.21.0", registry = "credibil" }
+wasi-messaging = { version = "0.21.0", registry = "credibil" }
+wasi-otel = { version = "0.21.0", registry = "credibil" }
 
 # Internally referenced crates
 common = { path = "crates/common" }
 
-[patch.credibil]
-fabric = { path = "../../augentic/warp/crates/fabric" }
-wasi-http  = { path = "../../augentic/warp/crates/wasi-http" }
-
-[patch.crates-io]
-# wasmtime = { git = "https://github.com/bytecodealliance/wasmtime", version = "40.0.0", branch = "release-40.0.0" }
+# [patch.credibil]
+# fabric = { path = "../../augentic/warp/crates/fabric" }
 
 [profile.release]
 lto = "thin"

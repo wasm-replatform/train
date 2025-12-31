@@ -1,7 +1,7 @@
 use anyhow::Context as _;
-use bytes::Bytes;
 use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Error, Message, Publisher, Result};
+use fabric::{Error, IntoBody, Message, Publisher, Result};
+use http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::DilaxMessage;
@@ -27,7 +27,14 @@ where
     msg.headers.insert("key".to_string(), site.to_string());
     Publisher::send(provider, DILAX_TOPIC, &msg).await?;
 
-    Ok(DilaxReply("OK").into())
+    Ok(Reply {
+        status: StatusCode::OK,
+        headers: HeaderMap::from_iter([(
+            HeaderName::from_static("content-type"),
+            HeaderValue::from_static("application/json"),
+        )]),
+        body: DilaxReply("OK"),
+    })
 }
 
 impl<P> Handler<P> for DilaxRequest
@@ -65,11 +72,9 @@ impl TryFrom<&[u8]> for DilaxRequest {
 #[serde(transparent)]
 pub struct DilaxReply(pub &'static str);
 
-impl TryInto<Bytes> for DilaxReply {
-    type Error = anyhow::Error;
-
-    fn try_into(self) -> anyhow::Result<Bytes, Self::Error> {
-        Ok(Bytes::from(self.0))
+impl IntoBody for DilaxReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        Ok(self.0.as_bytes().to_vec())
     }
 }
 

@@ -1,7 +1,10 @@
 use std::convert::Infallible;
 
+use anyhow::Context as _;
 use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore, bad_request};
+use fabric::{
+    Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore, bad_request,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::god_mode::god_mode;
@@ -56,5 +59,11 @@ where
         H: Headers,
     {
         handle(ctx.owner, self, ctx.provider).await
+    }
+}
+
+impl IntoBody for ResetReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        serde_json::to_vec(&self).context("serializing reply")
     }
 }

@@ -1,8 +1,9 @@
 use std::convert::Infallible;
 
+use anyhow::Context as _;
 use common::fleet::{self, Vehicle};
 use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use fabric::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
 
 use crate::trip::TripInstance;
@@ -71,5 +72,11 @@ where
         H: Headers,
     {
         handle(ctx.owner, self, ctx.provider).await
+    }
+}
+
+impl IntoBody for VehicleInfoReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        serde_json::to_vec(&self).context("serializing reply")
     }
 }

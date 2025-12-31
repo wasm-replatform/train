@@ -19,7 +19,6 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-bytes.workspace = true
 fabric.workspace = true
 quick-xml.workspace = true
 serde.workspace = true

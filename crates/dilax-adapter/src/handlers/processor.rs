@@ -1,8 +1,8 @@
 use anyhow::Context as _;
 use common::block_mgt;
 use common::fleet::{self, Vehicle};
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{
     Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
 };
 
@@ -33,10 +33,7 @@ where
     type Output = DilaxReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

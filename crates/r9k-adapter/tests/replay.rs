@@ -8,8 +8,8 @@ use std::fs::{self, File};
 use anyhow::{Result, bail};
 use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
-use fabric::api::Client;
 use r9k_adapter::{R9kMessage, SmarTrakEvent};
+use warp_sdk::api::Client;
 
 use self::provider::MockProvider;
 use crate::provider::Replay;

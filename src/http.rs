@@ -5,12 +5,12 @@ use axum::routing::{get, post};
 use bytes::Bytes;
 use dilax_adapter::{DetectionReply, DetectionRequest};
 use dilax_apc_connector::{DilaxReply, DilaxRequest};
-use fabric::api::{Client, HttpResult, Reply};
 use r9k_connector::{R9kReply, R9kRequest};
 use smartrak_gtfs::{
     ResetReply, ResetRequest, SetTripReply, SetTripRequest, VehicleInfoReply, VehicleInfoRequest,
 };
 use tracing::Level;
+use warp_sdk::api::{Client, HttpResult, Reply};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types as p3;
 

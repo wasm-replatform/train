@@ -16,6 +16,7 @@ version.workspace = true
 workspace = true
 
 [lib]
+path = "src/guest.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -24,7 +25,6 @@ axum = { workspace = true, features = ["json", "macros", "query"] }
 bytes.workspace = true
 dilax-adapter = { path = "crates/dilax-adapter" }
 dilax-apc-connector = { path = "crates/dilax-apc-connector" }
-fabric.workspace = true
 fromenv = "0.1.0"
 http.workspace = true
 http-body.workspace = true
@@ -32,6 +32,7 @@ r9k-adapter = { path = "crates/r9k-adapter" }
 r9k-connector = { path = "crates/r9k-connector" }
 smartrak-gtfs = { path = "crates/smartrak-gtfs" }
 tracing.workspace = true
+warp-sdk.workspace = true
 wasi-http.workspace = true
 wasi-identity.workspace = true
 wasi-keyvalue.workspace = true
@@ -44,11 +45,10 @@ wit-bindgen.workspace = true
 cfg-if = "1.0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-buildgen.workspace = true
-kernel.workspace = true
 futures.workspace = true
 tokio.workspace = true
 wasmtime.workspace = true
+warp.workspace = true
 wasmtime-wasi.workspace = true
 
 [workspace]
@@ -138,20 +138,25 @@ wasmtime-wasi = { version = "40.0.0", features = ["p3"] }
 wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 
 # Credibil registry
-buildgen = { version = "0.21.0", registry = "credibil" }
-fabric = { version = "0.21.0", registry = "credibil" }
-kernel = { version = "0.21.0", registry = "credibil" }
-wasi-http = { version = "0.21.0", registry = "credibil" }
-wasi-identity = { version = "0.21.0", registry = "credibil" }
-wasi-keyvalue = { version = "0.21.0", registry = "credibil" }
-wasi-messaging = { version = "0.21.0", registry = "credibil" }
-wasi-otel = { version = "0.21.0", registry = "credibil" }
+warp = { version = "0.22.0", registry = "credibil" }
+warp-sdk = { version = "0.22.0", registry = "credibil" }
+wasi-http = { version = "0.22.0", registry = "credibil" }
+wasi-identity = { version = "0.22.0", registry = "credibil" }
+wasi-keyvalue = { version = "0.22.0", registry = "credibil" }
+wasi-messaging = { version = "0.22.0", registry = "credibil" }
+wasi-otel = { version = "0.22.0", registry = "credibil" }
 
 # Internally referenced crates
 common = { path = "crates/common" }
 
-# [patch.credibil]
-# fabric = { path = "../../augentic/warp/crates/fabric" }
+[patch.credibil]
+warp = { path = "../../augentic/warp/crates/warp" }
+warp-sdk = { path = "../../augentic/warp/crates/warp-sdk" }
+wasi-http = { path = "../../augentic/warp/crates/wasi-http" }
+wasi-identity = { path = "../../augentic/warp/crates/wasi-identity" }
+wasi-keyvalue = { path = "../../augentic/warp/crates/wasi-keyvalue" }
+wasi-messaging = { path = "../../augentic/warp/crates/wasi-messaging" }
+wasi-otel = { path = "../../augentic/warp/crates/wasi-otel" }
 
 [profile.release]
 lto = "thin"

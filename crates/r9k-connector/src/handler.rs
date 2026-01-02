@@ -6,9 +6,9 @@
 use std::fmt::{self, Display};
 
 use anyhow::Context as _;
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Error, IntoBody, Message, Publisher, Result, bad_request};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Error, IntoBody, Message, Publisher, Result, bad_request};
 
 use crate::R9kError;
 
@@ -48,10 +48,7 @@ where
     type Output = R9kReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<R9kReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

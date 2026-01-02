@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{
+    Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
+};
 
 use crate::location::Location;
 use crate::{god_mode, location, serial_data};
@@ -53,13 +55,10 @@ impl<P> Handler<P> for SmarTrakMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = fabric::Error;
+    type Error = warp_sdk::Error;
     type Output = SmarTrakReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<SmarTrakReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<SmarTrakReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

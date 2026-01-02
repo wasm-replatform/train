@@ -2,9 +2,9 @@ use std::convert::Infallible;
 
 use anyhow::Context as _;
 use common::fleet::{self, Vehicle};
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
 
 use crate::trip::TripInstance;
 
@@ -67,10 +67,7 @@ where
     type Error = Error;
     type Output = VehicleInfoReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<VehicleInfoReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<VehicleInfoReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

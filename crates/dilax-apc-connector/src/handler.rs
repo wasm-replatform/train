@@ -1,8 +1,8 @@
 use anyhow::Context as _;
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Error, IntoBody, Message, Publisher, Result};
 use http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Error, IntoBody, Message, Publisher, Result};
 
 use crate::DilaxMessage;
 
@@ -44,10 +44,7 @@ where
     type Error = Error;
     type Output = DilaxReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<DilaxReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

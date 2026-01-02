@@ -2,9 +2,9 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
@@ -43,10 +43,7 @@ where
     type Output = PassengerCountReply;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<PassengerCountReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<PassengerCountReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

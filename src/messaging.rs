@@ -1,23 +1,25 @@
+use std::env;
+
 use anyhow::{Context, Result};
 use dilax_adapter::DilaxMessage;
-use fabric::api::Client;
 use r9k_adapter::R9kMessage;
 use smartrak_gtfs::{CafAvlMessage, PassengerCountMessage, SmarTrakMessage, TrainAvlMessage};
+use warp_sdk::api::Client;
 use wasi_messaging::types::{Error, Message};
 
 use crate::provider::Provider;
 
 pub struct Messaging;
-
 wasi_messaging::export!(Messaging with_types_in wasi_messaging);
-#[allow(clippy::future_not_send)]
+
 impl wasi_messaging::incoming_handler::Guest for Messaging {
     #[wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), Error> {
         let topic = message.topic().unwrap_or_default();
 
         // check we're processing topics for the correct environment
-        let env = &Provider::new().config.environment;
+        // let env = &Provider::new().config.environment;
+        let env = env::var("ENV").unwrap_or_default();
         let Some(topic) = topic.strip_prefix(&format!("{env}-")) else {
             return Err(Error::Other("Incorrect environment".to_string()));
         };

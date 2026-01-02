@@ -19,10 +19,10 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-fabric.workspace = true
 quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+warp-sdk.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

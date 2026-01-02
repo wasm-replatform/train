@@ -5,10 +5,10 @@
 use anyhow::Context as _;
 use bytes::Bytes;
 use chrono::Utc;
-use fabric::api::{Context, Handler, Headers, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 
 use crate::r9k::{R9kMessage, TrainUpdate};
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
@@ -62,10 +62,7 @@ where
     type Output = R9kResponse;
 
     // TODO: implement "owner"
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<R9kResponse>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kResponse>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

@@ -22,7 +22,6 @@ anyhow.workspace = true
 bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
-fabric.workspace = true
 http.workspace = true
 http-body.workspace = true
 http-body-util.workspace = true
@@ -32,6 +31,7 @@ serde_json.workspace = true
 serde_repr.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+warp-sdk.workspace = true
 
 [dev-dependencies]
 serde_yaml.workspace = true

@@ -1,7 +1,8 @@
 use common::fleet;
-use fabric::api::{Context, Handler, Headers, NoHeaders, Reply};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use http::HeaderMap;
 use serde::Deserialize;
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 use crate::SmarTrakMessage;
 
@@ -43,7 +44,7 @@ where
         return Ok(CafAvlReply.into());
     }
 
-    let headers = NoHeaders;
+    let headers = HeaderMap::default();
     SmarTrakMessage::handle(request, Context { owner, provider, headers: &headers }).await?;
     Ok(CafAvlReply.into())
 }
@@ -55,10 +56,7 @@ where
     type Error = Error;
     type Output = CafAvlReply;
 
-    async fn handle<H>(self, ctx: Context<'_, P, H>) -> Result<Reply<CafAvlReply>>
-    where
-        H: Headers,
-    {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<CafAvlReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

@@ -21,7 +21,6 @@ chrono.workspace = true
 chrono-tz.workspace = true
 common.workspace = true
 dashmap = "6.1.0"
-fabric.workspace = true
 http.workspace = true
 http-body-util.workspace = true
 serde.workspace = true
@@ -29,6 +28,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 uuid.workspace = true
+warp-sdk.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

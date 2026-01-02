@@ -235,17 +235,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "buildgen"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "0239c5e656d0e75017e46102c2249a96da1618419200a9901185576a157ccbd7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -495,12 +484,12 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "bytes",
- "fabric",
  "http",
  "http-body-util",
  "serde",
  "serde_json",
  "urlencoding",
+ "warp-sdk",
 ]
 
 [[package]]
@@ -839,13 +828,13 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "common",
- "fabric",
  "http",
  "http-body-util",
  "serde",
  "serde_json",
  "tokio",
  "tracing",
+ "warp-sdk",
 ]
 
 [[package]]
@@ -853,11 +842,11 @@ name = "dilax-apc-connector"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "fabric",
  "http",
  "serde",
  "serde_json",
  "tokio",
+ "warp-sdk",
 ]
 
 [[package]]
@@ -918,24 +907,6 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "fabric"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "b8ccd575672c8951a272f5b78f991b9f4faac1afafd2b6aa2d643c876c0569c4"
-dependencies = [
- "anyhow",
- "axum",
- "bytes",
- "http",
- "http-body",
- "http-body-util",
- "serde",
- "serde_json",
- "thiserror 2.0.17",
- "tracing",
 ]
 
 [[package]]
@@ -1155,6 +1126,16 @@ dependencies = [
  "fallible-iterator",
  "indexmap",
  "stable_deref_trait",
+]
+
+[[package]]
+name = "guest-macro"
+version = "0.22.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn",
 ]
 
 [[package]]
@@ -1577,23 +1558,6 @@ checksum = "464a3709c7f55f1f721e5389aa6ea4e3bc6aba669353300af094b29ffbdde1d8"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "kernel"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "ace16b4c31fe74ebb5afdb29e196c7b1c77bda5329b57f69e9595daaf85d0c82"
-dependencies = [
- "anyhow",
- "clap",
- "credibil-otel",
- "futures",
- "serde",
- "tokio",
- "tracing",
- "wasmtime",
- "wasmtime-wasi",
 ]
 
 [[package]]
@@ -2205,7 +2169,6 @@ dependencies = [
  "bytes",
  "chrono",
  "chrono-tz",
- "fabric",
  "http",
  "http-body",
  "http-body-util",
@@ -2217,6 +2180,7 @@ dependencies = [
  "thiserror 2.0.17",
  "tokio",
  "tracing",
+ "warp-sdk",
 ]
 
 [[package]]
@@ -2224,11 +2188,11 @@ name = "r9k-connector"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "fabric",
  "quick-xml",
  "serde",
  "thiserror 2.0.17",
  "tokio",
+ "warp-sdk",
 ]
 
 [[package]]
@@ -2349,6 +2313,18 @@ dependencies = [
  "log",
  "rustc-hash",
  "smallvec",
+]
+
+[[package]]
+name = "regex"
+version = "1.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "843bc0191f75f3e22651ae5f1e72939ab2f72a4bc30fa80a066bd66edefc24d4"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
 ]
 
 [[package]]
@@ -2493,6 +2469,15 @@ name = "rkyv_derive"
 version = "0.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd83f5f173ff41e00337d97f6572e416d022ef8a19f371817259ae960324c482"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "runtime-macro"
+version = "0.22.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2864,7 +2849,6 @@ dependencies = [
  "chrono-tz",
  "common",
  "dashmap",
- "fabric",
  "http",
  "http-body-util",
  "serde",
@@ -2872,6 +2856,7 @@ dependencies = [
  "thiserror 2.0.17",
  "tracing",
  "uuid",
+ "warp-sdk",
 ]
 
 [[package]]
@@ -3322,22 +3307,21 @@ version = "0.3.0"
 dependencies = [
  "anyhow",
  "axum",
- "buildgen",
  "bytes",
  "cfg-if",
  "dilax-adapter",
  "dilax-apc-connector",
- "fabric",
  "fromenv",
  "futures",
  "http",
  "http-body",
- "kernel",
  "r9k-adapter",
  "r9k-connector",
  "smartrak-gtfs",
  "tokio",
  "tracing",
+ "warp",
+ "warp-sdk",
  "wasi-http",
  "wasi-identity",
  "wasi-keyvalue",
@@ -3464,6 +3448,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "warp"
+version = "0.22.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "credibil-otel",
+ "futures",
+ "runtime-macro",
+ "serde",
+ "tokio",
+ "tracing",
+ "wasmtime",
+ "wasmtime-wasi",
+]
+
+[[package]]
+name = "warp-sdk"
+version = "0.22.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "bytes",
+ "guest-macro",
+ "http",
+ "http-body",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.17",
+ "tracing",
+ "wasi-http",
+ "wasi-messaging",
+ "wasi-otel",
+ "wasip3",
+]
+
+[[package]]
 name = "wasi"
 version = "0.11.1+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3471,23 +3491,19 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasi-http"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "ee86d9f42824dd9ea74a374d2913b6318696691f33ac97305ea198404c5a47f3"
+version = "0.22.0"
 dependencies = [
  "anyhow",
  "axum",
  "base64ct",
  "bytes",
  "credibil-encoding",
- "fabric",
  "fromenv",
  "futures",
  "http",
  "http-body",
  "http-body-util",
  "hyper",
- "kernel",
  "percent-encoding",
  "reqwest 0.13.1",
  "rkyv",
@@ -3496,6 +3512,7 @@ dependencies = [
  "tokio",
  "tower",
  "tracing",
+ "warp",
  "wasi-keyvalue",
  "wasip3",
  "wasmtime",
@@ -3505,17 +3522,15 @@ dependencies = [
 
 [[package]]
 name = "wasi-identity"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "8ead71ce979ed60c985f055cfd800dea3a9b2694ed61f1a81fdeea6d7b378f77"
+version = "0.22.0"
 dependencies = [
  "anyhow",
  "fromenv",
  "futures",
- "kernel",
  "oauth2",
  "serde",
  "tracing",
+ "warp",
  "wasmtime",
  "wasmtime-wasi",
  "wit-bindgen 0.50.0",
@@ -3523,18 +3538,16 @@ dependencies = [
 
 [[package]]
 name = "wasi-keyvalue"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "fa3492a282ccd135956fc913d5ccb1c19b54433f1f0a919b8e56c9ebe2cc8108"
+version = "0.22.0"
 dependencies = [
  "anyhow",
  "chrono",
  "futures",
- "kernel",
  "parking_lot",
  "serde",
  "serde_json",
  "tracing",
+ "warp",
  "wasmtime",
  "wasmtime-wasi",
  "wit-bindgen 0.50.0",
@@ -3542,19 +3555,17 @@ dependencies = [
 
 [[package]]
 name = "wasi-messaging"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "75c1b76022d6fe5998196bfdde8894c3868b4578f62b6b191de78cace294213f"
+version = "0.22.0"
 dependencies = [
  "anyhow",
  "futures",
  "http",
- "kernel",
  "serde",
  "time",
  "tokio",
  "tokio-stream",
  "tracing",
+ "warp",
  "wasmtime",
  "wasmtime-wasi",
  "wit-bindgen 0.50.0",
@@ -3562,16 +3573,13 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "8dcfc570e807567c048c9866663f4a2fdc82c2399602debaa2eaa73bf33c979c"
+version = "0.22.0"
 dependencies = [
  "anyhow",
  "cfg-if",
  "credibil-otel",
  "futures",
  "hex",
- "kernel",
  "num-traits",
  "opentelemetry",
  "opentelemetry-proto",
@@ -3580,6 +3588,7 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
+ "warp",
  "wasi-otel-attr",
  "wasmtime",
  "wit-bindgen 0.50.0",
@@ -3587,9 +3596,7 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel-attr"
-version = "0.21.0"
-source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "f7fb1148cf10569287de9c7bd4aaa1710e3957f770bb5a177a119b6e1b7b4bed"
+version = "0.22.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4799,6 +4806,6 @@ dependencies = [
 
 [[package]]
 name = "zmij"
-version = "1.0.5"
+version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3280a1b827474fcd5dbef4b35a674deb52ba5c312363aef9135317df179d81b"
+checksum = "de9211a9f64b825911bdf0240f58b7a8dac217fe260fc61f080a07f61372fbd5"

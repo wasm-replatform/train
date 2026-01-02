@@ -7,8 +7,8 @@ mod r9k;
 mod smartrak;
 mod stops;
 
-use fabric::Error;
 use thiserror::Error;
+use warp_sdk::Error;
 
 pub use self::r9k::*;
 pub use self::smartrak::*;

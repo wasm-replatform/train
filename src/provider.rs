@@ -54,7 +54,7 @@ impl Provider {
     }
 }
 
-impl fabric::Config for Provider {
+impl warp_sdk::Config for Provider {
     async fn get(&self, key: &str) -> Result<String> {
         Ok(match key {
             "ENV" => &self.config.environment,
@@ -69,8 +69,8 @@ impl fabric::Config for Provider {
     }
 }
 
-impl fabric::Publisher for Provider {
-    async fn send(&self, topic: &str, message: &fabric::Message) -> Result<()> {
+impl warp_sdk::Publisher for Provider {
+    async fn send(&self, topic: &str, message: &warp_sdk::Message) -> Result<()> {
         tracing::debug!("sending to topic: {topic}");
 
         let client = Client::connect("kafka".to_string()).await.context("connecting to broker")?;
@@ -92,7 +92,7 @@ impl fabric::Publisher for Provider {
     }
 }
 
-impl fabric::HttpRequest for Provider {
+impl warp_sdk::HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
@@ -104,7 +104,7 @@ impl fabric::HttpRequest for Provider {
     }
 }
 
-impl fabric::Identity for Provider {
+impl warp_sdk::Identity for Provider {
     async fn access_token(&self) -> Result<String> {
         let identity = self.config.azure_identity.clone();
         let identity = block_on(get_identity(identity))?;
@@ -113,7 +113,7 @@ impl fabric::Identity for Provider {
     }
 }
 
-impl fabric::StateStore for Provider {
+impl warp_sdk::StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
         let bucket = cache::open("train_cache").await.context("opening cache")?;
         bucket.get(key).await.context("reading state from cache")

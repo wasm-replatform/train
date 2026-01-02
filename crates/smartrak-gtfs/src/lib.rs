@@ -7,10 +7,10 @@ mod location;
 mod serial_data;
 mod trip;
 
-use fabric::Error;
 pub use god_mode::*;
 pub use handlers::*;
 use thiserror::Error;
+use warp_sdk::Error;
 
 // TODO: use for internal methods
 #[derive(Error, Debug)]

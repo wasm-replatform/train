@@ -3470,6 +3470,7 @@ dependencies = [
  "anyhow",
  "axum",
  "bytes",
+ "fromenv",
  "guest-macro",
  "http",
  "http-body",
@@ -3478,9 +3479,12 @@ dependencies = [
  "thiserror 2.0.17",
  "tracing",
  "wasi-http",
+ "wasi-identity",
+ "wasi-keyvalue",
  "wasi-messaging",
  "wasi-otel",
  "wasip3",
+ "wit-bindgen 0.50.0",
 ]
 
 [[package]]

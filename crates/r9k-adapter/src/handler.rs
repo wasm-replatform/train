@@ -7,14 +7,41 @@ use bytes::Bytes;
 use chrono::Utc;
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
+use serde::Deserialize;
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 
-use crate::r9k::{R9kMessage, TrainUpdate};
+use crate::r9k::TrainUpdate;
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
-use crate::stops;
+use crate::{R9kError, stops};
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
+
+/// R9K train update message as deserialized from the XML received from
+/// KiwiRail.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct R9kMessage {
+    /// The train update.
+    #[serde(rename(deserialize = "ActualizarDatosTren"))]
+    pub train_update: TrainUpdate,
+}
+
+impl TryFrom<String> for R9kMessage {
+    type Error = R9kError;
+
+    fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
+        quick_xml::de::from_str(&xml).map_err(Into::into)
+    }
+}
+
+impl TryFrom<&[u8]> for R9kMessage {
+    type Error = R9kError;
+
+    fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
+        quick_xml::de::from_reader(xml).map_err(Into::into)
+    }
+}
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
@@ -126,5 +153,20 @@ impl TrainUpdate {
         }
 
         Ok(events)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::R9kMessage;
+
+    #[test]
+    fn deserialization() {
+        let xml = include_str!("../data/sample.xml");
+        let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
+
+        let update = message.train_update;
+        assert_eq!(update.even_train_id, Some("1234".to_string()));
+        assert!(!update.changes.is_empty(), "should have changes");
     }
 }

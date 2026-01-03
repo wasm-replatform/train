@@ -4,8 +4,8 @@ use std::fmt::{Display, Formatter};
 
 use chrono::{NaiveDate, Utc};
 use chrono_tz::Pacific;
-use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde::Deserialize;
+use serde_repr::Deserialize_repr;
 use warp_sdk::Result;
 
 use crate::R9kError;
@@ -13,35 +13,9 @@ use crate::R9kError;
 const MAX_DELAY_SECS: i64 = 60;
 const MIN_DELAY_SECS: i64 = -30;
 
-/// R9K train update message as deserialized from the XML received from
-/// KiwiRail.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default)]
-pub struct R9kMessage {
-    /// The train update.
-    #[serde(rename(deserialize = "ActualizarDatosTren"))]
-    pub train_update: TrainUpdate,
-}
-
-impl TryFrom<String> for R9kMessage {
-    type Error = R9kError;
-
-    fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_str(&xml).map_err(Into::into)
-    }
-}
-
-impl TryFrom<&[u8]> for R9kMessage {
-    type Error = R9kError;
-
-    fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_reader(xml).map_err(Into::into)
-    }
-}
-
 /// R9000 (R9K) train update as received from KiwiRail.
 /// Defines the XML mappings as defined by the R9K provider - in Spanish.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct TrainUpdate {
     /// Train ID for even trains.
@@ -159,7 +133,7 @@ impl TrainUpdate {
 }
 
 /// R9K train update change.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Change {
     /// Type of change that triggered the update message.
     #[serde(rename(deserialize = "tipoCambio"))]
@@ -250,7 +224,7 @@ pub struct Change {
 }
 
 /// The type of change that triggered the update message.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
 #[repr(u8)]
 pub enum ChangeType {
     /// Train has exited the first station.
@@ -326,7 +300,7 @@ impl ChangeType {
 }
 
 /// Type of train.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TrainType {
     /// Metro train.
@@ -341,7 +315,7 @@ pub enum TrainType {
 }
 
 /// Direction of travel.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
 #[repr(i8)]
 pub enum Direction {
     /// Right.
@@ -355,7 +329,7 @@ pub enum Direction {
 }
 
 /// Direction of travel.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize_repr)]
 #[repr(i8)]
 pub enum StopType {
     /// Original, Passing (non-stop/skip), or Destination (no dwell time in
@@ -364,19 +338,4 @@ pub enum StopType {
 
     /// Intermediate stop (there is a dwell time in the time table).
     Intermediate = 5,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::R9kMessage;
-
-    #[test]
-    fn deserialization() {
-        let xml = include_str!("../data/sample.xml");
-        let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
-
-        let update = message.train_update;
-        assert_eq!(update.even_train_id, Some("1234".to_string()));
-        assert!(!update.changes.is_empty(), "should have changes");
-    }
 }

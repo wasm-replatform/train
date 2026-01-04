@@ -81,6 +81,16 @@ where
     Ok(R9kResponse.into())
 }
 
+use warp_sdk::Decodable;
+impl Decodable for R9kMessage {
+    type DecodeError = R9kError;
+
+    fn decode(bytes: &[u8]) -> anyhow::Result<Self, Self::DecodeError> {
+        let message = quick_xml::de::from_reader(bytes)?;
+        Ok(message)
+    }
+}
+
 impl<P> Handler<P> for R9kMessage
 where
     P: Config + HttpRequest + Identity + Publisher,
@@ -88,7 +98,6 @@ where
     type Error = Error;
     type Output = R9kResponse;
 
-    // TODO: implement "owner"
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kResponse>> {
         handle(ctx.owner, self, ctx.provider).await
     }

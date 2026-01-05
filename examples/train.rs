@@ -7,7 +7,7 @@ cfg_if::cfg_if! {
         use wasi_otel::{WasiOtel,  OtelDefault};
 
         warp::runtime!({
-            main: true, 
+            main: true,
             hosts: {
                 WasiHttp: HttpDefault,
                 WasiOtel: OtelDefault,

@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-
 use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
@@ -13,22 +11,12 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct ResetRequest(String);
 
-#[allow(clippy::infallible_try_from)]
-impl TryFrom<String> for ResetRequest {
-    type Error = Infallible;
-
-    fn try_from(value: String) -> anyhow::Result<Self, Self::Error> {
-        Ok(Self(value))
-    }
-}
-
 impl Decode for ResetRequest {
     type DecodeError = Error;
+    type Encoded = String;
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
-        serde_json::from_slice(bytes)
-            .context("deserializing ResetRequest")
-            .map_err(Into::into)
+    fn decode(encoded: Self::Encoded) -> Result<Self> {
+        Ok(Self(encoded))
     }
 }
 

@@ -13,7 +13,7 @@ use warp_sdk::{Config, Decode, Error, HttpRequest, Identity, Message, Publisher,
 
 use crate::r9k::TrainUpdate;
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
-use crate::{R9kError, stops};
+use crate::stops;
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 
@@ -25,22 +25,6 @@ pub struct R9kMessage {
     /// The train update.
     #[serde(rename(deserialize = "ActualizarDatosTren"))]
     pub train_update: TrainUpdate,
-}
-
-impl TryFrom<String> for R9kMessage {
-    type Error = R9kError;
-
-    fn try_from(xml: String) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_str(&xml).map_err(Into::into)
-    }
-}
-
-impl TryFrom<&[u8]> for R9kMessage {
-    type Error = R9kError;
-
-    fn try_from(xml: &[u8]) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_reader(xml).map_err(Into::into)
-    }
 }
 
 /// R9K empty response.
@@ -83,9 +67,12 @@ where
 
 impl Decode for R9kMessage {
     type DecodeError = Error;
+    type Encoded = Vec<u8>;
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
-        quick_xml::de::from_reader(bytes).context("deserializing R9k message").map_err(Into::into)
+    fn decode(encoded: Self::Encoded) -> Result<Self> {
+        quick_xml::de::from_reader(encoded.as_ref())
+            .context("deserializing R9kMessage")
+            .map_err(Into::into)
     }
 }
 

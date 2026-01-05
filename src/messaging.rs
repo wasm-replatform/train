@@ -26,14 +26,12 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 
         // process message based on topic
         if let Err(e) = match &topic {
-            t if t.contains("realtime-r9k.v1") => r9k(&message.data()).await,
-            t if t.contains("realtime-dilax-apc.v2") => dilax(&message.data()).await,
-            t if t.contains("realtime-r9k-to-smartrak.v1") => smartrak(&message.data()).await,
-            t if t.contains("realtime-caf-avl.v1") => caf_avl(&message.data()).await,
-            t if t.contains("realtime-train-avl.v1") => train_avl(&message.data()).await,
-            t if t.contains("realtime-passenger-count.v1") => {
-                passenger_count(&message.data()).await
-            }
+            t if t.contains("realtime-r9k.v1") => r9k(message.data()).await,
+            t if t.contains("realtime-dilax-apc.v2") => dilax(message.data()).await,
+            t if t.contains("realtime-r9k-to-smartrak.v1") => smartrak(message.data()).await,
+            t if t.contains("realtime-caf-avl.v1") => caf_avl(message.data()).await,
+            t if t.contains("realtime-train-avl.v1") => train_avl(message.data()).await,
+            t if t.contains("realtime-passenger-count.v1") => passenger_count(message.data()).await,
             _ => {
                 return Err(Error::Other("Unhandled topic".to_string()));
             }
@@ -46,7 +44,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 }
 
 #[wasi_otel::instrument]
-async fn r9k(payload: &[u8]) -> Result<()> {
+async fn r9k(payload: Vec<u8>) -> Result<()> {
     // let request = R9kMessage::decode(payload)?;
     // Client::new("at").provider(Provider::new()).request(request).await?;
     R9kMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
@@ -54,31 +52,31 @@ async fn r9k(payload: &[u8]) -> Result<()> {
 }
 
 #[wasi_otel::instrument]
-async fn dilax(payload: &[u8]) -> Result<()> {
+async fn dilax(payload: Vec<u8>) -> Result<()> {
     DilaxMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
-async fn passenger_count(payload: &[u8]) -> Result<()> {
+async fn passenger_count(payload: Vec<u8>) -> Result<()> {
     PassengerCountMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
-async fn smartrak(payload: &[u8]) -> Result<()> {
+async fn smartrak(payload: Vec<u8>) -> Result<()> {
     SmarTrakMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
-async fn caf_avl(payload: &[u8]) -> Result<()> {
+async fn caf_avl(payload: Vec<u8>) -> Result<()> {
     CafAvlMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
-async fn train_avl(payload: &[u8]) -> Result<()> {
+async fn train_avl(payload: Vec<u8>) -> Result<()> {
     TrainAvlMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }

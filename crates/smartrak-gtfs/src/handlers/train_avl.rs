@@ -11,19 +11,12 @@ use crate::SmarTrakMessage;
 #[serde(transparent)]
 pub struct TrainAvlMessage(SmarTrakMessage);
 
-impl TryFrom<&[u8]> for TrainAvlMessage {
-    type Error = serde_json::Error;
-
-    fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
-        serde_json::from_slice(value)
-    }
-}
-
 impl Decode for TrainAvlMessage {
     type DecodeError = Error;
+    type Encoded = Vec<u8>;
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
-        serde_json::from_slice(bytes)
+    fn decode(encoded: Self::Encoded) -> Result<Self> {
+        serde_json::from_slice(&encoded)
             .context("deserializing TrainAvlMessage")
             .map_err(Into::into)
     }

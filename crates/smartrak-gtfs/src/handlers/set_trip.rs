@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-
 use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
@@ -13,22 +11,12 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetTripRequest(String, String);
 
-#[allow(clippy::infallible_try_from)]
-impl TryFrom<(String, String)> for SetTripRequest {
-    type Error = Infallible;
-
-    fn try_from(value: (String, String)) -> anyhow::Result<Self, Self::Error> {
-        Ok(Self(value.0, value.1))
-    }
-}
-
 impl Decode for SetTripRequest {
     type DecodeError = Error;
+    type Encoded = (String, String);
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
-        serde_json::from_slice(bytes)
-            .context("deserializing SetTripRequest")
-            .map_err(Into::into)
+    fn decode(encoded: Self::Encoded) -> Result<Self> {
+        Ok(Self(encoded.0, encoded.1))
     }
 }
 

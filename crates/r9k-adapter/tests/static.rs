@@ -8,8 +8,8 @@ use std::ops::Sub;
 use chrono::{Duration, Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use r9k_adapter::{ChangeType, EventType, R9kMessage};
-use warp_sdk::Error;
 use warp_sdk::api::Client;
+use warp_sdk::{Decode, Error};
 
 use self::provider::MockProvider;
 
@@ -17,7 +17,7 @@ use self::provider::MockProvider;
 #[tokio::test]
 async fn deserialize_xml() {
     let xml = XmlBuilder::new().xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     let train_update = message.train_update;
     assert_eq!(train_update.train_id(), "5226");
@@ -33,7 +33,7 @@ async fn arrival_event() {
     let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     client.request(message).await.expect("should process");
 
@@ -56,7 +56,7 @@ async fn departure_event() {
     let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().arrival(false).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     client.request(message).await.expect("should process");
     let events = provider.events();
@@ -77,7 +77,7 @@ async fn unmapped_station() {
     let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().station(5).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     client.request(message).await.expect("should process");
     let events = provider.events();
@@ -91,7 +91,7 @@ async fn no_matching_vehicle() {
     let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().vehicle("445").xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     client.request(message).await.expect("should process");
     let events = provider.events();
@@ -105,7 +105,7 @@ async fn no_matching_stop() {
     let client = Client::new("at").provider(provider.clone());
 
     let xml = XmlBuilder::new().station(80).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     client.request(message).await.expect("should process");
     let events = provider.events();
@@ -119,7 +119,7 @@ async fn no_train_update() {
     let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::None).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return BadRequest error");
@@ -136,7 +136,7 @@ async fn no_changes() {
     let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return BadRequest error");
@@ -153,7 +153,7 @@ async fn no_actual_changes() {
     let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return BadRequest error");
@@ -170,7 +170,7 @@ async fn too_late() {
     let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().delay_secs(61).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return no actual update error");
@@ -187,7 +187,7 @@ async fn too_early() {
     let client = Client::new("at").provider(provider);
 
     let xml = XmlBuilder::new().delay_secs(-32).xml();
-    let message = R9kMessage::try_from(xml).expect("should deserialize");
+    let message = R9kMessage::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
     let Err(Error::BadRequest { code, description }) = client.request(message).await else {
         panic!("should return no actual update error");

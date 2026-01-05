@@ -10,8 +10,6 @@ use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{Decode, Error, IntoBody, Message, Publisher, Result, bad_request};
 
-use crate::R9kError;
-
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
     Fault { status_code: 500, response: FaultMessage { message: "Internal Server Error" } };
@@ -61,19 +59,12 @@ pub struct R9kRequest {
     pub body: Body,
 }
 
-impl TryFrom<&[u8]> for R9kRequest {
-    type Error = R9kError;
-
-    fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
-        quick_xml::de::from_reader(value).map_err(Into::into)
-    }
-}
-
 impl Decode for R9kRequest {
     type DecodeError = Error;
+    type Encoded = Vec<u8>;
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
-        quick_xml::de::from_reader(bytes)
+    fn decode(encoded: Self::Encoded) -> Result<Self> {
+        quick_xml::de::from_reader(encoded.as_slice())
             .context("deserializing R9kRequest")
             .map_err(Into::into)
     }
@@ -132,7 +123,7 @@ mod tests {
     #[test]
     fn deserialize_soap() {
         let xml = include_str!("../data/receive-message.xml");
-        let envelope = R9kRequest::try_from(xml.as_bytes()).expect("should deserialize");
+        let envelope = R9kRequest::decode(xml.as_bytes().to_vec()).expect("should deserialize");
 
         let receive_message = envelope.body.receive_message;
         let message = receive_message.axml_message;

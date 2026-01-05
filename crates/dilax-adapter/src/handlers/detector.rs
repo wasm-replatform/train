@@ -22,8 +22,9 @@ pub struct DetectionRequest;
 
 impl Decode for DetectionRequest {
     type DecodeError = Error;
+    type Encoded = ();
 
-    fn decode(_bytes: &[u8]) -> Result<Self> {
+    fn decode(_encoded: Self::Encoded) -> Result<Self> {
         Ok(Self)
     }
 }

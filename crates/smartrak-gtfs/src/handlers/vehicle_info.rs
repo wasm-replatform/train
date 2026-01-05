@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-
 use anyhow::Context as _;
 use common::fleet::{self, Vehicle};
 use serde::{Deserialize, Serialize};
@@ -13,22 +11,12 @@ use crate::trip::TripInstance;
 #[derive(Debug, Clone, Deserialize)]
 pub struct VehicleInfoRequest(String);
 
-#[allow(clippy::infallible_try_from)]
-impl TryFrom<String> for VehicleInfoRequest {
-    type Error = Infallible;
-
-    fn try_from(value: String) -> anyhow::Result<Self, Self::Error> {
-        Ok(Self(value))
-    }
-}
-
 impl Decode for VehicleInfoRequest {
     type DecodeError = Error;
+    type Encoded = String;
 
-    fn decode(bytes: &[u8]) -> Result<Self> {
-        serde_json::from_slice(bytes)
-            .context("deserializing VehicleInfoRequest")
-            .map_err(Into::into)
+    fn decode(encoded: Self::Encoded) -> Result<Self> {
+        Ok(Self(encoded))
     }
 }
 

@@ -3,7 +3,7 @@ use common::fleet;
 use http::HeaderMap;
 use serde::Deserialize;
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Decode, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 use crate::SmarTrakMessage;
 
@@ -11,12 +11,11 @@ use crate::SmarTrakMessage;
 #[serde(transparent)]
 pub struct CafAvlMessage(SmarTrakMessage);
 
-impl Decode for CafAvlMessage {
-    type DecodeError = Error;
-    type Encoded = Vec<u8>;
+impl TryFrom<Vec<u8>> for CafAvlMessage {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        serde_json::from_slice(&encoded).context("deserializing CafAvlMessage").map_err(Into::into)
+    fn try_from(value: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&value).context("deserializing CafAvlMessage").map_err(Into::into)
     }
 }
 
@@ -55,6 +54,7 @@ impl<P> Handler<P> for CafAvlMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Input = Vec<u8>;
     type Error = Error;
     type Output = CafAvlReply;
 

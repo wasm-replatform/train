@@ -2,21 +2,18 @@ use anyhow::Context as _;
 use common::fleet::{self, Vehicle};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{
-    Config, Decode, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore,
-};
+use warp_sdk::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
 
 use crate::trip::TripInstance;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct VehicleInfoRequest(String);
 
-impl Decode for VehicleInfoRequest {
-    type DecodeError = Error;
-    type Encoded = String;
+impl TryFrom<String> for VehicleInfoRequest {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        Ok(Self(encoded))
+    fn try_from(value: String) -> Result<Self> {
+        Ok(Self(value))
     }
 }
 
@@ -64,6 +61,7 @@ impl<P> Handler<P> for VehicleInfoRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Input = String;
     type Error = Error;
     type Output = VehicleInfoReply;
 

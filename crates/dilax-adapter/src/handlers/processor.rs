@@ -29,6 +29,7 @@ impl<P> Handler<P> for DilaxMessage
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
+    type Input = Vec<u8>;
     type Error = Error;
     type Output = DilaxReply;
 

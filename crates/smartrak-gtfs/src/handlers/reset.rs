@@ -2,8 +2,7 @@ use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{
-    Config, Decode, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore,
-    bad_request,
+    Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore, bad_request,
 };
 
 use crate::god_mode::god_mode;
@@ -11,12 +10,11 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct ResetRequest(String);
 
-impl Decode for ResetRequest {
-    type DecodeError = Error;
-    type Encoded = String;
+impl TryFrom<String> for ResetRequest {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        Ok(Self(encoded))
+    fn try_from(value: String) -> Result<Self> {
+        Ok(Self(value))
     }
 }
 
@@ -50,6 +48,7 @@ impl<P> Handler<P> for ResetRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Input = String;
     type Error = Error;
     type Output = ResetReply;
 

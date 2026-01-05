@@ -3,8 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{
-    Config, Decode, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore,
-    bad_request,
+    Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
 };
 
 use crate::location::Location;
@@ -57,6 +56,7 @@ impl<P> Handler<P> for SmarTrakMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Input = Vec<u8>;
     type Error = warp_sdk::Error;
     type Output = SmarTrakReply;
 
@@ -93,12 +93,11 @@ impl SmarTrakMessage {
     }
 }
 
-impl Decode for SmarTrakMessage {
-    type DecodeError = Error;
-    type Encoded = Vec<u8>;
+impl TryFrom<Vec<u8>> for SmarTrakMessage {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        serde_json::from_slice(&encoded)
+    fn try_from(value: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&value)
             .context("deserializing SmarTrakMessage")
             .map_err(Into::into)
     }

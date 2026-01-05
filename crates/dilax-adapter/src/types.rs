@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use serde::{Deserialize, Deserializer, Serialize};
-use warp_sdk::{Decode, Error, Result};
+use warp_sdk::{Error, Result};
 
 /// Raw Dilax payload emitted by the APC hardware on board a train.
 /// The payload mirrors the legacy adapter schema so that parity can be
@@ -43,12 +43,11 @@ pub struct DilaxMessage {
     pub wpt: Option<Waypoint>,
 }
 
-impl Decode for DilaxMessage {
-    type DecodeError = Error;
-    type Encoded = Vec<u8>;
+impl TryFrom<Vec<u8>> for DilaxMessage {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        serde_json::from_slice(&encoded).context("deserializing DilaxMessage").map_err(Into::into)
+    fn try_from(value: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&value).context("deserializing DilaxMessage").map_err(Into::into)
     }
 }
 

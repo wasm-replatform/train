@@ -2,8 +2,7 @@ use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{
-    Config, Decode, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore,
-    bad_request,
+    Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore, bad_request,
 };
 
 use crate::god_mode::god_mode;
@@ -11,12 +10,11 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetTripRequest(String, String);
 
-impl Decode for SetTripRequest {
-    type DecodeError = Error;
-    type Encoded = (String, String);
+impl TryFrom<(String, String)> for SetTripRequest {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        Ok(Self(encoded.0, encoded.1))
+    fn try_from(value: (String, String)) -> Result<Self> {
+        Ok(Self(value.0, value.1))
     }
 }
 
@@ -47,6 +45,7 @@ impl<P> Handler<P> for SetTripRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Input = (String, String);
     type Error = Error;
     type Output = SetTripReply;
 

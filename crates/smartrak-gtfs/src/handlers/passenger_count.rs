@@ -5,7 +5,7 @@
 use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Decode, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
@@ -40,6 +40,7 @@ impl<P> Handler<P> for PassengerCountMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
+    type Input = Vec<u8>;
     type Error = Error;
     type Output = PassengerCountReply;
 
@@ -58,12 +59,11 @@ pub struct PassengerCountMessage {
     pub timestamp: i64,
 }
 
-impl Decode for PassengerCountMessage {
-    type DecodeError = Error;
-    type Encoded = Vec<u8>;
+impl TryFrom<Vec<u8>> for PassengerCountMessage {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        serde_json::from_slice(&encoded)
+    fn try_from(value: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&value)
             .context("deserializing PassengerCountMessage")
             .map_err(Into::into)
     }

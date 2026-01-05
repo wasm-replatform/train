@@ -9,7 +9,7 @@ use http::header::AUTHORIZATION;
 use http_body_util::Empty;
 use serde::Deserialize;
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Decode, Error, HttpRequest, Identity, Message, Publisher, Result};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 
 use crate::r9k::TrainUpdate;
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
@@ -65,12 +65,11 @@ where
     Ok(R9kResponse.into())
 }
 
-impl Decode for R9kMessage {
-    type DecodeError = Error;
-    type Encoded = Vec<u8>;
+impl TryFrom<Vec<u8>> for R9kMessage {
+    type Error = Error;
 
-    fn decode(encoded: Self::Encoded) -> Result<Self> {
-        quick_xml::de::from_reader(encoded.as_ref())
+    fn try_from(value: Vec<u8>) -> Result<Self> {
+        quick_xml::de::from_reader(value.as_ref())
             .context("deserializing R9kMessage")
             .map_err(Into::into)
     }
@@ -81,6 +80,7 @@ where
     P: Config + HttpRequest + Identity + Publisher,
 {
     type Error = Error;
+    type Input = Vec<u8>;
     type Output = R9kResponse;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kResponse>> {

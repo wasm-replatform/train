@@ -13,16 +13,12 @@ use crate::types::{DilaxMessage, EnrichedEvent};
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
 
-/// Dilax empty response.
-#[derive(Debug, Clone)]
-pub struct DilaxReply;
-
-async fn handle<P>(_owner: &str, request: DilaxMessage, provider: &P) -> Result<Reply<DilaxReply>>
+async fn handle<P>(_owner: &str, request: DilaxMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     process(request, provider).await?;
-    Ok(DilaxReply.into())
+    Ok(Reply::ok(()))
 }
 
 impl<P> Handler<P> for DilaxMessage
@@ -31,10 +27,10 @@ where
 {
     type Error = Error;
     type Input = Vec<u8>;
-    type Output = DilaxReply;
+    type Output = ();
 
     // TODO: implement "owner"
-    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

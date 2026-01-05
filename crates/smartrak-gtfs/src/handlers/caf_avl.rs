@@ -19,11 +19,7 @@ impl TryFrom<Vec<u8>> for CafAvlMessage {
     }
 }
 
-/// CAF AVL response.
-#[derive(Debug, Clone)]
-pub struct CafAvlReply;
-
-async fn handle<P>(owner: &str, request: CafAvlMessage, provider: &P) -> Result<Reply<CafAvlReply>>
+async fn handle<P>(owner: &str, request: CafAvlMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -32,22 +28,22 @@ where
     // verify vehicle tag is 'caf'
     let Some(vehicle_id) = request.vehicle_id() else {
         tracing::debug!("no vehicle identifier found");
-        return Ok(CafAvlReply.into());
+        return Ok(Reply::ok(()));
     };
     let Some(vehicle) = fleet::vehicle(vehicle_id, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
-        return Ok(CafAvlReply.into());
+        return Ok(Reply::ok(()));
     };
     if let Some(tag) = vehicle.tag.as_deref().map(str::to_lowercase)
         && tag != "caf"
     {
         tracing::debug!("vehicle tag {tag} did not match rules");
-        return Ok(CafAvlReply.into());
+        return Ok(Reply::ok(()));
     }
 
     let headers = HeaderMap::default();
     SmarTrakMessage::handle(request, Context { owner, provider, headers: &headers }).await?;
-    Ok(CafAvlReply.into())
+    Ok(Reply::ok(()))
 }
 
 impl<P> Handler<P> for CafAvlMessage
@@ -56,9 +52,9 @@ where
 {
     type Error = Error;
     type Input = Vec<u8>;
-    type Output = CafAvlReply;
+    type Output = ();
 
-    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<CafAvlReply>> {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

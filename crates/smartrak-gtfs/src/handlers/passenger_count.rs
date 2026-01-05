@@ -7,15 +7,9 @@ use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
-/// R9K empty response.
-#[derive(Debug, Clone)]
-pub struct PassengerCountReply;
-
 const OCCUPANY_STATUS_TTL: u64 = 3 * 60 * 60; // 3 hours
 
-async fn handle<P>(
-    _owner: &str, request: PassengerCountMessage, provider: &P,
-) -> Result<Reply<PassengerCountReply>>
+async fn handle<P>(_owner: &str, request: PassengerCountMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -33,7 +27,7 @@ where
         StateStore::delete(provider, &key).await?;
     }
 
-    Ok(PassengerCountReply.into())
+    Ok(Reply::ok(()))
 }
 
 impl<P> Handler<P> for PassengerCountMessage
@@ -42,10 +36,10 @@ where
 {
     type Error = Error;
     type Input = Vec<u8>;
-    type Output = PassengerCountReply;
+    type Output = ();
 
     // TODO: implement "owner"
-    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<PassengerCountReply>> {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

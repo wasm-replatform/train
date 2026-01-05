@@ -27,11 +27,7 @@ pub struct R9kMessage {
     pub train_update: TrainUpdate,
 }
 
-/// R9K empty response.
-#[derive(Debug, Clone)]
-pub struct R9kResponse;
-
-async fn handle<P>(owner: &str, request: R9kMessage, provider: &P) -> Result<Reply<R9kResponse>>
+async fn handle<P>(owner: &str, request: R9kMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher,
 {
@@ -62,7 +58,7 @@ where
         }
     }
 
-    Ok(R9kResponse.into())
+    Ok(Reply::ok(()))
 }
 
 impl TryFrom<Vec<u8>> for R9kMessage {
@@ -81,9 +77,9 @@ where
 {
     type Error = Error;
     type Input = Vec<u8>;
-    type Output = R9kResponse;
+    type Output = ();
 
-    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kResponse>> {
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await
     }
 }

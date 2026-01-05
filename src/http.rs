@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use axum::Router;
 use axum::extract::Path;
 use axum::routing::{get, post};
@@ -37,70 +37,54 @@ impl Guest for Http {
 #[axum::debug_handler]
 async fn r9k_message(body: Bytes) -> HttpResult<Reply<R9kReply>> {
     // let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
-    // let reply = Client::new("at").provider(Provider::new()).request(request).await.context("processing request")?;
+    // Client::new("at").provider(Provider::new()).request(request).await.context("processing request")?;
 
-    let reply = R9kRequest::handler(body.to_vec())
-        .context("parsing")?
+    R9kRequest::handler(body.to_vec())?
         .provider(Provider::new())
         .owner("at")
         .await
-        .context("processing")?;
-    Ok(reply)
+        .map_err(Into::into)
 }
 
 #[axum::debug_handler]
 async fn dilax_message(body: Bytes) -> HttpResult<Reply<DilaxReply>> {
-    let reply = DilaxRequest::handler(body.to_vec())
-        .context("parsing")?
+    DilaxRequest::handler(body.to_vec())?
         .provider(Provider::new())
         .owner("at")
         .await
-        .context("processing")?;
-    Ok(reply)
+        .map_err(Into::into)
 }
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Reply<DetectionReply>> {
-    let reply = DetectionRequest::handler(())
-        .context("parsing")?
-        .provider(Provider::new())
-        .owner("at")
-        .await
-        .context("processing")?;
-    Ok(reply)
+    DetectionRequest::handler(())?.provider(Provider::new()).owner("at").await.map_err(Into::into)
 }
 
 #[axum::debug_handler]
 async fn vehicle_info(Path(vehicle_id): Path<String>) -> HttpResult<Reply<VehicleInfoReply>> {
-    let reply = VehicleInfoRequest::handler(vehicle_id)
-        .context("parsing")?
+    VehicleInfoRequest::handler(vehicle_id)?
         .provider(Provider::new())
         .owner("at")
         .await
-        .context("processing")?;
-    Ok(reply)
+        .map_err(Into::into)
 }
 
 #[axum::debug_handler]
 async fn set_trip(
     Path((vehicle_id, trip_id)): Path<(String, String)>,
 ) -> HttpResult<Reply<SetTripReply>> {
-    let reply = SetTripRequest::handler((vehicle_id, trip_id))
-        .context("parsing")?
+    SetTripRequest::handler((vehicle_id, trip_id))?
         .provider(Provider::new())
         .owner("at")
         .await
-        .context("processing")?;
-    Ok(reply)
+        .map_err(Into::into)
 }
 
 #[axum::debug_handler]
 async fn reset(Path(vehicle_id): Path<String>) -> HttpResult<Reply<ResetReply>> {
-    let reply = ResetRequest::handler(vehicle_id)
-        .context("parsing")?
+    ResetRequest::handler(vehicle_id)?
         .provider(Provider::new())
         .owner("at")
         .await
-        .context("processing")?;
-    Ok(reply)
+        .map_err(Into::into)
 }

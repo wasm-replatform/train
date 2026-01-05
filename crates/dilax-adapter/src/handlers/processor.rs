@@ -29,8 +29,8 @@ impl<P> Handler<P> for DilaxMessage
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
-    type Input = Vec<u8>;
     type Error = Error;
+    type Input = Vec<u8>;
     type Output = DilaxReply;
 
     // TODO: implement "owner"

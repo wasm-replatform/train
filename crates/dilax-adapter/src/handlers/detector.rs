@@ -44,8 +44,8 @@ impl<P> Handler<P> for DetectionRequest
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
-    type Input = ();
     type Error = Error;
+    type Input = ();
     type Output = DetectionReply;
 
     // TODO: implement "owner"

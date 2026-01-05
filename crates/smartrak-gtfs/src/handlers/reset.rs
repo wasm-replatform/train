@@ -48,8 +48,8 @@ impl<P> Handler<P> for ResetRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Input = String;
     type Error = Error;
+    type Input = String;
     type Output = ResetReply;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<ResetReply>> {

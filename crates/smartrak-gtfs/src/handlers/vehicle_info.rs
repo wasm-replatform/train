@@ -61,8 +61,8 @@ impl<P> Handler<P> for VehicleInfoRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Input = String;
     type Error = Error;
+    type Input = String;
     type Output = VehicleInfoReply;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<VehicleInfoReply>> {

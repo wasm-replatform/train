@@ -56,8 +56,8 @@ impl<P> Handler<P> for SmarTrakMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Input = Vec<u8>;
     type Error = warp_sdk::Error;
+    type Input = Vec<u8>;
     type Output = SmarTrakReply;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<SmarTrakReply>> {
@@ -97,9 +97,7 @@ impl TryFrom<Vec<u8>> for SmarTrakMessage {
     type Error = Error;
 
     fn try_from(value: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&value)
-            .context("deserializing SmarTrakMessage")
-            .map_err(Into::into)
+        serde_json::from_slice(&value).context("deserializing SmarTrakMessage").map_err(Into::into)
     }
 }
 

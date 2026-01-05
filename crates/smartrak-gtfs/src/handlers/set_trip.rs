@@ -45,8 +45,8 @@ impl<P> Handler<P> for SetTripRequest
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Input = (String, String);
     type Error = Error;
+    type Input = (String, String);
     type Output = SetTripReply;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<SetTripReply>> {

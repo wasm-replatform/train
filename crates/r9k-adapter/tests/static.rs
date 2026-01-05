@@ -8,8 +8,8 @@ use std::ops::Sub;
 use chrono::{Duration, Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use r9k_adapter::{ChangeType, EventType, R9kMessage};
-use warp_sdk::api::Client;
 use warp_sdk::Error;
+use warp_sdk::api::Client;
 
 use self::provider::MockProvider;
 

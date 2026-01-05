@@ -41,8 +41,8 @@ impl<P> Handler<P> for DilaxRequest
 where
     P: Publisher,
 {
-    type Input = Vec<u8>;
     type Error = Error;
+    type Input = Vec<u8>;
     type Output = DilaxReply;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {

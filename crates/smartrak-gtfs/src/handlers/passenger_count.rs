@@ -40,8 +40,8 @@ impl<P> Handler<P> for PassengerCountMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Input = Vec<u8>;
     type Error = Error;
+    type Input = Vec<u8>;
     type Output = PassengerCountReply;
 
     // TODO: implement "owner"

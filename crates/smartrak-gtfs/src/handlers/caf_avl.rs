@@ -54,8 +54,8 @@ impl<P> Handler<P> for CafAvlMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Input = Vec<u8>;
     type Error = Error;
+    type Input = Vec<u8>;
     type Output = CafAvlReply;
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<CafAvlReply>> {

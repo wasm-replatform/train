@@ -4,7 +4,8 @@ use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{
-    Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore, bad_request,
+    Config, Decode, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore,
+    bad_request,
 };
 
 use crate::god_mode::god_mode;
@@ -18,6 +19,16 @@ impl TryFrom<String> for ResetRequest {
 
     fn try_from(value: String) -> anyhow::Result<Self, Self::Error> {
         Ok(Self(value))
+    }
+}
+
+impl Decode for ResetRequest {
+    type DecodeError = Error;
+
+    fn decode(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes)
+            .context("deserializing ResetRequest")
+            .map_err(Into::into)
     }
 }
 

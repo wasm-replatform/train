@@ -1,8 +1,10 @@
+use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{
-    Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
+    Config, Decode, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore,
+    bad_request,
 };
 
 use crate::location::Location;
@@ -96,6 +98,16 @@ impl TryFrom<&[u8]> for SmarTrakMessage {
 
     fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
         serde_json::from_slice(value)
+    }
+}
+
+impl Decode for SmarTrakMessage {
+    type DecodeError = Error;
+
+    fn decode(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes)
+            .context("deserializing SmarTrakMessage")
+            .map_err(Into::into)
     }
 }
 

@@ -8,7 +8,7 @@ use std::fmt::{self, Display};
 use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Error, IntoBody, Message, Publisher, Result, bad_request};
+use warp_sdk::{Decode, Error, IntoBody, Message, Publisher, Result, bad_request};
 
 use crate::R9kError;
 
@@ -66,6 +66,16 @@ impl TryFrom<&[u8]> for R9kRequest {
 
     fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
         quick_xml::de::from_reader(value).map_err(Into::into)
+    }
+}
+
+impl Decode for R9kRequest {
+    type DecodeError = Error;
+
+    fn decode(bytes: &[u8]) -> Result<Self> {
+        quick_xml::de::from_reader(bytes)
+            .context("deserializing R9kRequest")
+            .map_err(Into::into)
     }
 }
 

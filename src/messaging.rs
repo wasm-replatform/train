@@ -1,10 +1,10 @@
 use std::env;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use dilax_adapter::DilaxMessage;
 use r9k_adapter::R9kMessage;
 use smartrak_gtfs::{CafAvlMessage, PassengerCountMessage, SmarTrakMessage, TrainAvlMessage};
-use warp_sdk::api::Client;
+use warp_sdk::Handler;
 use wasi_messaging::types::{Error, Message};
 
 use crate::provider::Provider;
@@ -45,56 +45,40 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     }
 }
 
-use warp_sdk::{Decodable, RequestHandler};
-
 #[wasi_otel::instrument]
-async fn r9k(message: &[u8]) -> Result<()> {
-    let request = R9kMessage::decode(message)?;
+async fn r9k(payload: &[u8]) -> Result<()> {
+    // let request = R9kMessage::decode(payload)?;
     // Client::new("at").provider(Provider::new()).request(request).await?;
-    RequestHandler::new().provider(Provider::new()).request(request).owner("at").await?;
-
-    // R9kMessage::handler().provider(Provider::new()).owner("at").request(message).handle().await?;
-    // R9kMessage::decode_handle(message)?.provider(Provider::new()).await?;
-
+    R9kMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn dilax(payload: &[u8]) -> Result<()> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = DilaxMessage::try_from(payload).context("deserializing event")?;
-    client.request(request).await?;
+    DilaxMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn passenger_count(payload: &[u8]) -> Result<()> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = PassengerCountMessage::try_from(payload).context("deserializing event")?;
-    client.request(request).await?;
+    PassengerCountMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn smartrak(payload: &[u8]) -> Result<()> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = SmarTrakMessage::try_from(payload).context("deserializing event")?;
-    client.request(request).await?;
+    SmarTrakMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn caf_avl(payload: &[u8]) -> Result<()> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = CafAvlMessage::try_from(payload).context("deserializing event")?;
-    client.request(request).await?;
+    CafAvlMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }
 
 #[wasi_otel::instrument]
 async fn train_avl(payload: &[u8]) -> Result<()> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = TrainAvlMessage::try_from(payload).context("deserializing event")?;
-    client.request(request).await?;
+    TrainAvlMessage::handler(payload)?.provider(Provider::new()).owner("at").await?;
     Ok(())
 }

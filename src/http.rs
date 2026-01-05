@@ -10,6 +10,7 @@ use smartrak_gtfs::{
     ResetReply, ResetRequest, SetTripReply, SetTripRequest, VehicleInfoReply, VehicleInfoRequest,
 };
 use tracing::Level;
+use warp_sdk::Handler;
 use warp_sdk::api::{Client, HttpResult, Reply};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types as p3;
@@ -35,32 +36,59 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn r9k_message(body: Bytes) -> HttpResult<Reply<R9kReply>> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
-    let reply = client.request(request).await.context("processing request")?;
+    // let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
+    // let reply = Client::new("at").provider(Provider::new()).request(request).await.context("processing request")?;
+
+    let reply = R9kRequest::handler(body.as_ref())
+        .context("parsing")?
+        .provider(Provider::new())
+        .owner("at")
+        .await
+        .context("processing")?;
     Ok(reply)
 }
 
 #[axum::debug_handler]
 async fn dilax_message(body: Bytes) -> HttpResult<Reply<DilaxReply>> {
-    let client = Client::new("at").provider(Provider::new());
-    let request = DilaxRequest::try_from(body.as_ref()).context("parsing request")?;
-    let reply = client.request(request).await.context("processing request")?;
+    let reply = DilaxRequest::handler(body.as_ref())
+        .context("parsing")?
+        .provider(Provider::new())
+        .owner("at")
+        .await
+        .context("processing")?;
     Ok(reply)
 }
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Reply<DetectionReply>> {
-    let client = Client::new("at").provider(Provider::new());
-    let reply = client.request(DetectionRequest).await.context("processing request")?;
+    let reply = Client::new("at")
+        .provider(Provider::new())
+        .request(DetectionRequest)
+        .await
+        .context("processing request")?;
+    // let reply = DetectionRequest::handler(&[]).context("parsing")?
+    //     .provider(Provider::new())
+    //     .owner("at")
+    //     .await
+    //     .context("processing")?;
     Ok(reply)
 }
 
 #[axum::debug_handler]
 async fn vehicle_info(Path(vehicle_id): Path<String>) -> HttpResult<Reply<VehicleInfoReply>> {
-    let client = Client::new("at").provider(Provider::new());
     let request = VehicleInfoRequest::try_from(vehicle_id).context("parsing vehicle id")?;
-    let reply = client.request(request).await.context("processing request")?;
+    let reply = Client::new("at")
+        .provider(Provider::new())
+        .request(request)
+        .await
+        .context("processing request")?;
+
+    // let reply = VehicleInfoRequest::handler(vehicle_id.as_bytes())
+    //     .context("parsing")?
+    //     .provider(Provider::new())
+    //     .owner("at")
+    //     .await
+    //     .context("processing")?;
     Ok(reply)
 }
 
@@ -68,16 +96,26 @@ async fn vehicle_info(Path(vehicle_id): Path<String>) -> HttpResult<Reply<Vehicl
 async fn set_trip(
     Path((vehicle_id, trip_id)): Path<(String, String)>,
 ) -> HttpResult<Reply<SetTripReply>> {
-    let client = Client::new("at").provider(Provider::new());
     let request = SetTripRequest::try_from((vehicle_id, trip_id)).context("parsing vehicle id")?;
-    let reply = client.request(request).await.context("processing request")?;
+    let reply = Client::new("at")
+        .provider(Provider::new())
+        .request(request)
+        .await
+        .context("processing request")?;
+
+    // SetTripRequest::handler((vehicle_id, trip_id))?.provider(Provider::new()).owner("at").await?;
     Ok(reply)
 }
 
 #[axum::debug_handler]
 async fn reset(Path(vehicle_id): Path<String>) -> HttpResult<Reply<ResetReply>> {
-    let client = Client::new("at").provider(Provider::new());
     let request = ResetRequest::try_from(vehicle_id).context("parsing vehicle id")?;
-    let reply = client.request(request).await.context("processing request")?;
+    let reply = Client::new("at")
+        .provider(Provider::new())
+        .request(request)
+        .await
+        .context("processing request")?;
+
+    // ResetRequest::handler(vehicle_id)?.provider(Provider::new()).owner("at").await?;
     Ok(reply)
 }

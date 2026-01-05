@@ -9,7 +9,7 @@ use http::header::AUTHORIZATION;
 use http_body_util::Empty;
 use serde::Deserialize;
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
+use warp_sdk::{Config, Decode, Error, HttpRequest, Identity, Message, Publisher, Result};
 
 use crate::r9k::TrainUpdate;
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
@@ -81,13 +81,11 @@ where
     Ok(R9kResponse.into())
 }
 
-use warp_sdk::Decodable;
-impl Decodable for R9kMessage {
-    type DecodeError = R9kError;
+impl Decode for R9kMessage {
+    type DecodeError = Error;
 
-    fn decode(bytes: &[u8]) -> anyhow::Result<Self, Self::DecodeError> {
-        let message = quick_xml::de::from_reader(bytes)?;
-        Ok(message)
+    fn decode(bytes: &[u8]) -> Result<Self> {
+        quick_xml::de::from_reader(bytes).context("deserializing R9k message").map_err(Into::into)
     }
 }
 

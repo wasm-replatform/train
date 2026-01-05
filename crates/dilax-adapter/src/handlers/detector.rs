@@ -4,7 +4,9 @@ use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
+use warp_sdk::{
+    Config, Decode, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore,
+};
 
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 
@@ -17,6 +19,14 @@ const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
+
+impl Decode for DetectionRequest {
+    type DecodeError = Error;
+
+    fn decode(_bytes: &[u8]) -> Result<Self> {
+        Ok(Self)
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectionReply {

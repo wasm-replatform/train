@@ -2,9 +2,10 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
+use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use warp_sdk::{Config, Decode, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 /// R9K empty response.
 #[derive(Debug, Clone)]
@@ -62,6 +63,16 @@ impl TryFrom<&[u8]> for PassengerCountMessage {
 
     fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
         serde_json::from_slice(value)
+    }
+}
+
+impl Decode for PassengerCountMessage {
+    type DecodeError = Error;
+
+    fn decode(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes)
+            .context("deserializing PassengerCountMessage")
+            .map_err(Into::into)
     }
 }
 

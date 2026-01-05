@@ -2,7 +2,7 @@ use anyhow::Context as _;
 use http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Error, IntoBody, Message, Publisher, Result};
+use warp_sdk::{Decode, Error, IntoBody, Message, Publisher, Result};
 
 use crate::DilaxMessage;
 
@@ -62,6 +62,16 @@ impl TryFrom<&[u8]> for DilaxRequest {
 
     fn try_from(value: &[u8]) -> anyhow::Result<Self, Self::Error> {
         serde_json::from_slice(value)
+    }
+}
+
+impl Decode for DilaxRequest {
+    type DecodeError = Error;
+
+    fn decode(bytes: &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes)
+            .context("deserializing DilaxRequest")
+            .map_err(Into::into)
     }
 }
 

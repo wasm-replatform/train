@@ -51,13 +51,10 @@ use warp_sdk::{Decodable, RequestHandler};
 async fn r9k(message: &[u8]) -> Result<()> {
     let request = R9kMessage::decode(message)?;
     // Client::new("at").provider(Provider::new()).request(request).await?;
-    RequestHandler::new(Provider::new()).request(request).with_owner("at").handle().await?;
+    RequestHandler::new().provider(Provider::new()).request(request).owner("at").await?;
 
-    // R9kMessage::decode(message)?
-    //     .with_provider(Provider::new())
-    //     .with_owner("at")
-    //     .handle()
-    //     .await?;
+    // R9kMessage::handler().provider(Provider::new()).owner("at").request(message).handle().await?;
+    // R9kMessage::decode_handle(message)?.provider(Provider::new()).await?;
 
     Ok(())
 }

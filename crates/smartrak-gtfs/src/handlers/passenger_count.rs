@@ -59,7 +59,6 @@ pub struct PassengerCountMessage {
     pub timestamp: i64,
 }
 
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Vehicle {

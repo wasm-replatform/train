@@ -41,7 +41,6 @@ pub struct DilaxMessage {
     pub wpt: Option<Waypoint>,
 }
 
-
 #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 fn into_u32<'de, D>(deserializer: D) -> anyhow::Result<Option<u32>, D::Error>
 where

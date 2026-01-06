@@ -10,7 +10,6 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct ResetRequest(String);
 
-
 #[derive(Debug, Clone, Serialize)]
 pub struct ResetReply {
     pub message: String,

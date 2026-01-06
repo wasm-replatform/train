@@ -10,7 +10,6 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetTripRequest(String, String);
 
-
 #[derive(Debug, Clone, Serialize)]
 pub struct SetTripReply {
     pub message: String,

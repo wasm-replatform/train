@@ -62,7 +62,6 @@ pub struct DilaxRequest {
     pub message: DilaxMessage,
 }
 
-
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
 pub struct DilaxReply(pub &'static str);

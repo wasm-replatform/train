@@ -66,7 +66,6 @@ pub struct R9kRequest {
     pub body: Body,
 }
 
-
 /// R9K SOAP Body for [`ReceiveMessage`] requests
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -120,7 +119,8 @@ mod tests {
     #[test]
     fn deserialize_soap() {
         let xml = include_str!("../data/receive-message.xml");
-        let envelope: R9kRequest = quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
+        let envelope: R9kRequest =
+            quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
 
         let receive_message = envelope.body.receive_message;
         let message = receive_message.axml_message;

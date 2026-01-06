@@ -2,7 +2,9 @@ use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
+use warp_sdk::{
+    Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
+};
 
 use crate::location::Location;
 use crate::{god_mode, location, serial_data};
@@ -87,7 +89,6 @@ impl SmarTrakMessage {
             .and_then(|rd| rd.external_id.as_deref().or(rd.remote_name.as_deref()))
     }
 }
-
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum EventType {

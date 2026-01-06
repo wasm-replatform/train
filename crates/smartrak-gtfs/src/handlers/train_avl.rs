@@ -11,7 +11,6 @@ use crate::SmarTrakMessage;
 #[serde(transparent)]
 pub struct TrainAvlMessage(SmarTrakMessage);
 
-
 async fn handle<P>(owner: &str, request: TrainAvlMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,

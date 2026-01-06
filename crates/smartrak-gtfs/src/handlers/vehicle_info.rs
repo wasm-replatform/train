@@ -9,7 +9,6 @@ use crate::trip::TripInstance;
 #[derive(Debug, Clone, Deserialize)]
 pub struct VehicleInfoRequest(String);
 
-
 const PROCESS_ID: u32 = 0;
 
 #[derive(Debug, Clone, Serialize)]

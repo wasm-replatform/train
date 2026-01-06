@@ -8,7 +8,7 @@ use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
 use r9k_adapter::{SmarTrakEvent, StopInfo};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use warp_sdk::{Config, HttpRequest, Identity, Message, Publisher};
 
 #[allow(dead_code)]

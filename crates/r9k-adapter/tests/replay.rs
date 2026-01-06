@@ -19,7 +19,7 @@ use crate::provider::Replay;
 async fn run() -> Result<()> {
     for entry in fs::read_dir("data/sessions")? {
         let file = File::open(entry?.path())?;
-        let session: Replay = serde_yaml::from_reader(&file)?;
+        let session: Replay = serde_json::from_reader(&file)?;
         replay(session).await?;
     }
 

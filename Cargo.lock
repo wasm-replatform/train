@@ -1100,7 +1100,9 @@ dependencies = [
 
 [[package]]
 name = "guest-macro"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "b13e5c43a39a92cb194ca6433dffa83e8fa1eb78164092cf62071893a5aecb2d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2146,7 +2148,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_repr",
- "serde_yaml",
  "thiserror 2.0.17",
  "tokio",
  "tracing",
@@ -2447,7 +2448,9 @@ dependencies = [
 
 [[package]]
 name = "runtime-macro"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "e2626cda5d0d20f222adf51c8a210c80612e01bc6dcdf4132127276f27ed1e48"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2698,9 +2701,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.148"
+version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3084b546a1dd6289475996f182a22aba973866ea8e8b02c51d9f46b1336a22da"
+checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
  "itoa",
  "memchr",
@@ -2741,19 +2744,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serde_yaml"
-version = "0.9.34+deprecated"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
 ]
 
 [[package]]
@@ -3334,12 +3324,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
-name = "unsafe-libyaml"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
-
-[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3420,7 +3404,9 @@ dependencies = [
 
 [[package]]
 name = "warp"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "1ee74a08f117c743d5d34fe9fd152fe74efc8a6e77d650a1ee278fa7443940fd"
 dependencies = [
  "anyhow",
  "clap",
@@ -3436,7 +3422,9 @@ dependencies = [
 
 [[package]]
 name = "warp-otel"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "8ea3f4c53ec6e8939ea69746638338e7d1107a489432a4316c46fff77fdf0bbb"
 dependencies = [
  "anyhow",
  "http",
@@ -3452,7 +3440,9 @@ dependencies = [
 
 [[package]]
 name = "warp-sdk"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "fe202c51a110b5d449c4298794d34d017210ff2269be4bec752f65177e41c785"
 dependencies = [
  "anyhow",
  "axum",
@@ -3482,7 +3472,9 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasi-http"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "9a23ad87431187d166bfdde63bb6b5191dfa80ec1ce8dd897904e50a3796da13"
 dependencies = [
  "anyhow",
  "axum",
@@ -3512,7 +3504,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-identity"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "4221922902305e8aef048b8779e4e8cc25e4645c521c0c4553843fbe343ae8f8"
 dependencies = [
  "anyhow",
  "fromenv",
@@ -3528,7 +3522,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-keyvalue"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "3bfd62687c8410413d5b60e2a0a20b02cd293146424292d6bfcb11154e0bb379"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3545,7 +3541,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-messaging"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "619b568b179311fa045470b7ae005da496558830f4c7cb0e1fe30ad35ec2d6b9"
 dependencies = [
  "anyhow",
  "futures",
@@ -3563,7 +3561,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "82d720b238962a17562c25482e7a62f7d6e30f22c33b8bdc9321e7b391933038"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -3586,7 +3586,9 @@ dependencies = [
 
 [[package]]
 name = "wasi-otel-attr"
-version = "0.22.0"
+version = "0.22.1"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "c8f75074265f9ae83a130f40112c70608819b75e7d210d2131c7c7443341c507"
 dependencies = [
  "proc-macro2",
  "quote",

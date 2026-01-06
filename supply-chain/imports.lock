@@ -620,8 +620,8 @@ user-login = "dtolnay"
 user-name = "David Tolnay"
 
 [[publisher.serde_json]]
-version = "1.0.148"
-when = "2025-12-27"
+version = "1.0.149"
+when = "2026-01-06"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -636,13 +636,6 @@ user-name = "David Tolnay"
 [[publisher.serde_repr]]
 version = "0.1.20"
 when = "2025-03-04"
-user-id = 3618
-user-login = "dtolnay"
-user-name = "David Tolnay"
-
-[[publisher.serde_yaml]]
-version = "0.9.34+deprecated"
-when = "2024-03-25"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -779,13 +772,6 @@ when = "2024-09-19"
 user-id = 1139
 user-login = "Manishearth"
 user-name = "Manish Goregaokar"
-
-[[publisher.unsafe-libyaml]]
-version = "0.2.11"
-when = "2024-03-17"
-user-id = 3618
-user-login = "dtolnay"
-user-name = "David Tolnay"
 
 [[publisher.url]]
 version = "2.5.8"

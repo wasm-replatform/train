@@ -121,7 +121,6 @@ quick-xml = { version = "0.38.4", features = ["serde", "serialize"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_repr = "0.1.20"
-serde_yaml = "0.9.34-deprecated"
 thiserror = "2.0.17"
 tokio = { version = "1.47.1", default-features = false, features = ["io-util", "macros", "rt", "sync", "time"] }
 tracing = "0.1.44"

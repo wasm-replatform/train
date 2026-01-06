@@ -8,7 +8,7 @@ use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
 use r9k_adapter::{SmarTrakEvent, StopInfo};
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use warp_sdk::{Config, HttpRequest, Identity, Message, Publisher};
 
 #[allow(dead_code)]
@@ -25,7 +25,7 @@ pub struct Static {
 }
 
 #[allow(dead_code)]
-#[derive(Deserialize, Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Replay {
     pub input: String,
     pub output: Option<Vec<String>>,
@@ -127,5 +127,30 @@ impl Publisher for MockProvider {
 impl Identity for MockProvider {
     async fn access_token(&self) -> Result<String> {
         Ok("mock_access_token".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use warp_sdk::Error;
+
+    use super::*;
+
+    #[test]
+    fn test_new_replay() {
+        let replay = Replay {
+            input: "test".to_string(),
+            output: None,
+            error: Some(Error::BadRequest {
+                code: "bad_time".to_string(),
+                description: "outdated by 506 seconds".to_string(),
+            }),
+            delay: None,
+            stop_info: None,
+            vehicles: None,
+        };
+
+        let ser_str = serde_json::to_string_pretty(&replay).unwrap();
+        println!("{}", ser_str);
     }
 }

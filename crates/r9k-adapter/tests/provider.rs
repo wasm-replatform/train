@@ -129,28 +129,3 @@ impl Identity for MockProvider {
         Ok("mock_access_token".to_string())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use warp_sdk::Error;
-
-    use super::*;
-
-    #[test]
-    fn test_new_replay() {
-        let replay = Replay {
-            input: "test".to_string(),
-            output: None,
-            error: Some(Error::BadRequest {
-                code: "bad_time".to_string(),
-                description: "outdated by 506 seconds".to_string(),
-            }),
-            delay: None,
-            stop_info: None,
-            vehicles: None,
-        };
-
-        let ser_str = serde_json::to_string_pretty(&replay).unwrap();
-        println!("{}", ser_str);
-    }
-}

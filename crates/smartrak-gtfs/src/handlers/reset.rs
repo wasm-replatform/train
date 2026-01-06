@@ -10,13 +10,6 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct ResetRequest(String);
 
-impl TryFrom<String> for ResetRequest {
-    type Error = Error;
-
-    fn try_from(value: String) -> Result<Self> {
-        Ok(Self(value))
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ResetReply {
@@ -51,6 +44,10 @@ where
     type Error = Error;
     type Input = String;
     type Output = ResetReply;
+
+    fn from_input(input: String) -> Result<Self> {
+        Ok(Self(input))
+    }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<ResetReply>> {
         handle(ctx.owner, self, ctx.provider).await

@@ -38,6 +38,12 @@ where
     type Input = Vec<u8>;
     type Output = ();
 
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input)
+            .context("deserializing PassengerCountMessage")
+            .map_err(Into::into)
+    }
+
     // TODO: implement "owner"
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await
@@ -53,15 +59,6 @@ pub struct PassengerCountMessage {
     pub timestamp: i64,
 }
 
-impl TryFrom<Vec<u8>> for PassengerCountMessage {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&value)
-            .context("deserializing PassengerCountMessage")
-            .map_err(Into::into)
-    }
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

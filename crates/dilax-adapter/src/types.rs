@@ -1,6 +1,4 @@
-use anyhow::Context as _;
 use serde::{Deserialize, Deserializer, Serialize};
-use warp_sdk::{Error, Result};
 
 /// Raw Dilax payload emitted by the APC hardware on board a train.
 /// The payload mirrors the legacy adapter schema so that parity can be
@@ -43,13 +41,6 @@ pub struct DilaxMessage {
     pub wpt: Option<Waypoint>,
 }
 
-impl TryFrom<Vec<u8>> for DilaxMessage {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&value).context("deserializing DilaxMessage").map_err(Into::into)
-    }
-}
 
 #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 fn into_u32<'de, D>(deserializer: D) -> anyhow::Result<Option<u32>, D::Error>

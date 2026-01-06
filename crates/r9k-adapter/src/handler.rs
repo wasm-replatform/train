@@ -61,16 +61,6 @@ where
     Ok(Reply::ok(()))
 }
 
-impl TryFrom<Vec<u8>> for R9kMessage {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        quick_xml::de::from_reader(value.as_ref())
-            .context("deserializing R9kMessage")
-            .map_err(Into::into)
-    }
-}
-
 impl<P> Handler<P> for R9kMessage
 where
     P: Config + HttpRequest + Identity + Publisher,
@@ -78,6 +68,12 @@ where
     type Error = Error;
     type Input = Vec<u8>;
     type Output = ();
+
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        quick_xml::de::from_reader(input.as_ref())
+            .context("deserializing R9kMessage")
+            .map_err(Into::into)
+    }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await

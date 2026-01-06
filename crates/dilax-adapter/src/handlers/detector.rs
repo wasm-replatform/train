@@ -18,14 +18,6 @@ const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
 
-impl TryFrom<()> for DetectionRequest {
-    type Error = Error;
-
-    fn try_from(_value: ()) -> Result<Self> {
-        Ok(Self)
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectionReply {
     pub status: &'static str,
@@ -47,6 +39,10 @@ where
     type Error = Error;
     type Input = ();
     type Output = DetectionReply;
+
+    fn from_input(_input: ()) -> Result<Self> {
+        Ok(Self)
+    }
 
     // TODO: implement "owner"
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DetectionReply>> {

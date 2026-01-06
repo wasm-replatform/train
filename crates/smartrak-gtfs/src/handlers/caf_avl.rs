@@ -11,13 +11,6 @@ use crate::SmarTrakMessage;
 #[serde(transparent)]
 pub struct CafAvlMessage(SmarTrakMessage);
 
-impl TryFrom<Vec<u8>> for CafAvlMessage {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&value).context("deserializing CafAvlMessage").map_err(Into::into)
-    }
-}
 
 async fn handle<P>(owner: &str, request: CafAvlMessage, provider: &P) -> Result<Reply<()>>
 where
@@ -53,6 +46,10 @@ where
     type Error = Error;
     type Input = Vec<u8>;
     type Output = ();
+
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing CafAvlMessage").map_err(Into::into)
+    }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await

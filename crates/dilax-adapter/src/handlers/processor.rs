@@ -29,6 +29,10 @@ where
     type Input = Vec<u8>;
     type Output = ();
 
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing DilaxMessage").map_err(Into::into)
+    }
+
     // TODO: implement "owner"
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await

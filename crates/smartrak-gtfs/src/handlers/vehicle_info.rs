@@ -9,13 +9,6 @@ use crate::trip::TripInstance;
 #[derive(Debug, Clone, Deserialize)]
 pub struct VehicleInfoRequest(String);
 
-impl TryFrom<String> for VehicleInfoRequest {
-    type Error = Error;
-
-    fn try_from(value: String) -> Result<Self> {
-        Ok(Self(value))
-    }
-}
 
 const PROCESS_ID: u32 = 0;
 
@@ -64,6 +57,10 @@ where
     type Error = Error;
     type Input = String;
     type Output = VehicleInfoReply;
+
+    fn from_input(input: String) -> Result<Self> {
+        Ok(Self(input))
+    }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<VehicleInfoReply>> {
         handle(ctx.owner, self, ctx.provider).await

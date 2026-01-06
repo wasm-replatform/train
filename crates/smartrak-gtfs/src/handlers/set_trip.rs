@@ -10,13 +10,6 @@ use crate::god_mode::god_mode;
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetTripRequest(String, String);
 
-impl TryFrom<(String, String)> for SetTripRequest {
-    type Error = Error;
-
-    fn try_from(value: (String, String)) -> Result<Self> {
-        Ok(Self(value.0, value.1))
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SetTripReply {
@@ -48,6 +41,10 @@ where
     type Error = Error;
     type Input = (String, String);
     type Output = SetTripReply;
+
+    fn from_input(input: (String, String)) -> Result<Self> {
+        Ok(Self(input.0, input.1))
+    }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<SetTripReply>> {
         handle(ctx.owner, self, ctx.provider).await

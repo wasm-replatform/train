@@ -31,7 +31,7 @@ async fn run() -> Result<()> {
 async fn replay(replay: Replay) -> Result<()> {
     let provider = MockProvider::new_replay(replay.clone());
     let client = Client::new("at").provider(provider.clone());
-    let mut request = R9kMessage::try_from(replay.input.as_bytes().to_vec())?;
+    let mut request: R9kMessage = quick_xml::de::from_reader(replay.input.as_bytes())?;
 
     let Some(change) = request.train_update.changes.get_mut(0) else {
         bail!("no changes in input message");

@@ -46,6 +46,12 @@ where
     type Input = Vec<u8>;
     type Output = R9kReply;
 
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        quick_xml::de::from_reader(input.as_slice())
+            .context("deserializing R9kRequest")
+            .map_err(Into::into)
+    }
+
     // TODO: implement "owner"
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kReply>> {
         handle(ctx.owner, self, ctx.provider).await
@@ -60,15 +66,6 @@ pub struct R9kRequest {
     pub body: Body,
 }
 
-impl TryFrom<Vec<u8>> for R9kRequest {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        quick_xml::de::from_reader(value.as_slice())
-            .context("deserializing R9kRequest")
-            .map_err(Into::into)
-    }
-}
 
 /// R9K SOAP Body for [`ReceiveMessage`] requests
 #[derive(Debug, Clone, Deserialize)]
@@ -123,7 +120,7 @@ mod tests {
     #[test]
     fn deserialize_soap() {
         let xml = include_str!("../data/receive-message.xml");
-        let envelope = R9kRequest::try_from(xml.as_bytes().to_vec()).expect("should deserialize");
+        let envelope: R9kRequest = quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
 
         let receive_message = envelope.body.receive_message;
         let message = receive_message.axml_message;

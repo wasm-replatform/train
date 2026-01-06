@@ -2,9 +2,7 @@ use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{
-    Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
-};
+use warp_sdk::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 
 use crate::location::Location;
 use crate::{god_mode, location, serial_data};
@@ -53,6 +51,10 @@ where
     type Input = Vec<u8>;
     type Output = ();
 
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing SmarTrakMessage").map_err(Into::into)
+    }
+
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
         handle(ctx.owner, self, ctx.provider).await
     }
@@ -86,13 +88,6 @@ impl SmarTrakMessage {
     }
 }
 
-impl TryFrom<Vec<u8>> for SmarTrakMessage {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&value).context("deserializing SmarTrakMessage").map_err(Into::into)
-    }
-}
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 pub enum EventType {

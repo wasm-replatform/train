@@ -45,6 +45,10 @@ where
     type Input = Vec<u8>;
     type Output = DilaxReply;
 
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing DilaxRequest").map_err(Into::into)
+    }
+
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {
         handle(ctx.owner, self, ctx.provider).await
     }
@@ -58,13 +62,6 @@ pub struct DilaxRequest {
     pub message: DilaxMessage,
 }
 
-impl TryFrom<Vec<u8>> for DilaxRequest {
-    type Error = Error;
-
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&value).context("deserializing DilaxRequest").map_err(Into::into)
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]

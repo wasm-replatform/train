@@ -36,8 +36,8 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn r9k_message(body: Bytes) -> HttpResult<Reply<R9kReply>> {
-    // let request = R9kRequest::try_from(body.as_ref()).context("parsing request")?;
-    // Client::new("at").provider(Provider::new()).request(request).await.context("processing request")?;
+    // let request = R9kRequest::try_from(body.to_vec())?;
+    // Client::new("at").provider(Provider::new()).request(request).await?;
 
     R9kRequest::handler(body.to_vec())?
         .provider(Provider::new())

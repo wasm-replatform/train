@@ -1,18 +1,15 @@
+use anyhow::Context as _;
 use chrono::{DateTime, Utc};
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{
+    Config, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
+};
 
 use crate::location::Location;
 use crate::{god_mode, location, serial_data};
 
-/// R9K empty response.
-#[derive(Debug, Clone)]
-pub struct SmarTrakResponse;
-
-async fn handle<P>(
-    _owner: &str, message: SmarTrakMessage, provider: &P,
-) -> Result<Response<SmarTrakResponse>>
+async fn handle<P>(_owner: &str, message: SmarTrakMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -23,13 +20,12 @@ where
             god_mode.preprocess(&mut message);
         }
         serial_data::process(&message, provider).await?;
-
-        return Ok(SmarTrakResponse.into());
+        return Ok(Reply::ok(()));
     }
 
     // must be a location event
     let Some(location) = location::process(&message, provider).await? else {
-        return Ok(SmarTrakResponse.into());
+        return Ok(Reply::ok(()));
     };
 
     let (payload, key, topic) = match location {
@@ -46,17 +42,23 @@ where
     message.headers.insert("key".to_string(), key.clone());
     Publisher::send(provider, topic, &message).await?;
 
-    Ok(SmarTrakResponse.into())
+    Ok(Reply::ok(()))
 }
 
-impl<P> Handler<SmarTrakResponse, P> for Request<SmarTrakMessage>
+impl<P> Handler<P> for SmarTrakMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = fabric::Error;
+    type Error = warp_sdk::Error;
+    type Input = Vec<u8>;
+    type Output = ();
 
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<SmarTrakResponse>> {
-        handle(owner, self.body, provider).await
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing SmarTrakMessage").map_err(Into::into)
+    }
+
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

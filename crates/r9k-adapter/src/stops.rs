@@ -3,9 +3,9 @@ use std::sync::LazyLock;
 
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
-use fabric::{Config, HttpRequest, Identity, Publisher};
 use http_body_util::Empty;
 use serde::{Deserialize, Serialize};
+use warp_sdk::{Config, HttpRequest, Identity, Publisher};
 
 /// Stop information from GTFS
 #[derive(Debug, Clone, Serialize, Deserialize)]

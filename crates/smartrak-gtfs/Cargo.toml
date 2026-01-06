@@ -16,26 +16,19 @@ workspace = true
 
 [dependencies]
 anyhow.workspace = true
-async-trait.workspace = true
 bytes.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 common.workspace = true
-credibil-api.workspace = true
 dashmap = "6.1.0"
-fabric.workspace = true
-futures.workspace = true
 http.workspace = true
-http-body.workspace = true
 http-body-util.workspace = true
-once_cell = "1.19"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-tokio.workspace = true
 tracing.workspace = true
-urlencoding.workspace = true
 uuid.workspace = true
+warp-sdk.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

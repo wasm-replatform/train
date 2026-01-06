@@ -1,6 +1,6 @@
-# Blobstore Example
+# Train Example
 
-Demonstrates `wasi-blobstore` using the default (in-memory) implementation.
+Demonstrates `train` using the default (in-memory) implementation of `WASI` services (e.g. `http`, `identity`, `keyvalue`, `messaging`, `otel`).
 
 ## Quick Start
 

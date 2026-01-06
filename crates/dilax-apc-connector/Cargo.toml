@@ -19,11 +19,10 @@ crate-type = ["lib"]
 
 [dependencies]
 anyhow.workspace = true
-credibil-api.workspace = true
-fabric.workspace = true
+http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-thiserror.workspace = true
+warp-sdk.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

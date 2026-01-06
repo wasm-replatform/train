@@ -1,10 +1,10 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Pacific;
 use common::block_mgt::{self, Allocation};
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore};
 
 use crate::trip_state::{self, VehicleInfo, VehicleTripInfo};
 
@@ -18,31 +18,41 @@ const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
 
-#[derive(Debug, Clone)]
-pub struct DetectionResponse {
-    pub detections: Vec<Detection>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DetectionReply {
+    pub status: &'static str,
+    pub detections: usize,
 }
 
-async fn handle<P>(
-    _owner: &str, _: DetectionRequest, provider: &P,
-) -> Result<Response<DetectionResponse>>
+async fn handle<P>(_owner: &str, _: DetectionRequest, provider: &P) -> Result<Reply<DetectionReply>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     let detections = lost_connections(provider).await.context("detecting lost connections")?;
-
-    Ok(DetectionResponse { detections }.into())
+    Ok(DetectionReply { status: "job detection triggered", detections: detections.len() }.into())
 }
 
-impl<P> Handler<DetectionResponse, P> for Request<DetectionRequest>
+impl<P> Handler<P> for DetectionRequest
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     type Error = Error;
+    type Input = ();
+    type Output = DetectionReply;
+
+    fn from_input(_input: ()) -> Result<Self> {
+        Ok(Self)
+    }
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DetectionResponse>> {
-        handle(owner, self.body, provider).await
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DetectionReply>> {
+        handle(ctx.owner, self, ctx.provider).await
+    }
+}
+
+impl IntoBody for DetectionReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        serde_json::to_vec(&self).context("serializing reply")
     }
 }
 

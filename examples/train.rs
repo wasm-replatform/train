@@ -6,12 +6,15 @@ cfg_if::cfg_if! {
         use wasi_messaging::{WasiMessaging, MessagingDefault};
         use wasi_otel::{WasiOtel,  OtelDefault};
 
-        buildgen::runtime!(main, {
-            WasiHttp: HttpDefault,
-            WasiOtel: OtelDefault,
-            WasiIdentity: IdentityDefault,
-            WasiKeyValue: KeyValueDefault,
-            WasiMessaging: MessagingDefault,
+        warp::runtime!({
+            main: true,
+            hosts: {
+                WasiHttp: HttpDefault,
+                WasiOtel: OtelDefault,
+                WasiIdentity: IdentityDefault,
+                WasiKeyValue: KeyValueDefault,
+                WasiMessaging: MessagingDefault,
+            },
         });
     } else {
         // HACK: prevent lint error for wasm32 target

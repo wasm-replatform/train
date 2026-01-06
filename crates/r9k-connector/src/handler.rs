@@ -4,20 +4,18 @@
 //! for validation and transformation to SmarTrak events.
 
 use std::fmt::{self, Display};
-use std::str::FromStr;
 
-use credibil_api::{Handler, Request, Response};
-use fabric::{Error, Message, Publisher, Result, bad_request};
+use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
-
-use crate::R9kError;
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Error, IntoBody, Message, Publisher, Result, bad_request};
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
     Fault { status_code: 500, response: FaultMessage { message: "Internal Server Error" } };
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Response<R9kResponse>>
+async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Reply<R9kReply>>
 where
     P: Publisher,
 {
@@ -37,15 +35,26 @@ where
     let msg = Message::new(message.as_bytes());
     Publisher::send(provider, R9K_TOPIC, &msg).await?;
 
-    Ok(R9kResponse("OK").into())
+    Ok(R9kReply("OK").into())
 }
 
-impl<P: Publisher> Handler<R9kResponse, P> for Request<R9kRequest> {
+impl<P> Handler<P> for R9kRequest
+where
+    P: Publisher,
+{
     type Error = Error;
+    type Input = Vec<u8>;
+    type Output = R9kReply;
+
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        quick_xml::de::from_reader(input.as_slice())
+            .context("deserializing R9kRequest")
+            .map_err(Into::into)
+    }
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<R9kResponse>> {
-        handle(owner, self.body, provider).await
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<R9kReply>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 
@@ -55,14 +64,6 @@ impl<P: Publisher> Handler<R9kResponse, P> for Request<R9kRequest> {
 pub struct R9kRequest {
     /// SOAP Body
     pub body: Body,
-}
-
-impl FromStr for R9kRequest {
-    type Err = R9kError;
-
-    fn from_str(xml: &str) -> anyhow::Result<Self, Self::Err> {
-        quick_xml::de::from_str(xml).map_err(Into::into)
-    }
 }
 
 /// R9K SOAP Body for [`ReceiveMessage`] requests
@@ -82,12 +83,12 @@ pub struct ReceiveMessage {
 /// R9K SOAP Response
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename = "Return")]
-pub struct R9kResponse(pub &'static str);
+pub struct R9kReply(pub &'static str);
 
-impl Display for R9kResponse {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let xml = quick_xml::se::to_string(&self).map_err(|_e| fmt::Error)?;
-        write!(f, "{xml}",)
+impl IntoBody for R9kReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        let xml = quick_xml::se::to_string(&self).context("serializing R9kResponse")?;
+        Ok(xml.into_bytes())
     }
 }
 
@@ -113,14 +114,13 @@ pub struct FaultMessage {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use super::*;
 
     #[test]
     fn deserialize_soap() {
         let xml = include_str!("../data/receive-message.xml");
-        let envelope = R9kRequest::from_str(xml).expect("should deserialize");
+        let envelope: R9kRequest =
+            quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
 
         let receive_message = envelope.body.receive_message;
         let message = receive_message.axml_message;
@@ -131,7 +131,8 @@ mod tests {
 
     #[test]
     fn serialize_ok() {
-        let xml = R9kResponse("OK").to_string();
+        let xml = R9kReply("OK").into_body().expect("should serialize");
+        let xml = String::from_utf8(xml).expect("should be UTF-8");
         assert_eq!(xml, "<Return>OK</Return>");
     }
 

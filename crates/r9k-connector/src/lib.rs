@@ -4,9 +4,9 @@
 
 mod handler;
 
-use fabric::Error;
 pub use handler::*;
 use thiserror::Error;
+use warp_sdk::Error;
 
 // TODO: use for internal methods
 #[derive(Error, Debug)]

@@ -9,6 +9,7 @@ doc-valid-idents = [
 allowed-duplicate-crates = [
     "axum",
     "axum-core",
+    "core-foundation",
     "embedded-io",
     "getrandom",
     "hashbrown",
@@ -18,6 +19,7 @@ allowed-duplicate-crates = [
     "rand",
     "rand_chacha",
     "rand_core",
+    "reqwest",
     "rustix",
     "rustls",
     "rustls-webpki",

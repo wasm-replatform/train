@@ -2,19 +2,14 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
+use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
-
-/// R9K empty response.
-#[derive(Debug, Clone)]
-pub struct PassengerCountResponse;
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 const OCCUPANY_STATUS_TTL: u64 = 3 * 60 * 60; // 3 hours
 
-async fn handle<P>(
-    _owner: &str, request: PassengerCountMessage, provider: &P,
-) -> Result<Response<PassengerCountResponse>>
+async fn handle<P>(_owner: &str, request: PassengerCountMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -32,18 +27,26 @@ where
         StateStore::delete(provider, &key).await?;
     }
 
-    Ok(PassengerCountResponse.into())
+    Ok(Reply::ok(()))
 }
 
-impl<P> Handler<PassengerCountResponse, P> for Request<PassengerCountMessage>
+impl<P> Handler<P> for PassengerCountMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
     type Error = Error;
+    type Input = Vec<u8>;
+    type Output = ();
+
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input)
+            .context("deserializing PassengerCountMessage")
+            .map_err(Into::into)
+    }
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<PassengerCountResponse>> {
-        handle(owner, self.body, provider).await
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

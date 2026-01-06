@@ -2,25 +2,32 @@
 //!
 //! Transform an R9K XML message into a SmarTrak[`TrainUpdate`].
 
-use anyhow::Context;
+use anyhow::Context as _;
 use bytes::Bytes;
 use chrono::Utc;
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 use http::header::AUTHORIZATION;
 use http_body_util::Empty;
+use serde::Deserialize;
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, Error, HttpRequest, Identity, Message, Publisher, Result};
 
-use crate::r9k::{R9kMessage, TrainUpdate};
+use crate::r9k::TrainUpdate;
 use crate::smartrak::{EventType, MessageData, RemoteData, SmarTrakEvent};
 use crate::stops;
 
 const SMARTRAK_TOPIC: &str = "realtime-r9k-to-smartrak.v1";
 
-/// R9K empty response.
-#[derive(Debug, Clone)]
-pub struct R9kResponse;
+/// R9K train update message as deserialized from the XML received from
+/// KiwiRail.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct R9kMessage {
+    /// The train update.
+    #[serde(rename(deserialize = "ActualizarDatosTren"))]
+    pub train_update: TrainUpdate,
+}
 
-async fn handle<P>(owner: &str, request: R9kMessage, provider: &P) -> Result<Response<R9kResponse>>
+async fn handle<P>(owner: &str, request: R9kMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher,
 {
@@ -51,18 +58,25 @@ where
         }
     }
 
-    Ok(R9kResponse.into())
+    Ok(Reply::ok(()))
 }
 
-impl<P> Handler<R9kResponse, P> for Request<R9kMessage>
+impl<P> Handler<P> for R9kMessage
 where
     P: Config + HttpRequest + Identity + Publisher,
 {
     type Error = Error;
+    type Input = Vec<u8>;
+    type Output = ();
 
-    // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<R9kResponse>> {
-        handle(owner, self.body, provider).await
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        quick_xml::de::from_reader(input.as_ref())
+            .context("deserializing R9kMessage")
+            .map_err(Into::into)
+    }
+
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 
@@ -125,5 +139,20 @@ impl TrainUpdate {
         }
 
         Ok(events)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::R9kMessage;
+
+    #[test]
+    fn deserialization() {
+        let xml = include_str!("../data/sample.xml");
+        let message: R9kMessage = quick_xml::de::from_str(xml).expect("should deserialize");
+
+        let update = message.train_update;
+        assert_eq!(update.even_train_id, Some("1234".to_string()));
+        assert!(!update.changes.is_empty(), "should have changes");
     }
 }

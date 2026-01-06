@@ -1,7 +1,9 @@
+use anyhow::Context as _;
 use common::fleet;
-use credibil_api::{Handler, Request, Response};
-use fabric::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
+use http::HeaderMap;
 use serde::Deserialize;
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Config, HttpRequest, Identity, Publisher, Result, StateStore};
 
 use crate::SmarTrakMessage;
 
@@ -9,13 +11,7 @@ use crate::SmarTrakMessage;
 #[serde(transparent)]
 pub struct TrainAvlMessage(SmarTrakMessage);
 
-/// Train AVL response.
-#[derive(Debug, Clone)]
-pub struct TrainAvlResponse;
-
-async fn handle<P>(
-    owner: &str, request: TrainAvlMessage, provider: &P,
-) -> Result<Response<TrainAvlResponse>>
+async fn handle<P>(owner: &str, request: TrainAvlMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
@@ -24,31 +20,38 @@ where
     // verify vehicle tag is 'train'
     let Some(vehicle_id) = request.vehicle_id() else {
         tracing::debug!("no vehicle identifier found");
-        return Ok(TrainAvlResponse.into());
+        return Ok(Reply::ok(()));
     };
     let Some(vehicle) = fleet::vehicle(vehicle_id, provider).await? else {
         tracing::debug!("vehicle info not found for {vehicle_id}");
-        return Ok(TrainAvlResponse.into());
+        return Ok(Reply::ok(()));
     };
     if let Some(tag) = vehicle.tag.as_deref().map(str::to_lowercase)
         && tag != "smartrak"
     {
         tracing::debug!("vehicle tag {tag} did not match rules");
-        return Ok(TrainAvlResponse.into());
+        return Ok(Reply::ok(()));
     }
 
-    Request::<SmarTrakMessage>::handle(request.into(), owner, provider).await?;
+    let headers = HeaderMap::default();
+    SmarTrakMessage::handle(request, Context { owner, provider, headers: &headers }).await?;
 
-    Ok(TrainAvlResponse.into())
+    Ok(Reply::ok(()))
 }
 
-impl<P> Handler<TrainAvlResponse, P> for Request<TrainAvlMessage>
+impl<P> Handler<P> for TrainAvlMessage
 where
     P: Config + HttpRequest + Identity + Publisher + StateStore,
 {
-    type Error = fabric::Error;
+    type Error = warp_sdk::Error;
+    type Input = Vec<u8>;
+    type Output = ();
 
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<TrainAvlResponse>> {
-        handle(owner, self.body, provider).await
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing TrainAvlMessage").map_err(Into::into)
+    }
+
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }

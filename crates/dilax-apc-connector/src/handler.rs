@@ -1,18 +1,15 @@
-use std::fmt::Display;
-
-use anyhow::Context;
-use credibil_api::{Handler, Request, Response};
-use fabric::{Error, Message, Publisher, Result};
+use anyhow::Context as _;
+use http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{Error, IntoBody, Message, Publisher, Result};
 
 use crate::DilaxMessage;
 
 const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(
-    _owner: &str, request: DilaxRequest, provider: &P,
-) -> Result<Response<DilaxResponse>>
+async fn handle<P>(_owner: &str, request: DilaxRequest, provider: &P) -> Result<Reply<DilaxReply>>
 where
     P: Publisher,
 {
@@ -30,14 +27,30 @@ where
     msg.headers.insert("key".to_string(), site.to_string());
     Publisher::send(provider, DILAX_TOPIC, &msg).await?;
 
-    Ok(DilaxResponse("OK").into())
+    Ok(Reply {
+        status: StatusCode::OK,
+        headers: HeaderMap::from_iter([(
+            HeaderName::from_static("content-type"),
+            HeaderValue::from_static("application/json"),
+        )]),
+        body: DilaxReply("OK"),
+    })
 }
 
-impl<P: Publisher> Handler<DilaxResponse, P> for Request<DilaxRequest> {
+impl<P> Handler<P> for DilaxRequest
+where
+    P: Publisher,
+{
     type Error = Error;
+    type Input = Vec<u8>;
+    type Output = DilaxReply;
 
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {
-        handle(owner, self.body, provider).await
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing DilaxRequest").map_err(Into::into)
+    }
+
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 
@@ -51,11 +64,11 @@ pub struct DilaxRequest {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
-pub struct DilaxResponse(pub &'static str);
+pub struct DilaxReply(pub &'static str);
 
-impl Display for DilaxResponse {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+impl IntoBody for DilaxReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        Ok(self.0.as_bytes().to_vec())
     }
 }
 

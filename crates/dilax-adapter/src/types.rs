@@ -28,16 +28,13 @@ pub struct DilaxMessage {
     /// Door-level passenger counters captured for this interval.
     pub doors: Vec<Door>,
     /// Scheduled arrival timestamp if supplied by the APC device.
-    #[serde(default)]
     pub arrival_utc: Option<String>,
     /// Scheduled departure timestamp if supplied by the APC device.
-    #[serde(default)]
     pub departure_utc: Option<String>,
     /// Distance to the previous stop, when available.
-    #[serde(default)]
     pub distance_laststop: Option<i64>,
     /// Vehicle speed reported by the hardware (km/h).
-    #[serde(default, deserialize_with = "deserialize_speed")]
+    #[serde(deserialize_with = "into_u32")]
     pub speed: Option<u32>,
     /// Geo-spatial waypoint associated with the reading.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -45,7 +42,7 @@ pub struct DilaxMessage {
 }
 
 #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-fn deserialize_speed<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>
+fn into_u32<'de, D>(deserializer: D) -> anyhow::Result<Option<u32>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -139,6 +136,19 @@ pub struct Waypoint {
     /// Longitude of the waypoint.
     pub lon: String,
     /// Instantaneous speed reported (km/h).
-    #[serde(default, deserialize_with = "deserialize_speed")]
+    #[serde(deserialize_with = "into_u32")]
     pub speed: Option<u32>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_message() {
+        let json = include_bytes!("../data/message.json");
+        let dilax_message: DilaxMessage = serde_json::from_slice(json).unwrap();
+        assert_eq!(dilax_message.dlx_vers, "ABCDEFGHIJKLMN");
+        assert_eq!(dilax_message.speed, Some(0));
+    }
 }

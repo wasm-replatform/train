@@ -8,8 +8,8 @@ use std::fs::{self, File};
 use anyhow::{Result, bail};
 use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
-use credibil_api::Client;
 use r9k_adapter::{R9kMessage, SmarTrakEvent};
+use warp_sdk::api::Client;
 
 use self::provider::MockProvider;
 use crate::provider::Replay;
@@ -19,7 +19,7 @@ use crate::provider::Replay;
 async fn run() -> Result<()> {
     for entry in fs::read_dir("data/sessions")? {
         let file = File::open(entry?.path())?;
-        let session: Replay = serde_yaml::from_reader(&file)?;
+        let session: Replay = serde_json::from_reader(&file)?;
         replay(session).await?;
     }
 
@@ -30,8 +30,8 @@ async fn run() -> Result<()> {
 // current adapter.
 async fn replay(replay: Replay) -> Result<()> {
     let provider = MockProvider::new_replay(replay.clone());
-    let client = Client::new(provider.clone());
-    let mut request = R9kMessage::try_from(replay.input)?;
+    let client = Client::new("at").provider(provider.clone());
+    let mut request: R9kMessage = quick_xml::de::from_reader(replay.input.as_bytes())?;
 
     let Some(change) = request.train_update.changes.get_mut(0) else {
         bail!("no changes in input message");
@@ -50,7 +50,7 @@ async fn replay(replay: Replay) -> Result<()> {
         change.actual_arrival_time = adjusted_secs;
     }
 
-    if let Err(e) = client.request(request).owner("owner").await {
+    if let Err(e) = client.request(request).await {
         assert_eq!(e.to_string(), replay.error.unwrap().to_string());
     }
 

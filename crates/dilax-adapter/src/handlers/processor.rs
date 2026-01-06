@@ -1,8 +1,8 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use common::block_mgt;
 use common::fleet::{self, Vehicle};
-use credibil_api::{Handler, Request, Response};
-use fabric::{
+use warp_sdk::api::{Context, Handler, Reply};
+use warp_sdk::{
     Config, Error, HttpRequest, Identity, Message, Publisher, Result, StateStore, bad_request,
 };
 
@@ -13,29 +13,29 @@ use crate::types::{DilaxMessage, EnrichedEvent};
 const STOP_SEARCH_DISTANCE_METERS: u32 = 150;
 const DILAX_ENRICHED_TOPIC: &str = "realtime-dilax-apc-enriched.v2";
 
-/// Dilax empty response.
-#[derive(Debug, Clone)]
-pub struct DilaxResponse;
-
-async fn handle<P>(
-    _owner: &str, request: DilaxMessage, provider: &P,
-) -> Result<Response<DilaxResponse>>
+async fn handle<P>(_owner: &str, request: DilaxMessage, provider: &P) -> Result<Reply<()>>
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     process(request, provider).await?;
-    Ok(DilaxResponse.into())
+    Ok(Reply::ok(()))
 }
 
-impl<P> Handler<DilaxResponse, P> for Request<DilaxMessage>
+impl<P> Handler<P> for DilaxMessage
 where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     type Error = Error;
+    type Input = Vec<u8>;
+    type Output = ();
+
+    fn from_input(input: Vec<u8>) -> Result<Self> {
+        serde_json::from_slice(&input).context("deserializing DilaxMessage").map_err(Into::into)
+    }
 
     // TODO: implement "owner"
-    async fn handle(self, owner: &str, provider: &P) -> Result<Response<DilaxResponse>> {
-        handle(owner, self.body, provider).await
+    async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {
+        handle(ctx.owner, self, ctx.provider).await
     }
 }
 

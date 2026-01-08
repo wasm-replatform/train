@@ -10,8 +10,7 @@ use smartrak_gtfs::{
     ResetReply, ResetRequest, SetTripReply, SetTripRequest, VehicleInfoReply, VehicleInfoRequest,
 };
 use tracing::Level;
-use warp_sdk::Handler;
-use warp_sdk::api::{HttpResult, Reply};
+use warp_sdk::{Handler, HttpResult, Reply};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types as p3;
 
@@ -37,10 +36,10 @@ impl Guest for Http {
 #[axum::debug_handler]
 async fn r9k_message(body: Bytes) -> HttpResult<Reply<R9kReply>> {
     // let request = R9kRequest::try_from(body.to_vec())?;
-    // Client::new("at").provider(Provider::new()).request(request).await?;
+    // Client::new("at").provider(&Provider::new()).request(request).await?;
 
     R9kRequest::handler(body.to_vec())?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map_err(Into::into)
@@ -49,7 +48,7 @@ async fn r9k_message(body: Bytes) -> HttpResult<Reply<R9kReply>> {
 #[axum::debug_handler]
 async fn dilax_message(body: Bytes) -> HttpResult<Reply<DilaxReply>> {
     DilaxRequest::handler(body.to_vec())?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map_err(Into::into)
@@ -57,13 +56,13 @@ async fn dilax_message(body: Bytes) -> HttpResult<Reply<DilaxReply>> {
 
 #[axum::debug_handler]
 async fn detector() -> HttpResult<Reply<DetectionReply>> {
-    DetectionRequest::handler(())?.provider(Provider::new()).owner("at").await.map_err(Into::into)
+    DetectionRequest::handler(())?.provider(&Provider::new()).owner("at").await.map_err(Into::into)
 }
 
 #[axum::debug_handler]
 async fn vehicle_info(Path(vehicle_id): Path<String>) -> HttpResult<Reply<VehicleInfoReply>> {
     VehicleInfoRequest::handler(vehicle_id)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map_err(Into::into)
@@ -74,7 +73,7 @@ async fn set_trip(
     Path((vehicle_id, trip_id)): Path<(String, String)>,
 ) -> HttpResult<Reply<SetTripReply>> {
     SetTripRequest::handler((vehicle_id, trip_id))?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map_err(Into::into)
@@ -83,7 +82,7 @@ async fn set_trip(
 #[axum::debug_handler]
 async fn reset(Path(vehicle_id): Path<String>) -> HttpResult<Reply<ResetReply>> {
     ResetRequest::handler(vehicle_id)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map_err(Into::into)

@@ -46,10 +46,10 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 #[wasi_otel::instrument]
 async fn r9k(payload: Vec<u8>) -> Result<()> {
     // let request = R9kMessage::try_from(payload)?;
-    // Client::new("at").provider(Provider::new()).request(request).await?;
+    // Client::new("at").provider(&Provider::new()).request(request).await?;
 
     R9kMessage::handler(payload)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map(|_| ())
@@ -59,7 +59,7 @@ async fn r9k(payload: Vec<u8>) -> Result<()> {
 #[wasi_otel::instrument]
 async fn dilax(payload: Vec<u8>) -> Result<()> {
     DilaxMessage::handler(payload)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map(|_| ())
@@ -69,7 +69,7 @@ async fn dilax(payload: Vec<u8>) -> Result<()> {
 #[wasi_otel::instrument]
 async fn passenger_count(payload: Vec<u8>) -> Result<()> {
     PassengerCountMessage::handler(payload)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map(|_| ())
@@ -79,7 +79,7 @@ async fn passenger_count(payload: Vec<u8>) -> Result<()> {
 #[wasi_otel::instrument]
 async fn smartrak(payload: Vec<u8>) -> Result<()> {
     SmarTrakMessage::handler(payload)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map(|_| ())
@@ -89,7 +89,7 @@ async fn smartrak(payload: Vec<u8>) -> Result<()> {
 #[wasi_otel::instrument]
 async fn caf_avl(payload: Vec<u8>) -> Result<()> {
     CafAvlMessage::handler(payload)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map(|_| ())
@@ -99,7 +99,7 @@ async fn caf_avl(payload: Vec<u8>) -> Result<()> {
 #[wasi_otel::instrument]
 async fn train_avl(payload: Vec<u8>) -> Result<()> {
     TrainAvlMessage::handler(payload)?
-        .provider(Provider::new())
+        .provider(&Provider::new())
         .owner("at")
         .await
         .map(|_| ())

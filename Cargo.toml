@@ -135,25 +135,25 @@ wasmtime-wasi = { version = "40.0.0", features = ["p3"] }
 wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 
 # Credibil registry
-warp = { version = "0.22.1", registry = "credibil" }
-warp-sdk = { version = "0.22.1", registry = "credibil" }
+warp = { version = "0.23.0", registry = "credibil" }
+warp-sdk = { version = "0.23.0", registry = "credibil" }
 wasi-http = { version = "0.22.1", registry = "credibil" }
-wasi-identity = { version = "0.22.1", registry = "credibil" }
-wasi-keyvalue = { version = "0.22.1", registry = "credibil" }
-wasi-messaging = { version = "0.22.1", registry = "credibil" }
-wasi-otel = { version = "0.22.1", registry = "credibil" }
+wasi-identity = { version = "0.23.0", registry = "credibil" }
+wasi-keyvalue = { version = "0.23.0", registry = "credibil" }
+wasi-messaging = { version = "0.23.0", registry = "credibil" }
+wasi-otel = { version = "0.23.0", registry = "credibil" }
 
 # Internally referenced crates
 common = { path = "crates/common" }
 
-# [patch.credibil]
-# warp = { path = "../../augentic/warp/crates/warp" }
-# warp-sdk = { path = "../../augentic/warp/crates/warp-sdk" }
-# wasi-http = { path = "../../augentic/warp/crates/wasi-http" }
-# wasi-identity = { path = "../../augentic/warp/crates/wasi-identity" }
-# wasi-keyvalue = { path = "../../augentic/warp/crates/wasi-keyvalue" }
-# wasi-messaging = { path = "../../augentic/warp/crates/wasi-messaging" }
-# wasi-otel = { path = "../../augentic/warp/crates/wasi-otel" }
+[patch.credibil]
+warp = { path = "../../augentic/warp/crates/warp" }
+warp-sdk = { path = "../../augentic/warp/crates/warp-sdk" }
+wasi-http = { path = "../../augentic/warp/crates/wasi-http" }
+wasi-identity = { path = "../../augentic/warp/crates/wasi-identity" }
+wasi-keyvalue = { path = "../../augentic/warp/crates/wasi-keyvalue" }
+wasi-messaging = { path = "../../augentic/warp/crates/wasi-messaging" }
+wasi-otel = { path = "../../augentic/warp/crates/wasi-otel" }
 
 [profile.release]
 lto = "thin"

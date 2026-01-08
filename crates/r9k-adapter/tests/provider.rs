@@ -102,7 +102,6 @@ impl HttpRequest for MockProvider {
                     }
                     Session::Replay(Replay { vehicles, .. }) => vehicles.as_deref().unwrap_or(&[]),
                 };
-
                 serde_json::to_vec(&vehicles).context("failed to serialize")?
             }
             _ => {

@@ -64,6 +64,7 @@ impl MockProvider {
     }
 
     #[allow(clippy::missing_panics_doc)]
+    #[allow(dead_code)]
     #[must_use]
     pub fn events(&self) -> Vec<SmarTrakEvent> {
         self.events.lock().expect("should lock").clone()

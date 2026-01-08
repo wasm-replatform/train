@@ -1,6 +1,6 @@
 use anyhow::Result;
 use axum::Router;
-use axum::extract::Path;
+use axum::extract::{Path, RawQuery};
 use axum::routing::{get, post};
 use bytes::Bytes;
 use dilax_adapter::{DetectionReply, DetectionRequest};
@@ -55,8 +55,12 @@ async fn dilax_message(body: Bytes) -> HttpResult<Reply<DilaxReply>> {
 }
 
 #[axum::debug_handler]
-async fn detector() -> HttpResult<Reply<DetectionReply>> {
-    DetectionRequest::handler(())?.provider(&Provider::new()).owner("at").await.map_err(Into::into)
+async fn detector(RawQuery(query): RawQuery) -> HttpResult<Reply<DetectionReply>> {
+    DetectionRequest::handler(query)?
+        .provider(&Provider::new())
+        .owner("at")
+        .await
+        .map_err(Into::into)
 }
 
 #[axum::debug_handler]

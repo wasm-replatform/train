@@ -6,6 +6,7 @@ use bytes::Bytes;
 use fromenv::FromEnv;
 use http::{Request, Response};
 use tracing::error;
+use warp_sdk::{Config, HttpRequest, Identity, Publisher, StateStore};
 use wasi_identity::credentials::get_identity;
 use wasi_keyvalue::cache;
 use wasi_messaging::producer;
@@ -54,7 +55,7 @@ impl Provider {
     }
 }
 
-impl warp_sdk::Config for Provider {
+impl Config for Provider {
     async fn get(&self, key: &str) -> Result<String> {
         Ok(match key {
             "ENV" => &self.config.environment,
@@ -69,7 +70,7 @@ impl warp_sdk::Config for Provider {
     }
 }
 
-impl warp_sdk::Publisher for Provider {
+impl Publisher for Provider {
     async fn send(&self, topic: &str, message: &warp_sdk::Message) -> Result<()> {
         tracing::debug!("sending to topic: {topic}");
 
@@ -92,7 +93,7 @@ impl warp_sdk::Publisher for Provider {
     }
 }
 
-impl warp_sdk::HttpRequest for Provider {
+impl HttpRequest for Provider {
     async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
     where
         T: http_body::Body + Any + Send,
@@ -104,7 +105,7 @@ impl warp_sdk::HttpRequest for Provider {
     }
 }
 
-impl warp_sdk::Identity for Provider {
+impl Identity for Provider {
     async fn access_token(&self) -> Result<String> {
         let identity = self.config.azure_identity.clone();
         let identity = block_on(get_identity(identity))?;
@@ -113,7 +114,7 @@ impl warp_sdk::Identity for Provider {
     }
 }
 
-impl warp_sdk::StateStore for Provider {
+impl StateStore for Provider {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
         let bucket = cache::open("train_cache").await.context("opening cache")?;
         bucket.get(key).await.context("reading state from cache")

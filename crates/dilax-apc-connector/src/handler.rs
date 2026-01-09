@@ -46,7 +46,7 @@ where
     type Output = DilaxReply;
 
     fn from_input(input: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&input).context("deserializing DilaxRequest").map_err(Into::into)
+        serde_json::from_slice(&input).map_err(Into::into)
     }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DilaxReply>> {

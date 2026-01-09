@@ -11,30 +11,12 @@ warp_sdk::guest!({
     owner: "at",
     provider: Provider,
     http: [
-        "/jobs/detector": {
-            method: get,
-            request: DetectionRequest,
-            reply: DetectionReply
-        },
-        "/inbound/xml": {
-            method: post,
-            request: R9kRequest,
-            reply: R9kReply
-        },
-        "/god-mode/set-trip/{vehicle_id}/{trip_id}": {
-            method: get,
-            request: SetTripRequest,
-            reply: SetTripReply,
-        },
-        "/god-mode/reset/{vehicle_id}": {
-            method: get,
-            request: VehicleInfoRequest,
-            reply: VehicleInfoReply
-        }
+        "/jobs/detector": get(DetectionRequest, DetectionReply),
+        "/inbound/xml": post(R9kRequest, R9kReply) | body,
+        "/god-mode/set-trip/{vehicle_id}/{trip_id}": get(SetTripRequest, SetTripReply),
+        "/god-mode/reset/{vehicle_id}": get(VehicleInfoRequest, VehicleInfoReply),
     ],
     messaging: [
-        "realtime-r9k.v1": {
-            message: R9kMessage
-        }
+        "realtime-r9k.v1": R9kMessage,
     ]
 });

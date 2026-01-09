@@ -43,10 +43,10 @@ where
     P: Config + HttpRequest + Publisher + StateStore + Identity,
 {
     type Error = Error;
-    type Input = Option<String>;
+    type Input = ();
     type Output = DetectionReply;
 
-    fn from_input(_input: Option<String>) -> Result<Self> {
+    fn from_input(_input: ()) -> Result<Self> {
         Ok(Self)
     }
 

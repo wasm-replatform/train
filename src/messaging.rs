@@ -45,9 +45,6 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
 
 #[wasi_otel::instrument]
 async fn r9k(payload: Vec<u8>) -> Result<()> {
-    // let request = R9kMessage::try_from(payload)?;
-    // Client::new("at").provider(&Provider::new()).request(request).await?;
-
     R9kMessage::handler(payload)?
         .provider(&Provider::new())
         .owner("at")

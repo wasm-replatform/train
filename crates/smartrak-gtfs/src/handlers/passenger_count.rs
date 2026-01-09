@@ -2,7 +2,6 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};

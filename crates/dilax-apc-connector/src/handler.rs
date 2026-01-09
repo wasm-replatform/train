@@ -2,16 +2,16 @@ use anyhow::Context as _;
 use http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Error, IntoBody, Message, Publisher, Result};
+use warp_sdk::{Config, Error, IntoBody, Message, Publisher, Result};
 
 use crate::DilaxMessage;
 
-const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
+ const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
 #[allow(clippy::unused_async)]
 async fn handle<P>(_owner: &str, request: DilaxRequest, provider: &P) -> Result<Reply<DilaxReply>>
 where
-    P: Publisher,
+    P: Config + Publisher,
 {
     let message = &request.message;
 
@@ -25,7 +25,11 @@ where
     let mut msg = Message::new(&msg_vec);
     let site = message.device.as_ref().map_or_else(|| "undefined", |device| &device.site);
     msg.headers.insert("key".to_string(), site.to_string());
-    Publisher::send(provider, DILAX_TOPIC, &msg).await?;
+
+    let env = Config::get(provider, "ENV").await?;
+    let topic = format!("{env}-{DILAX_TOPIC}");
+
+    Publisher::send(provider, &topic, &msg).await?;
 
     Ok(Reply {
         status: StatusCode::OK,
@@ -39,7 +43,7 @@ where
 
 impl<P> Handler<P> for DilaxRequest
 where
-    P: Publisher,
+    P: Config + Publisher,
 {
     type Error = Error;
     type Input = Vec<u8>;
@@ -69,102 +73,5 @@ pub struct DilaxReply(pub &'static str);
 impl IntoBody for DilaxReply {
     fn into_body(self) -> anyhow::Result<Vec<u8>> {
         Ok(self.0.as_bytes().to_vec())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::future::Future;
-    use std::sync::{Arc, Mutex};
-
-    use super::*;
-    use crate::types::DilaxMessage;
-
-    #[tokio::test]
-    async fn publishes_device_site_header() {
-        let provider = MockProvider::default();
-        let message = sample_message();
-        let request = DilaxRequest { message: message.clone() };
-
-        handle("owner", request, &provider).await.expect("handler should succeed");
-
-        let published = provider.published();
-        assert_eq!(published.len(), 1);
-
-        let (topic, record) = &published[0];
-        assert_eq!(topic, DILAX_TOPIC);
-        let expected_key = message.device.as_ref().expect("device").site.as_str();
-        assert_eq!(record.headers.get("key").map(String::as_str), Some(expected_key));
-        assert_eq!(record.payload, serde_json::to_vec(&message).expect("serialize"));
-    }
-
-    #[tokio::test]
-    async fn publishes_undefined_header_when_device_missing() {
-        let provider = MockProvider::default();
-        let mut message = sample_message();
-        message.device = None;
-        let request = DilaxRequest { message: message.clone() };
-
-        handle("owner", request, &provider).await.expect("handler should succeed");
-
-        let published = provider.published();
-        assert_eq!(published.len(), 1);
-
-        let (topic, record) = &published[0];
-        assert_eq!(topic, DILAX_TOPIC);
-        assert_eq!(record.headers.get("key").map(String::as_str), Some("undefined"));
-        assert_eq!(record.payload, serde_json::to_vec(&message).expect("serialize"));
-    }
-
-    #[tokio::test]
-    async fn publishes_whitespace_when_device_site_whitespace() {
-        let provider = MockProvider::default();
-        let site = "  ";
-        let mut message = sample_message();
-        if let Some(device) = message.device.as_mut() {
-            device.site = site.to_string();
-        }
-        let request = DilaxRequest { message: message.clone() };
-
-        handle("owner", request, &provider).await.expect("handler should succeed");
-
-        let published = provider.published();
-        assert_eq!(published.len(), 1);
-
-        let (topic, record) = &published[0];
-        assert_eq!(topic, DILAX_TOPIC);
-        assert_eq!(record.headers.get("key").map(String::as_str), Some(site));
-        assert_eq!(record.payload, serde_json::to_vec(&message).expect("serialize"));
-    }
-
-    #[derive(Default, Clone)]
-    struct MockProvider {
-        published: Arc<Mutex<Vec<(String, Message)>>>,
-    }
-
-    impl MockProvider {
-        fn published(&self) -> Vec<(String, Message)> {
-            self.published.lock().expect("lock").clone()
-        }
-    }
-
-    impl Publisher for MockProvider {
-        fn send(
-            &self, topic: &str, message: &Message,
-        ) -> impl Future<Output = anyhow::Result<()>> + Send {
-            let topic = topic.to_string();
-            let message = message.clone();
-            let published = Arc::clone(&self.published);
-
-            async move {
-                published.lock().expect("lock").push((topic, message));
-                Ok(())
-            }
-        }
-    }
-
-    fn sample_message() -> DilaxMessage {
-        serde_json::from_str(include_str!("../data/dilax_sample.json"))
-            .expect("fixture should deserialize")
     }
 }

@@ -16,10 +16,11 @@ pub async fn allocation<P>(vehicle_id: &str, provider: &P) -> Result<Option<Allo
 where
     P: Config + HttpRequest + Identity,
 {
-    let block_mgt_url =
-        Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
-    let url = format!("{block_mgt_url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
-    let token = Identity::access_token(provider).await?;
+    let url = Config::get(provider, "BLOCK_MGT_URL").await?;
+    let identity = Config::get(provider, "AZURE_IDENTITY").await?;
+
+    let url = format!("{url}/allocations/vehicles/{vehicle_id}?currentTrip=true");
+    let token = Identity::access_token(provider, identity).await?;
 
     let request = http::Request::builder()
         .method(Method::GET)
@@ -31,7 +32,7 @@ where
 
     let response = HttpRequest::fetch(provider, request)
         .await
-        .with_context(|| format!("failed to fetch block allocation for vehicle {vehicle_id}"))?;
+        .context("failed to fetch block allocation for vehicle")?;
 
     let body = response.into_body();
     let envelope: AllocationResponse =
@@ -52,9 +53,10 @@ pub async fn cached_allocation<P>(
 where
     P: Config + HttpRequest + Identity,
 {
-    let url = Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
+    let url = Config::get(provider, "BLOCK_MGT_URL").await?;
+    let identity = Config::get(provider, "AZURE_IDENTITY").await?;
 
-    let token = Identity::access_token(provider).await?;
+    let token = Identity::access_token(provider, identity).await?;
     let endpoint = format!(
         "{url}/allocations/vehicles/{vehicle_id}?currentTrip=true&siblings=true&nowUnixTimeSeconds={timestamp}"
     );
@@ -90,11 +92,11 @@ pub async fn allocations<P>(provider: &P) -> Result<Vec<Allocation>>
 where
     P: Config + HttpRequest + Identity,
 {
-    let block_mgt_url =
-        Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
+    let url = Config::get(provider, "BLOCK_MGT_URL").await?;
+    let identity = Config::get(provider, "AZURE_IDENTITY").await?;
 
-    let url = format!("{block_mgt_url}/allocations");
-    let token = Identity::access_token(provider).await?;
+    let url = format!("{url}/allocations");
+    let token = Identity::access_token(provider, identity).await?;
 
     let request = http::Request::builder()
         .method(Method::GET)

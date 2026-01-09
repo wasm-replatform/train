@@ -1,57 +1,39 @@
-use std::any::Any;
-use std::error::Error;
-
-use anyhow::{Context, Result};
-use bytes::Bytes;
+use anyhow::Result;
 use fromenv::FromEnv;
-use http::{Request, Response};
-use tracing::error;
 use warp_sdk::{Config, HttpRequest, Identity, Publisher, StateStore};
-use wasi_identity::credentials::get_identity;
-use wasi_keyvalue::cache;
-use wasi_messaging::producer;
-use wasi_messaging::types::{Client, Message};
-use wit_bindgen::block_on;
 
-const SERVICE: &str = "train";
-
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Provider {
     pub config: ConfigSettings,
+}
+
+impl Provider {
+    pub fn new() -> Self {
+        Self { config: ConfigSettings::default() }
+    }
 }
 
 #[derive(Debug, Clone, FromEnv)]
 pub struct ConfigSettings {
     #[env(from = "ENV", default = "dev")]
     pub environment: String,
-
     #[env(from = "BLOCK_MGT_URL")]
     pub block_mgt_url: String,
-
     #[env(from = "CC_STATIC_URL")]
     pub cc_static_url: String,
-
     #[env(from = "FLEET_URL")]
     pub fleet_url: String,
-
     #[env(from = "GTFS_STATIC_URL")]
     pub gtfs_static_url: String,
-
     #[env(from = "AZURE_IDENTITY")]
     pub azure_identity: String,
 }
 
 impl Default for ConfigSettings {
     fn default() -> Self {
-        // we panic here to ensure configuration is always loaded
-        // i.e. guest should not start without proper configuration
+        // We panic here to ensure configuration is always loaded.
+        // i.e. the guest should not start without proper configuration.
         Self::from_env().finalize().expect("should load configuration")
-    }
-}
-
-impl Provider {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 
@@ -70,63 +52,8 @@ impl Config for Provider {
     }
 }
 
-impl Publisher for Provider {
-    async fn send(&self, topic: &str, message: &warp_sdk::Message) -> Result<()> {
-        tracing::debug!("sending to topic: {topic}");
-
-        let client = Client::connect("kafka".to_string()).await.context("connecting to broker")?;
-        let msg = Message::new(&message.payload);
-        let topic = format!("{}-{topic}", self.config.environment);
-
-        // TODO: move to wrt
-        if let Err(e) = producer::send(&client, topic.clone(), msg).await {
-            error!(
-                monotonic_counter.publishing_errors = 1, error = %e, topic = %topic, service = %SERVICE
-            );
-        } else {
-            tracing::info!(
-                monotonic_counter.messages_sent = 1, topic = %topic, service = %SERVICE
-            );
-        }
-
-        Ok(())
-    }
-}
-
-impl HttpRequest for Provider {
-    async fn fetch<T>(&self, request: Request<T>) -> Result<Response<Bytes>>
-    where
-        T: http_body::Body + Any + Send,
-        T::Data: Into<Vec<u8>>,
-        T::Error: Into<Box<dyn Error + Send + Sync + 'static>>,
-    {
-        tracing::debug!("request: {:?}", request.uri());
-        wasi_http::handle(request).await
-    }
-}
-
-impl Identity for Provider {
-    async fn access_token(&self) -> Result<String> {
-        let identity = self.config.azure_identity.clone();
-        let identity = block_on(get_identity(identity))?;
-        let access_token = block_on(async move { identity.get_token(vec![]).await })?;
-        Ok(access_token.token)
-    }
-}
-
-impl StateStore for Provider {
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>> {
-        let bucket = cache::open("train_cache").await.context("opening cache")?;
-        bucket.get(key).await.context("reading state from cache")
-    }
-
-    async fn set(&self, key: &str, value: &[u8], ttl_secs: Option<u64>) -> Result<Option<Vec<u8>>> {
-        let bucket = cache::open("train_cache").await.context("opening cache")?;
-        bucket.set(key, value, ttl_secs).await.context("reading state from cache")
-    }
-
-    async fn delete(&self, key: &str) -> Result<()> {
-        let bucket = cache::open("train_cache").await.context("opening cache")?;
-        bucket.delete(key).await.context("deleting state from cache")
-    }
-}
+// Use default implementations for these traits
+impl HttpRequest for Provider {}
+impl Identity for Provider {}
+impl Publisher for Provider {}
+impl StateStore for Provider {}

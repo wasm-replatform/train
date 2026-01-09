@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use common::fleet;
 use http::HeaderMap;
 use serde::Deserialize;

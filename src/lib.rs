@@ -4,4 +4,3 @@ mod http;
 mod messaging;
 mod provider;
 
-// pub mod guest;

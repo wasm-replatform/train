@@ -124,7 +124,7 @@ impl Publisher for MockProvider {
 }
 
 impl Identity for MockProvider {
-    async fn access_token(&self) -> Result<String> {
+    async fn access_token(&self, _identity: String) -> Result<String> {
         Ok("mock_access_token".to_string())
     }
 }

@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
@@ -37,10 +36,13 @@ where
         }
     };
 
+    let env = Config::get(provider, "ENV").await?;
+    let topic = format!("{env}-{topic}");
+
     // publish
     let mut message = Message::new(&payload);
     message.headers.insert("key".to_string(), key.clone());
-    Publisher::send(provider, topic, &message).await?;
+    Publisher::send(provider, &topic, &message).await?;
 
     Ok(Reply::ok(()))
 }

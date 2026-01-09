@@ -1,6 +1,6 @@
 use anyhow::Result;
 use axum::Router;
-use axum::extract::{Path, RawQuery};
+use axum::extract::Path;
 use axum::routing::{get, post};
 use bytes::Bytes;
 use dilax_adapter::{DetectionReply, DetectionRequest};
@@ -35,9 +35,6 @@ impl Guest for Http {
 
 #[axum::debug_handler]
 async fn r9k_message(body: Bytes) -> HttpResult<Reply<R9kReply>> {
-    // let request = R9kRequest::try_from(body.to_vec())?;
-    // Client::new("at").provider(&Provider::new()).request(request).await?;
-
     R9kRequest::handler(body.to_vec())?
         .provider(&Provider::new())
         .owner("at")
@@ -55,12 +52,8 @@ async fn dilax_message(body: Bytes) -> HttpResult<Reply<DilaxReply>> {
 }
 
 #[axum::debug_handler]
-async fn detector(RawQuery(query): RawQuery) -> HttpResult<Reply<DetectionReply>> {
-    DetectionRequest::handler(query)?
-        .provider(&Provider::new())
-        .owner("at")
-        .await
-        .map_err(Into::into)
+async fn detector() -> HttpResult<Reply<DetectionReply>> {
+    DetectionRequest::handler(())?.provider(&Provider::new()).owner("at").await.map_err(Into::into)
 }
 
 #[axum::debug_handler]

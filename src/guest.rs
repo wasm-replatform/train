@@ -12,7 +12,7 @@ warp_sdk::guest!({
     provider: Provider,
     http: [
         "/jobs/detector": get(DetectionRequest, DetectionReply),
-        "/inbound/xml": post(R9kRequest, R9kReply) | body,
+        "/inbound/xml": post(R9kRequest with_body, R9kReply),
         "/god-mode/set-trip/{vehicle_id}/{trip_id}": get(SetTripRequest, SetTripReply),
         "/god-mode/reset/{vehicle_id}": get(VehicleInfoRequest, VehicleInfoReply),
     ],

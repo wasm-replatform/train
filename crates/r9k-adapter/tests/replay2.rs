@@ -5,15 +5,12 @@ mod provider;
 
 use std::fs::{self, File};
 
-use r9k_adapter::{R9kMessage, SmarTrakEvent, StopInfo};
-use serde::Deserialize;
+use chrono::{Timelike, Utc};
+use chrono_tz::Pacific::Auckland;
+use r9k_adapter::R9kMessage;
+use warp_sdk::Client;
 
-// #[derive(Deserialize, Serialize)]
-// enum TestResult {}
-
-// struct TestCase {
-//     request: R9kMessage,
-// }
+use crate::provider::{ReplayData, ReplayTransform, TestCase};
 
 // Load each test case. For each, present the input to the adapter and compare
 // the output expected.
@@ -21,153 +18,77 @@ use serde::Deserialize;
 async fn run() {
     for entry in fs::read_dir("data/sessions2").expect("should read directory") {
         let file = File::open(entry.expect("should read entry").path()).expect("should open file");
-        let _session: provider::Replay =
+        let fixture: ReplayData =
             serde_json::from_reader(&file).expect("should deserialize session");
+        replay(fixture).await;
     }
 }
 
-// A trait that expresses the structure of taking in some data and
-// constructing (say by deserialization) an input and an output.
-pub trait Fixture
-{
-    // Type of input data needed by the test case. In most cases this is likely
-    // to be the request type of the handler under test.
-    type Input;
-    // Type of output data produced by the test case. This could be the
-    // expected output type of the handler under test, or an error type for
-    // failure cases. Many tests cases don't care about the handler's output
-    // type but a type that represents success or failure of some internal
-    // processing.
-    type Output;
-    // Type of error that can occur when producing the expected output.
-    type Error;
-    // Some handlers under test may require extension data in order to process
-    // the input, say from configuration or external systems.
-    type Extension: Default;
-    // Sometimes the raw input data needs to be transformed before being
-    // passed to the test case handler, for example to adjust timestamps to
-    // be relative to 'now'.
-    type TransformParams;
+async fn replay(fixture: ReplayData) {
+    let test_case = TestCase::new(fixture).prepare(shift_time);
+    let provider = provider::MockProvider::new_replay2(test_case.clone());
+    let client = Client::new("at").provider(provider.clone());
 
-    // Convert input data into the input type needed by the test case handler.
-    fn input(&self) -> Self::Input;
+    let result = client.request(test_case.input).await;
+    let curr_events = provider.events();
 
-    // Convert input data into transformation parameters for the test case
-    // handler.
-    fn params(&self) -> Option<Self::TransformParams> {
-        None
-    }
+    let Some(expected_result) = &test_case.output else {
+        assert!(curr_events.is_empty());
+        return;
+    };
 
-    // Apply a transformation function to the input data before passing it to
-    // the test case handler.
-    fn transform<F>(&self, f: F) -> Self::Input
-    where
-        F: FnOnce(Self::Input, Option<Self::TransformParams>) -> Self::Input,
-    {
-        f(self.input(), self.params())
-    }
+    match expected_result {
+        Ok(expected_events) => {
+            let Some(orig_events) = expected_events else {
+                assert!(curr_events.is_empty());
+                return;
+            };
+            orig_events.iter().zip(curr_events).for_each(|(published, mut actual)| {
+                // add 5 seconds to the actual message timestamp the adapter sleeps 5 seconds
+                // before output the first round
+                let now = Utc::now().with_timezone(&Auckland);
+                let diff = now.timestamp() - actual.message_data.timestamp.timestamp();
+                assert!(diff.abs() < 3, "expected vs actual too great: {diff}");
 
-    // Convert input data into extension data needed by the test case handler.
-    fn extension(&self) -> Option<Self::Extension> {
-        None
-    }
+                // compare original published message to r9k event
+                actual.received_at = published.received_at;
+                actual.message_data.timestamp = published.message_data.timestamp;
 
-    /// Convert input data into the expected output type needed by the test
-    /// case handler, which could be an error for failure cases.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when the fixture cannot produce the expected output.
-    fn output(&self) -> Option<Result<Self::Output, Self::Error>>;
-}
-
-pub struct TestCase<D> {
-    data: D,
-}
-
-pub struct PreparedTestCase<D>
-where
-    D: Fixture
-{
-    pub input: D::Input,
-    pub extension: Option<D::Extension>,
-    pub output: Option<Result<D::Output, D::Error>>,
-}
-
-impl<D> TestCase<D>
-where
-    D: Clone + Fixture,
-{
-    #[must_use]
-    pub const fn new(data: D) -> Self {
-        Self { data }
-    }
-
-    pub fn prepare<F>(&self, transform: F) -> PreparedTestCase<D>
-    where
-        F: FnOnce(D::Input, Option<D::TransformParams>) -> D::Input,
-        <D as Fixture>::Input: FnOnce(<D as Fixture>::Input, <D as Fixture>::TransformParams)
-    {
-        let input = self.data.transform(transform);
-        let extension = self.data.extension();
-        let output = self.data.output();
-        PreparedTestCase { input, extension, output }
+                let json_actual = serde_json::to_value(&actual).unwrap();
+                let json_expected = serde_json::to_value(published).unwrap();
+                assert_eq!(json_expected, json_actual);
+            });
+        }
+        Err(expected_error) => {
+            // Was the error the one defined in the fixture?
+            let actual_error = result.expect_err("should have error");
+            assert_eq!(actual_error.code(), expected_error.code());
+            assert_eq!(actual_error.description(), expected_error.description());
+        }
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct ReplayData {
-    pub input: String,
-    pub params: Option<ReplayTransform>,
-    pub extension: Option<ReplayExtension>,
-    pub output: Option<Vec<String>>,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-pub struct ReplayTransform {
-    pub delay: i32,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-pub struct ReplayExtension {
-    pub stop_info: StopInfo,
-}
-
-pub enum ReplayError {
-    BadRequest {
-        code: String,
-        description: String,
+fn shift_time(input: R9kMessage, params: Option<&ReplayTransform>) -> R9kMessage {
+    if params.is_none() {
+        return input;
     }
-}
+    let delay = params.as_ref().map_or(0, |p| p.delay);
+    let mut request = input;
+    let Some(change) = request.train_update.changes.get_mut(0) else {
+        return request;
+    };
 
-impl Fixture for ReplayData {
-    type Input = R9kMessage;
-    type Output = Option<Vec<SmarTrakEvent>>;
-    type Error = ReplayError;
-    type Extension = ReplayExtension;
-    type TransformParams = ReplayTransform;
+    let now = Utc::now().with_timezone(&Auckland);
+    request.train_update.created_date = now.date_naive();
+    
+    #[allow(clippy::cast_possible_wrap)]
+    let from_midnight = now.num_seconds_from_midnight() as i32;
+    let adjusted_secs = from_midnight - delay;
 
-    fn input(&self) -> Self::Input {
-        quick_xml::de::from_reader(self.input.as_bytes()).expect("should deserialize input")
+    if change.has_departed {
+        change.actual_departure_time = adjusted_secs;
+    } else if change.has_arrived {
+        change.actual_arrival_time = adjusted_secs;
     }
-
-    fn params(&self) -> Option<Self::TransformParams> {
-        self.params.clone()
-    }
-
-    fn extension(&self) -> Option<Self::Extension> {
-        self.extension.clone()
-    }
-
-    fn output(&self) -> Option<Result<Self::Output, Self::Error>> {
-        self.output.as_ref().map_or(Some(Ok(None)), |events| {
-                let smartrak_events: Vec<SmarTrakEvent> = events
-                    .iter()
-                    .map(|e| {
-                        serde_json::from_str(e).expect("should deserialize smartrak event")
-                    })
-                    .collect();
-                Some(Ok(Some(smartrak_events)))
-            })
-    }
+    request
 }

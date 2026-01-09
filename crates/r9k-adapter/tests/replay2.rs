@@ -5,7 +5,7 @@ mod provider;
 
 use std::fs::{self, File};
 
-use r9k_adapter::StopInfo;
+use r9k_adapter::{R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
 
 // #[derive(Deserialize, Serialize)]
@@ -26,31 +26,9 @@ async fn run() {
     }
 }
 
-// A trait that expresses the ability to transform some input data I using
-// transformation parameters T. The default implementation is a no-op.
-pub trait Transformer<I, T> {
-    fn transform<F>(&self, input: I, _: F) -> I
-    where
-        F: FnOnce(I, T) -> I,
-    {
-        input
-    }
-}
-
-impl<I> Transformer<I, ()> for () {}
-
 // A trait that expresses the structure of taking in some data and
-// constructing (say by deserialization) an input and an output. Optionally, a
-// transform function can be provided to modify the input before processing. The
-// transform function can also take parameters, which can be provided by the
-// generic parameter T. This defaults to the unit type if not specified.
-//
-// Similarly the handler under test may require some extension data to be
-// provided in order to process the input. This is expressed by the generic
-// parameter E.
-pub trait Fixture<T = ()>
-where
-    T: Transformer<Self::Input, T>,
+// constructing (say by deserialization) an input and an output.
+pub trait Fixture
 {
     // Type of input data needed by the test case. In most cases this is likely
     // to be the request type of the handler under test.
@@ -66,22 +44,32 @@ where
     // Some handlers under test may require extension data in order to process
     // the input, say from configuration or external systems.
     type Extension: Default;
+    // Sometimes the raw input data needs to be transformed before being
+    // passed to the test case handler, for example to adjust timestamps to
+    // be relative to 'now'.
+    type TransformParams;
 
     // Convert input data into the input type needed by the test case handler.
     fn input(&self) -> Self::Input;
 
     // Convert input data into transformation parameters for the test case
     // handler.
-    fn params(&self) -> T
+    fn params(&self) -> Option<Self::TransformParams> {
+        None
+    }
+
+    // Apply a transformation function to the input data before passing it to
+    // the test case handler.
+    fn transform<F>(&self, f: F) -> Self::Input
     where
-        T: Default,
+        F: FnOnce(Self::Input, Option<Self::TransformParams>) -> Self::Input,
     {
-        T::default()
+        f(self.input(), self.params())
     }
 
     // Convert input data into extension data needed by the test case handler.
-    fn extension(&self) -> Self::Extension {
-        Self::Extension::default()
+    fn extension(&self) -> Option<Self::Extension> {
+        None
     }
 
     /// Convert input data into the expected output type needed by the test
@@ -90,92 +78,96 @@ where
     /// # Errors
     ///
     /// Returns an error when the fixture cannot produce the expected output.
-    fn output(&self) -> Result<Self::Output, Self::Error>;
+    fn output(&self) -> Option<Result<Self::Output, Self::Error>>;
 }
 
-pub struct TestCase<D, T> {
+pub struct TestCase<D> {
     data: D,
-    _phantom: std::marker::PhantomData<T>,
 }
 
-pub struct PreparedTestCase<D, T = ()>
+pub struct PreparedTestCase<D>
 where
-    D: Fixture<T>, T: Transformer<<D as Fixture<T>>::Input, T>
+    D: Fixture
 {
     pub input: D::Input,
-    pub output: Result<D::Output, D::Error>,
+    pub extension: Option<D::Extension>,
+    pub output: Option<Result<D::Output, D::Error>>,
 }
 
-impl<D, T> TestCase<D, T>
+impl<D> TestCase<D>
 where
-    D: Clone + Fixture<T>,
-    T: Transformer<<D as Fixture<T>>::Input, T>
+    D: Clone + Fixture,
 {
     #[must_use]
     pub const fn new(data: D) -> Self {
-        Self { data, _phantom: std::marker::PhantomData }
+        Self { data }
     }
 
-    pub fn prepare<F>(&self, transform_fn: F) -> PreparedTestCase<D, T>
+    pub fn prepare<F>(&self, transform: F) -> PreparedTestCase<D>
     where
-        F: FnOnce(D::Input, T) -> D::Input,
-        T: Default,
+        F: FnOnce(D::Input, Option<D::TransformParams>) -> D::Input,
+        <D as Fixture>::Input: FnOnce(<D as Fixture>::Input, <D as Fixture>::TransformParams)
     {
-        let input = self.data.input();
-        let transformer = self.data.params();
-        let transformed_input = transformer.transform(input, transform_fn);
+        let input = self.data.transform(transform);
+        let extension = self.data.extension();
         let output = self.data.output();
-        PreparedTestCase { input: transformed_input, output }
+        PreparedTestCase { input, extension, output }
     }
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReplayData {
     pub input: String,
-    pub params: ReplayTransform,
-    pub extension: ReplayExtension,
+    pub params: Option<ReplayTransform>,
+    pub extension: Option<ReplayExtension>,
     pub output: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ReplayTransform {
-    pub delay: Option<i32>,
+    pub delay: i32,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ReplayExtension {
-    pub stop_info: Option<StopInfo>,
+    pub stop_info: StopInfo,
 }
 
+pub enum ReplayError {
+    BadRequest {
+        code: String,
+        description: String,
+    }
+}
 
-impl Fixture<ReplayTransform> for ReplayData {
-    type Input = String;
-    type Output = Vec<String>;
-    type Error = ();
+impl Fixture for ReplayData {
+    type Input = R9kMessage;
+    type Output = Option<Vec<SmarTrakEvent>>;
+    type Error = ReplayError;
     type Extension = ReplayExtension;
+    type TransformParams = ReplayTransform;
 
     fn input(&self) -> Self::Input {
-        self.input.clone()
+        quick_xml::de::from_reader(self.input.as_bytes()).expect("should deserialize input")
     }
 
-    fn params(&self) -> ReplayTransform {
+    fn params(&self) -> Option<Self::TransformParams> {
         self.params.clone()
     }
 
-    fn extension(&self) -> Self::Extension {
+    fn extension(&self) -> Option<Self::Extension> {
         self.extension.clone()
     }
 
-    fn output(&self) -> Result<Self::Output, Self::Error> {
-        self.output.as_ref().map_or(Err(()), |output| Ok(output.clone()))
-    }
-}
-
-impl Transformer<String, Self> for ReplayTransform {
-    fn transform<F>(&self, input: String, transform_fn: F) -> String
-    where
-        F: FnOnce(String, Self) -> String,
-    {
-        transform_fn(input, self.clone())
+    fn output(&self) -> Option<Result<Self::Output, Self::Error>> {
+        self.output.as_ref().map_or(Some(Ok(None)), |events| {
+                let smartrak_events: Vec<SmarTrakEvent> = events
+                    .iter()
+                    .map(|e| {
+                        serde_json::from_str(e).expect("should deserialize smartrak event")
+                    })
+                    .collect();
+                Some(Ok(Some(smartrak_events)))
+            })
     }
 }

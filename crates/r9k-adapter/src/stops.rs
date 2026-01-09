@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use warp_sdk::{Config, HttpRequest, Identity, Publisher};
 
 /// Stop information from GTFS
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StopInfo {
     pub stop_code: String,
     pub stop_lat: f64,

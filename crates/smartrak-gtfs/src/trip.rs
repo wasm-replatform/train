@@ -1,5 +1,3 @@
-
-
 use anyhow::{Context, Result};
 use bytes::Bytes;
 use chrono::{Duration, NaiveDate, TimeZone, Timelike};
@@ -11,8 +9,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::warn;
 use warp_sdk::{Config, HttpRequest, Identity, Publisher, StateStore};
-
-
 
 /// Retrieves the trip instance that matches the exact `trip_id`, `service_date`, and
 /// `start_time` combination.

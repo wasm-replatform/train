@@ -438,13 +438,6 @@ user-id = 3726
 user-login = "cfallin"
 user-name = "Chris Fallin"
 
-[[publisher.regex]]
-version = "1.12.2"
-when = "2025-10-13"
-user-id = 189
-user-login = "BurntSushi"
-user-name = "Andrew Gallant"
-
 [[publisher.regex-automata]]
 version = "0.4.13"
 when = "2025-10-13"

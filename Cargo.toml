@@ -142,14 +142,14 @@ wasi-otel = { version = "0.23.0", registry = "credibil" }
 # Internally referenced crates
 common = { path = "crates/common" }
 
-[patch.credibil]
-warp = { path = "../../augentic/warp/crates/warp" }
-warp-sdk = { path = "../../augentic/warp/crates/warp-sdk" }
-wasi-http = { path = "../../augentic/warp/crates/wasi-http" }
-wasi-identity = { path = "../../augentic/warp/crates/wasi-identity" }
-wasi-keyvalue = { path = "../../augentic/warp/crates/wasi-keyvalue" }
-wasi-messaging = { path = "../../augentic/warp/crates/wasi-messaging" }
-wasi-otel = { path = "../../augentic/warp/crates/wasi-otel" }
+# [patch.credibil]
+# warp = { path = "../../augentic/warp/crates/warp" }
+# warp-sdk = { path = "../../augentic/warp/crates/warp-sdk" }
+# wasi-http = { path = "../../augentic/warp/crates/wasi-http" }
+# wasi-identity = { path = "../../augentic/warp/crates/wasi-identity" }
+# wasi-keyvalue = { path = "../../augentic/warp/crates/wasi-keyvalue" }
+# wasi-messaging = { path = "../../augentic/warp/crates/wasi-messaging" }
+# wasi-otel = { path = "../../augentic/warp/crates/wasi-otel" }
 
 [profile.release]
 lto = "thin"

@@ -14,7 +14,7 @@ cfg_if::cfg_if! {
                 WasiIdentity: IdentityDefault,
                 WasiKeyValue: KeyValueDefault,
                 WasiMessaging: MessagingDefault,
-            },
+            }
         });
     } else {
         // HACK: prevent lint error for wasm32 target

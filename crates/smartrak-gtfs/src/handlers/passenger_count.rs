@@ -2,7 +2,6 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
-use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
 use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
@@ -39,9 +38,7 @@ where
     type Output = ();
 
     fn from_input(input: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&input)
-            .context("deserializing PassengerCountMessage")
-            .map_err(Into::into)
+        serde_json::from_slice(&input).map_err(Into::into)
     }
 
     // TODO: implement "owner"

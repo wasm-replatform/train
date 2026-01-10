@@ -5,7 +5,7 @@ use warp_sdk::{
     Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore, bad_request,
 };
 
-use crate::god_mode::god_mode;
+use crate::god_mode;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ResetRequest(String);
@@ -16,21 +16,20 @@ pub struct ResetReply {
     pub process: u32,
 }
 
-#[allow(clippy::unused_async)]
-async fn handle<P>(_owner: &str, request: ResetRequest, _provider: &P) -> Result<Reply<ResetReply>>
+async fn handle<P>(_owner: &str, request: ResetRequest, provider: &P) -> Result<Reply<ResetReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
     let vehicle_id = request.0;
 
-    let Some(god_mode) = god_mode() else {
+    if !god_mode::is_enabled(provider).await? {
         return Err(bad_request!("God mode not enabled"));
-    };
+    }
 
     if vehicle_id == "all" {
-        god_mode.reset_all();
+        god_mode::reset_all(provider).await.context("resetting all vehicles")?;
     } else {
-        god_mode.reset_vehicle(&vehicle_id);
+        god_mode::reset_vehicle(provider, &vehicle_id).await.context("resetting vehicle")?;
     }
 
     Ok(ResetReply { message: "Ok".to_string(), process: 0 }.into())

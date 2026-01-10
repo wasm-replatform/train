@@ -41,6 +41,9 @@ where
     // publish events to SmarTrak topic
     // publish 2x in order to properly signal departure from the station
     // (for schedule adherence)
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
+    let topic = format!("{env}-{SMARTRAK_TOPIC}");
+
     for _ in 0..2 {
         #[cfg(not(debug_assertions))]
         std::thread::sleep(std::time::Duration::from_secs(5));
@@ -54,7 +57,7 @@ where
             let mut message = Message::new(&payload);
             message.headers.insert("key".to_string(), external_id.clone());
 
-            Publisher::send(provider, SMARTRAK_TOPIC, &message).await?;
+            Publisher::send(provider, &topic, &message).await?;
         }
     }
 
@@ -106,9 +109,10 @@ impl TrainUpdate {
         };
 
         // get train allocations for this trip
-        let url =
-            Config::get(provider, "BLOCK_MGT_URL").await.context("getting `BLOCK_MGT_URL`")?;
-        let token = Identity::access_token(provider).await?;
+        let url = Config::get(provider, "BLOCK_MGT_URL").await?;
+        let identity = Config::get(provider, "AZURE_IDENTITY").await?;
+
+        let token = Identity::access_token(provider, identity).await?;
 
         let request = http::Request::builder()
             .uri(format!("{url}/allocations/trips?externalRefId={}", self.train_id()))

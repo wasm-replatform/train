@@ -30,7 +30,7 @@ where
     type Output = ();
 
     fn from_input(input: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&input).context("deserializing DilaxMessage").map_err(Into::into)
+        serde_json::from_slice(&input).map_err(Into::into)
     }
 
     // TODO: implement "owner"
@@ -114,7 +114,10 @@ where
         message.headers.insert("key".to_string(), trip_id.clone());
     }
 
-    Publisher::send(provider, DILAX_ENRICHED_TOPIC, &message).await?;
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
+    let topic = format!("{env}-{DILAX_ENRICHED_TOPIC}");
+
+    Publisher::send(provider, &topic, &message).await?;
 
     Ok(())
 }

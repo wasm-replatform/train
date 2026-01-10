@@ -15,6 +15,14 @@ const KEY_LOST_CONNECTION: &str = "apc:lostConnections";
 #[allow(clippy::cast_sign_loss)]
 const TTL_RETENTION: u64 = Duration::days(7).num_seconds() as u64;
 
+async fn handle<P>(_owner: &str, _: DetectionRequest, provider: &P) -> Result<Reply<DetectionReply>>
+where
+    P: Config + HttpRequest + Publisher + StateStore + Identity,
+{
+    let detections = lost_connections(provider).await.context("detecting lost connections")?;
+    Ok(DetectionReply { status: "job detection triggered", detections: detections.len() }.into())
+}
+
 #[derive(Debug, Clone)]
 pub struct DetectionRequest;
 
@@ -24,12 +32,10 @@ pub struct DetectionReply {
     pub detections: usize,
 }
 
-async fn handle<P>(_owner: &str, _: DetectionRequest, provider: &P) -> Result<Reply<DetectionReply>>
-where
-    P: Config + HttpRequest + Publisher + StateStore + Identity,
-{
-    let detections = lost_connections(provider).await.context("detecting lost connections")?;
-    Ok(DetectionReply { status: "job detection triggered", detections: detections.len() }.into())
+impl IntoBody for DetectionReply {
+    fn into_body(self) -> anyhow::Result<Vec<u8>> {
+        serde_json::to_vec(&self).context("serializing reply")
+    }
 }
 
 impl<P> Handler<P> for DetectionRequest
@@ -47,12 +53,6 @@ where
     // TODO: implement "owner"
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<DetectionReply>> {
         handle(ctx.owner, self, ctx.provider).await
-    }
-}
-
-impl IntoBody for DetectionReply {
-    fn into_body(self) -> anyhow::Result<Vec<u8>> {
-        serde_json::to_vec(&self).context("serializing reply")
     }
 }
 

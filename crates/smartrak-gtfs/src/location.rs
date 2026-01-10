@@ -1,5 +1,3 @@
-use std::env;
-
 use anyhow::Context as _;
 use chrono::{Duration, NaiveDate, TimeZone};
 use chrono_tz::Tz;
@@ -18,10 +16,6 @@ use crate::{EventType, SmarTrakMessage};
 const TTL_TRIP_TRAIN: Duration = Duration::seconds(3 * 60 * 60);
 const TTL_SIGN_ON: Duration = Duration::seconds(24 * 60 * 60);
 const TIMEZONE: Tz = chrono_tz::Pacific::Auckland;
-
-fn env_i64(key: &str, default: i64) -> i64 {
-    env::var(key).ok().and_then(|value| value.parse::<i64>().ok()).unwrap_or(default)
-}
 
 const fn duration_secs(duration: Duration) -> u64 {
     duration.num_seconds().unsigned_abs()
@@ -208,8 +202,7 @@ where
             time_to_timestamp(&instance.service_date, &instance.start_time, TIMEZONE),
             time_to_timestamp(&instance.service_date, &instance.end_time, TIMEZONE),
         ) {
-            let duration = end - start
-                + Duration::seconds(env_i64("TRIP_DURATION_BUFFER", 3_600)).num_seconds();
+            let duration = end - start + Duration::seconds(3_600).num_seconds();
             if timestamp - duration > sign_on_ts {
                 StateStore::delete(provider, &sign_on_key).await?;
                 StateStore::delete(provider, &trip_key).await?;

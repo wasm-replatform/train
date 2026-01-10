@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use common::fleet;
 use http::HeaderMap;
 use serde::Deserialize;
@@ -48,7 +47,7 @@ where
     type Output = ();
 
     fn from_input(input: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&input).context("deserializing TrainAvlMessage").map_err(Into::into)
+        serde_json::from_slice(&input).map_err(Into::into)
     }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {

@@ -8,7 +8,7 @@ use std::fmt::{self, Display};
 use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Error, IntoBody, Message, Publisher, Result, bad_request};
+use warp_sdk::{Config, Error, IntoBody, Message, Publisher, Result, bad_request};
 
 const R9K_TOPIC: &str = "realtime-r9k.v1";
 const ERROR: Fault =
@@ -17,7 +17,7 @@ const ERROR: Fault =
 #[allow(clippy::unused_async)]
 async fn handle<P>(_owner: &str, request: R9kRequest, provider: &P) -> Result<Reply<R9kReply>>
 where
-    P: Publisher,
+    P: Config + Publisher,
 {
     let message = &request.body.receive_message.axml_message;
 
@@ -32,15 +32,18 @@ where
     // }
 
     // forward to r9k-adapter topic
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
+    let topic = format!("{env}-{R9K_TOPIC}");
+
     let msg = Message::new(message.as_bytes());
-    Publisher::send(provider, R9K_TOPIC, &msg).await?;
+    Publisher::send(provider, &topic, &msg).await?;
 
     Ok(R9kReply("OK").into())
 }
 
 impl<P> Handler<P> for R9kRequest
 where
-    P: Publisher,
+    P: Config + Publisher,
 {
     type Error = Error;
     type Input = Vec<u8>;

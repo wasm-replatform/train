@@ -102,7 +102,6 @@ impl HttpRequest for MockProvider {
                     }
                     Session::Replay(Replay { vehicles, .. }) => vehicles.as_deref().unwrap_or(&[]),
                 };
-
                 serde_json::to_vec(&vehicles).context("failed to serialize")?
             }
             _ => {
@@ -125,7 +124,7 @@ impl Publisher for MockProvider {
 }
 
 impl Identity for MockProvider {
-    async fn access_token(&self) -> Result<String> {
+    async fn access_token(&self, _identity: String) -> Result<String> {
         Ok("mock_access_token".to_string())
     }
 }

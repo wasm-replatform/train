@@ -1,4 +1,3 @@
-use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use warp_sdk::api::{Context, Handler, Reply};
@@ -16,8 +15,8 @@ where
     // serial data event
     if message.event_type == EventType::SerialData {
         let mut message = message.clone();
-        if let Some(god_mode) = god_mode::god_mode() {
-            god_mode.preprocess(&mut message);
+        if god_mode::is_enabled(provider).await? {
+            god_mode::preprocess(provider, &mut message).await?;
         }
         serial_data::process(&message, provider).await?;
         return Ok(Reply::ok(()));
@@ -37,10 +36,13 @@ where
         }
     };
 
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
+    let topic = format!("{env}-{topic}");
+
     // publish
     let mut message = Message::new(&payload);
     message.headers.insert("key".to_string(), key.clone());
-    Publisher::send(provider, topic, &message).await?;
+    Publisher::send(provider, &topic, &message).await?;
 
     Ok(Reply::ok(()))
 }
@@ -54,7 +56,7 @@ where
     type Output = ();
 
     fn from_input(input: Vec<u8>) -> Result<Self> {
-        serde_json::from_slice(&input).context("deserializing SmarTrakMessage").map_err(Into::into)
+        serde_json::from_slice(&input).map_err(Into::into)
     }
 
     async fn handle(self, ctx: Context<'_, P>) -> Result<Reply<()>> {

@@ -5,7 +5,7 @@ use warp_sdk::{
     Config, Error, HttpRequest, Identity, IntoBody, Publisher, Result, StateStore, bad_request,
 };
 
-use crate::god_mode::god_mode;
+use crate::god_mode;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetTripRequest(String, String);
@@ -16,9 +16,8 @@ pub struct SetTripReply {
     pub process: u32,
 }
 
-#[allow(clippy::unused_async)]
 async fn handle<P>(
-    _owner: &str, request: SetTripRequest, _provider: &P,
+    _owner: &str, request: SetTripRequest, provider: &P,
 ) -> Result<Reply<SetTripReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
@@ -26,10 +25,13 @@ where
     let vehicle_id = request.0;
     let trip_id = request.1;
 
-    let Some(god_mode) = god_mode() else {
+    if !god_mode::is_enabled(provider).await? {
         return Err(bad_request!("God mode not enabled"));
-    };
-    god_mode.set_vehicle_to_trip(vehicle_id, trip_id);
+    }
+
+    god_mode::set_vehicle_to_trip(provider, vehicle_id, trip_id)
+        .await
+        .context("setting vehicle to trip")?;
     Ok(SetTripReply { message: "Ok".to_string(), process: 0 }.into())
 }
 

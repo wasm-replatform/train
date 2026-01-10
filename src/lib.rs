@@ -178,6 +178,7 @@ impl Provider {
             "CC_STATIC_URL",
             "FLEET_URL",
             "GTFS_STATIC_URL",
+            "TRIP_MANAGEMENT_URL",
             "AZURE_IDENTITY"
         );
         Self

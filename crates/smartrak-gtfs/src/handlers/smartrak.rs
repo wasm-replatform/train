@@ -15,8 +15,8 @@ where
     // serial data event
     if message.event_type == EventType::SerialData {
         let mut message = message.clone();
-        if let Some(god_mode) = god_mode::god_mode(provider).await {
-            god_mode.preprocess(&mut message);
+        if god_mode::is_enabled(provider).await? {
+            god_mode::preprocess(provider, &mut message).await?;
         }
         serial_data::process(&message, provider).await?;
         return Ok(Reply::ok(()));

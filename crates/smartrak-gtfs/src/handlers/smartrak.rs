@@ -15,7 +15,7 @@ where
     // serial data event
     if message.event_type == EventType::SerialData {
         let mut message = message.clone();
-        if let Some(god_mode) = god_mode::god_mode() {
+        if let Some(god_mode) = god_mode::god_mode(provider).await {
             god_mode.preprocess(&mut message);
         }
         serial_data::process(&message, provider).await?;
@@ -36,7 +36,7 @@ where
         }
     };
 
-    let env = Config::get(provider, "ENV").await?;
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
     let topic = format!("{env}-{topic}");
 
     // publish

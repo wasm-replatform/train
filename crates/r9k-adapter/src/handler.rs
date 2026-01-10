@@ -41,7 +41,7 @@ where
     // publish events to SmarTrak topic
     // publish 2x in order to properly signal departure from the station
     // (for schedule adherence)
-    let env = Config::get(provider, "ENV").await?;
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
     let topic = format!("{env}-{SMARTRAK_TOPIC}");
 
     for _ in 0..2 {

@@ -1,4 +1,4 @@
-use std::env;
+
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
@@ -12,7 +12,7 @@ use serde_json::Value;
 use tracing::warn;
 use warp_sdk::{Config, HttpRequest, Identity, Publisher, StateStore};
 
-const CACHE_DIRECTIVE_PRIMARY: &str = "max-age=20, stale-if-error=10";
+
 
 /// Retrieves the trip instance that matches the exact `trip_id`, `service_date`, and
 /// `start_time` combination.
@@ -95,10 +95,11 @@ where
     Ok(trips.into_iter().next())
 }
 
-async fn fetch(
-    trip_id: &str, service_date: &str, http: &impl HttpRequest,
-) -> Result<Vec<TripInstance>> {
-    let base_url = env::var("TRIP_MANAGEMENT_URL").context("getting `TRIP_MANAGEMENT_URL`")?;
+async fn fetch<P>(trip_id: &str, service_date: &str, provider: &P) -> Result<Vec<TripInstance>>
+where
+    P: HttpRequest + Config,
+{
+    let base_url = Config::get(provider, "TRIP_MANAGEMENT_URL").await?;
     let endpoint = format!("{}/tripinstances", base_url.trim_end_matches('/'));
 
     let payload = serde_json::json!({
@@ -110,13 +111,12 @@ async fn fetch(
     let request = http::Request::builder()
         .method(Method::POST)
         .uri(&endpoint)
-        .header(CACHE_CONTROL, CACHE_DIRECTIVE_PRIMARY)
+        .header(CACHE_CONTROL, "max-age=20, stale-if-error=10")
         .header(CONTENT_TYPE, "application/json")
         .body(Full::new(Bytes::from(body_bytes)))
         .context("building Trip Management request")?;
 
-    let response = http.fetch(request).await.context("requesting trip instances")?;
-
+    let response = provider.fetch(request).await.context("requesting trip instances")?;
     let status = response.status();
     let body = response.into_body();
 

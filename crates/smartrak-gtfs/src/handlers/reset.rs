@@ -17,13 +17,13 @@ pub struct ResetReply {
 }
 
 #[allow(clippy::unused_async)]
-async fn handle<P>(_owner: &str, request: ResetRequest, _provider: &P) -> Result<Reply<ResetReply>>
+async fn handle<P>(_owner: &str, request: ResetRequest, provider: &P) -> Result<Reply<ResetReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
 {
     let vehicle_id = request.0;
 
-    let Some(god_mode) = god_mode() else {
+    let Some(god_mode) = god_mode(provider).await else {
         return Err(bad_request!("God mode not enabled"));
     };
 

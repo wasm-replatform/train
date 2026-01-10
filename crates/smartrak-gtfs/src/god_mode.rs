@@ -1,7 +1,5 @@
-use std::env;
-use std::sync::LazyLock;
-
 use dashmap::DashMap;
+use warp_sdk::Config;
 
 use crate::{EventType, SmarTrakMessage};
 
@@ -71,19 +69,17 @@ impl GodMode {
     }
 }
 
-fn env_truthy(key: &str) -> bool {
-    env::var(key).ok().is_some_and(|value| {
-        let normalized = value.trim().to_ascii_lowercase();
-        matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
-    })
-}
-
-static GOD_MODE_ENABLED: LazyLock<bool> =
-    LazyLock::new(|| env_truthy("SMARTRAK_GOD_MODE") || env_truthy("GOD_MODE"));
-static GOD_MODE_INSTANCE: LazyLock<GodMode> = LazyLock::new(GodMode::default);
+// static GOD_MODE_INSTANCE: LazyLock<GodMode> = LazyLock::new(GodMode::default);
 
 /// Returns the global God Mode instance when the feature flag is enabled.
 #[must_use]
-pub fn god_mode() -> Option<&'static GodMode> {
-    (*GOD_MODE_ENABLED).then(|| &*GOD_MODE_INSTANCE)
+pub async fn god_mode(provider: &impl Config) -> Option<GodMode> {
+    if !Config::get(provider, "GOD_MODE_ENABLED").await.ok().is_some_and(|value| {
+        let normalized = value.trim().to_ascii_lowercase();
+        matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
+    }) {
+        return None;
+    }
+
+    Some(GodMode::default())
 }

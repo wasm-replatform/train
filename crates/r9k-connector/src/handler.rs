@@ -32,7 +32,7 @@ where
     // }
 
     // forward to r9k-adapter topic
-    let env = Config::get(provider, "ENV").await?;
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
     let topic = format!("{env}-{R9K_TOPIC}");
 
     let msg = Message::new(message.as_bytes());

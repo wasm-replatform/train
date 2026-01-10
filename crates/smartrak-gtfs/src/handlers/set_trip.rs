@@ -18,7 +18,7 @@ pub struct SetTripReply {
 
 #[allow(clippy::unused_async)]
 async fn handle<P>(
-    _owner: &str, request: SetTripRequest, _provider: &P,
+    _owner: &str, request: SetTripRequest, provider: &P,
 ) -> Result<Reply<SetTripReply>>
 where
     P: HttpRequest + Publisher + StateStore + Identity + Config,
@@ -26,7 +26,7 @@ where
     let vehicle_id = request.0;
     let trip_id = request.1;
 
-    let Some(god_mode) = god_mode() else {
+    let Some(god_mode) = god_mode(provider).await else {
         return Err(bad_request!("God mode not enabled"));
     };
     god_mode.set_vehicle_to_trip(vehicle_id, trip_id);

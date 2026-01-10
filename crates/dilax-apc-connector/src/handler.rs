@@ -6,7 +6,7 @@ use warp_sdk::{Config, Error, IntoBody, Message, Publisher, Result};
 
 use crate::DilaxMessage;
 
- const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
+const DILAX_TOPIC: &str = "realtime-dilax-apc.v2";
 
 #[allow(clippy::unused_async)]
 async fn handle<P>(_owner: &str, request: DilaxRequest, provider: &P) -> Result<Reply<DilaxReply>>
@@ -26,7 +26,7 @@ where
     let site = message.device.as_ref().map_or_else(|| "undefined", |device| &device.site);
     msg.headers.insert("key".to_string(), site.to_string());
 
-    let env = Config::get(provider, "ENV").await?;
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
     let topic = format!("{env}-{DILAX_TOPIC}");
 
     Publisher::send(provider, &topic, &msg).await?;

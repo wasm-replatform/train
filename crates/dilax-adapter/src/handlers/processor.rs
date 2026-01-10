@@ -114,7 +114,7 @@ where
         message.headers.insert("key".to_string(), trip_id.clone());
     }
 
-    let env = Config::get(provider, "ENV").await?;
+    let env = Config::get(provider, "ENV").await.unwrap_or_else(|_| "dev".to_string());
     let topic = format!("{env}-{DILAX_ENRICHED_TOPIC}");
 
     Publisher::send(provider, &topic, &message).await?;

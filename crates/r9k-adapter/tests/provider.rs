@@ -8,15 +8,14 @@ use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
 use r9k_adapter::{R9kMessage, SmarTrakEvent, StopInfo};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use warp_sdk::{Config, HttpRequest, Identity, Message, Publisher};
 
 #[allow(dead_code)]
 #[derive(Clone)]
 pub enum Session {
     Static(Static),
-    Replay(Replay),
-    Replay2(PreparedTestCase<ReplayData>),
+    Replay(PreparedTestCase<Replay>),
 }
 
 #[derive(Clone)]
@@ -25,19 +24,8 @@ pub struct Static {
     pub vehicles: Vec<String>,
 }
 
-#[allow(dead_code)]
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Replay {
-    pub input: String,
-    pub output: Option<Vec<String>>,
-    pub error: Option<warp_sdk::Error>,
-    pub delay: Option<i32>,
-    pub stop_info: Option<StopInfo>,
-    pub vehicles: Option<Vec<String>>,
-}
-
 #[derive(Debug, Clone, Deserialize)]
-pub struct ReplayData {
+pub struct Replay {
     pub input: String,
     pub params: Option<ReplayTransform>,
     pub extension: Option<ReplayExtension>,
@@ -63,11 +51,11 @@ pub struct ReplayExtension {
     pub vehicles: Option<Vec<String>>,
 }
 
-impl Fixture for ReplayData {
-    type Input = R9kMessage;
-    type Output = Option<Vec<SmarTrakEvent>>;
+impl Fixture for Replay {
     type Error = warp_sdk::Error;
     type Extension = ReplayExtension;
+    type Input = R9kMessage;
+    type Output = Option<Vec<SmarTrakEvent>>;
     type TransformParams = ReplayTransform;
 
     fn input(&self) -> Self::Input {
@@ -92,9 +80,7 @@ impl Fixture for ReplayData {
                 }
                 let smartrak_events: Vec<SmarTrakEvent> = events
                     .iter()
-                    .map(|e| {
-                        serde_json::from_str(e).expect("should deserialize smartrak event")
-                    })
+                    .map(|e| serde_json::from_str(e).expect("should deserialize smartrak event"))
                     .collect();
                 Some(Ok(Some(smartrak_events)))
             }
@@ -104,8 +90,7 @@ impl Fixture for ReplayData {
 
 // A trait that expresses the structure of taking in some data and
 // constructing (say by deserialization) an input and an output.
-pub trait Fixture
-{
+pub trait Fixture {
     // Type of input data needed by the test case. In most cases this is likely
     // to be the request type of the handler under test.
     type Input;
@@ -216,12 +201,6 @@ impl MockProvider {
         Self { session, events: Arc::new(Mutex::new(Vec::new())) }
     }
 
-    #[allow(dead_code)]
-    #[must_use]
-    pub fn new_replay(replay: Replay) -> Self {
-        Self { session: Session::Replay(replay), events: Arc::new(Mutex::new(Vec::new())) }
-    }
-
     #[allow(clippy::missing_panics_doc)]
     #[allow(dead_code)]
     #[must_use]
@@ -231,8 +210,8 @@ impl MockProvider {
 
     #[allow(dead_code)]
     #[must_use]
-    pub fn new_replay2(replay: PreparedTestCase<ReplayData>) -> Self {
-        Self { session: Session::Replay2(replay), events: Arc::new(Mutex::new(Vec::new())) }
+    pub fn new_replay2(replay: PreparedTestCase<Replay>) -> Self {
+        Self { session: Session::Replay(replay), events: Arc::new(Mutex::new(Vec::new())) }
     }
 }
 
@@ -254,15 +233,8 @@ impl HttpRequest for MockProvider {
             "/gtfs/stops" => {
                 let stops: Vec<StopInfo> = match &self.session {
                     Session::Static(Static { stops, .. }) => stops.clone(),
-                    Session::Replay(Replay { stop_info, .. }) => {
-                        stop_info.iter().cloned().collect()
-                    }
-                    Session::Replay2(PreparedTestCase { extension, .. }) => {
-                        extension
-                            .as_ref()
-                            .and_then(|e| e.stop_info.clone())
-                            .into_iter()
-                            .collect()
+                    Session::Replay(PreparedTestCase { extension, .. }) => {
+                        extension.as_ref().and_then(|e| e.stop_info.clone()).into_iter().collect()
                     }
                 };
                 serde_json::to_vec(&stops).context("failed to serialize stops")?
@@ -273,11 +245,9 @@ impl HttpRequest for MockProvider {
                     Session::Static(Static { vehicles, .. }) => {
                         if query.contains("externalRefId=445") { &vec![] } else { vehicles }
                     }
-                    Session::Replay(Replay { vehicles, .. }) => vehicles.as_deref().unwrap_or(&[]),
-                    Session::Replay2(PreparedTestCase { extension, .. }) => extension
-                        .as_ref()
-                        .and_then(|ext| ext.vehicles.as_deref())
-                        .unwrap_or(&[]),
+                    Session::Replay(PreparedTestCase { extension, .. }) => {
+                        extension.as_ref().and_then(|ext| ext.vehicles.as_deref()).unwrap_or(&[])
+                    }
                 };
                 serde_json::to_vec(&vehicles).context("failed to serialize")?
             }

@@ -4,11 +4,9 @@
         "delay": 506
     },
     "output": {
-        "error": {
-            "BadRequest": {
-                "code": "bad_time",
-                "description": "outdated by 506 seconds"
-            }
+        "BadRequest": {
+            "code": "bad_time",
+            "description": "outdated by 506 seconds"
         }
     }
 }

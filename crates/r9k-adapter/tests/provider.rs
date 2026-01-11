@@ -41,7 +41,14 @@ pub struct ReplayData {
     pub input: String,
     pub params: Option<ReplayTransform>,
     pub extension: Option<ReplayExtension>,
-    pub output: Option<Vec<String>>,
+    pub output: Option<ReplayOutput>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum ReplayOutput {
+    Events(Vec<String>),
+    Error(warp_sdk::Error),
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -76,7 +83,13 @@ impl Fixture for ReplayData {
     }
 
     fn output(&self) -> Option<Result<Self::Output, Self::Error>> {
-        self.output.as_ref().map_or(Some(Ok(None)), |events| {
+        let output = self.output.as_ref()?;
+        match output {
+            ReplayOutput::Error(error) => Some(Err(error.clone())),
+            ReplayOutput::Events(events) => {
+                if events.is_empty() {
+                    return Some(Ok(None));
+                }
                 let smartrak_events: Vec<SmarTrakEvent> = events
                     .iter()
                     .map(|e| {
@@ -84,10 +97,10 @@ impl Fixture for ReplayData {
                     })
                     .collect();
                 Some(Ok(Some(smartrak_events)))
-            })
+            }
+        }
     }
 }
-
 
 // A trait that expresses the structure of taking in some data and
 // constructing (say by deserialization) an input and an output.

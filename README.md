@@ -11,8 +11,10 @@ To run the project locally:
 3. Run the standalone example
 
 ```shell
+# build guest
 cargo build --target wasm32-wasip2 --release
 
+# run guest using example runtime (local)
 set -a; source .env; set +a
 cargo run --example train -- run ./target/wasm32-wasip2/release/train.wasm
 ```

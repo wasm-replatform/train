@@ -31,8 +31,6 @@ smartrak-gtfs = { path = "crates/smartrak-gtfs" }
 tracing.workspace = true
 warp-sdk.workspace = true
 wasi-http.workspace = true
-wasi-identity.workspace = true
-wasi-keyvalue.workspace = true
 wasi-messaging.workspace = true
 wasi-otel.workspace = true
 wasip3.workspace = true
@@ -43,9 +41,12 @@ cfg-if = "1.0.4"
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 futures.workspace = true
 tokio.workspace = true
-wasmtime.workspace = true
 warp.workspace = true
+wasmtime.workspace = true
 wasmtime-wasi.workspace = true
+wasi-config.workspace = true
+wasi-identity.workspace = true
+wasi-keyvalue.workspace = true
 
 [workspace]
 members = ["crates/*"]
@@ -133,6 +134,7 @@ wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 # Credibil registry
 warp = { version = "0.23.0", registry = "credibil" }
 warp-sdk = { version = "0.23.0", registry = "credibil" }
+wasi-config = { version = "0.23.0", registry = "credibil" }
 wasi-http = { version = "0.23.0", registry = "credibil" }
 wasi-identity = { version = "0.23.0", registry = "credibil" }
 wasi-keyvalue = { version = "0.23.0", registry = "credibil" }

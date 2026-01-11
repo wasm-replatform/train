@@ -179,7 +179,7 @@ impl Provider {
             "FLEET_URL",
             "GTFS_STATIC_URL",
             "TRIP_MANAGEMENT_URL",
-            "AZURE_IDENTITY"
+            // "AZURE_IDENTITY"
         );
         Self
     }

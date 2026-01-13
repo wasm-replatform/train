@@ -5,8 +5,8 @@
 mod handler;
 
 pub use handler::*;
+use qwasr_sdk::Error;
 use thiserror::Error;
-use warp_sdk::Error;
 
 // TODO: use for internal methods
 #[derive(Error, Debug)]

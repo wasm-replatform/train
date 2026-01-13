@@ -2,9 +2,9 @@
 //!
 //! This module stores occupancy status for a given vehicle and trip.
 
+use qwasr_sdk::api::{Context, Handler, Reply};
+use qwasr_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 use serde::{Deserialize, Serialize};
-use warp_sdk::api::{Context, Handler, Reply};
-use warp_sdk::{Config, Error, HttpRequest, Identity, Publisher, Result, StateStore};
 
 const OCCUPANY_STATUS_TTL: u64 = 3 * 60 * 60; // 3 hours
 

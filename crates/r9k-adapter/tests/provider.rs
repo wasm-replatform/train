@@ -7,10 +7,10 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use http::{Request, Response};
+use qwasr_sdk::{Config, HttpRequest, Identity, Message, Publisher};
 use r9k_adapter::{R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
 use test_utils::{Fixture, PreparedTestCase};
-use warp_sdk::{Config, HttpRequest, Identity, Message, Publisher};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -37,7 +37,7 @@ pub struct Replay {
 #[serde(untagged)]
 pub enum ReplayOutput {
     Events(Vec<String>),
-    Error(warp_sdk::Error),
+    Error(qwasr_sdk::Error),
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -53,7 +53,7 @@ pub struct ReplayExtension {
 }
 
 impl Fixture for Replay {
-    type Error = warp_sdk::Error;
+    type Error = qwasr_sdk::Error;
     type Extension = ReplayExtension;
     type Input = R9kMessage;
     type Output = Option<Vec<SmarTrakEvent>>;

@@ -7,6 +7,10 @@ use axum::routing::{get, post};
 use bytes::Bytes;
 use dilax_adapter::{DetectionReply, DetectionRequest, DilaxMessage};
 use dilax_apc_connector::{DilaxReply, DilaxRequest};
+use qwasr_sdk::{
+    Config, Handler, HttpRequest, HttpResult, Identity, Publisher, Reply, StateStore, ensure_env,
+};
+use qwasr_wasi_messaging::types::{Error, Message};
 use r9k_adapter::R9kMessage;
 use r9k_connector::{R9kReply, R9kRequest};
 use smartrak_gtfs::{
@@ -14,10 +18,6 @@ use smartrak_gtfs::{
     SmarTrakMessage, TrainAvlMessage, VehicleInfoReply, VehicleInfoRequest,
 };
 use tracing::Level;
-use warp_sdk::{
-    Config, Handler, HttpRequest, HttpResult, Identity, Publisher, Reply, StateStore, ensure_env,
-};
-use wasi_messaging::types::{Error, Message};
 use wasip3::exports::http::handler::Guest;
 use wasip3::http::types as p3;
 
@@ -25,7 +25,7 @@ pub struct Http;
 wasip3::http::proxy::export!(Http);
 
 impl Guest for Http {
-    #[wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
+    #[qwasr_wasi_otel::instrument(name = "http_guest_handle", level = Level::INFO)]
     async fn handle(request: p3::Request) -> Result<p3::Response, p3::ErrorCode> {
         let router = Router::new()
             .route("/api/apc", post(dilax_message))
@@ -34,7 +34,7 @@ impl Guest for Http {
             .route("/info/{vehicle_id}", get(vehicle_info))
             .route("/god-mode/set-trip/{vehicle_id}/{trip_id}", get(set_trip))
             .route("/god-mode/reset/{vehicle_id}", get(reset));
-        wasi_http::serve(router, request).await
+        qwasr_wasi_http::serve(router, request).await
     }
 }
 
@@ -85,10 +85,10 @@ async fn reset(Path(vehicle_id): Path<String>) -> HttpResult<Reply<ResetReply>> 
 }
 
 pub struct Messaging;
-wasi_messaging::export!(Messaging with_types_in wasi_messaging);
+qwasr_wasi_messaging::export!(Messaging with_types_in qwasr_wasi_messaging);
 
-impl wasi_messaging::incoming_handler::Guest for Messaging {
-    #[wasi_otel::instrument(name = "messaging_guest_handle")]
+impl qwasr_wasi_messaging::incoming_handler::Guest for Messaging {
+    #[qwasr_wasi_otel::instrument(name = "messaging_guest_handle")]
     async fn handle(message: Message) -> Result<(), Error> {
         if let Err(e) = match &message.topic().unwrap_or_default() {
             t if t.contains("realtime-r9k.v1") => r9k(message.data()).await,
@@ -107,7 +107,7 @@ impl wasi_messaging::incoming_handler::Guest for Messaging {
     }
 }
 
-#[wasi_otel::instrument]
+#[qwasr_wasi_otel::instrument]
 async fn r9k(payload: Vec<u8>) -> Result<()> {
     R9kMessage::handler(payload)?
         .provider(&Provider::new())
@@ -117,7 +117,7 @@ async fn r9k(payload: Vec<u8>) -> Result<()> {
         .map_err(Into::into)
 }
 
-#[wasi_otel::instrument]
+#[qwasr_wasi_otel::instrument]
 async fn smartrak(payload: Vec<u8>) -> Result<()> {
     SmarTrakMessage::handler(payload)?
         .provider(&Provider::new())
@@ -127,7 +127,7 @@ async fn smartrak(payload: Vec<u8>) -> Result<()> {
         .map_err(Into::into)
 }
 
-#[wasi_otel::instrument]
+#[qwasr_wasi_otel::instrument]
 async fn dilax(payload: Vec<u8>) -> Result<()> {
     DilaxMessage::handler(payload)?
         .provider(&Provider::new())
@@ -137,7 +137,7 @@ async fn dilax(payload: Vec<u8>) -> Result<()> {
         .map_err(Into::into)
 }
 
-#[wasi_otel::instrument]
+#[qwasr_wasi_otel::instrument]
 async fn caf_avl(payload: Vec<u8>) -> Result<()> {
     CafAvlMessage::handler(payload)?
         .provider(&Provider::new())
@@ -147,7 +147,7 @@ async fn caf_avl(payload: Vec<u8>) -> Result<()> {
         .map_err(Into::into)
 }
 
-#[wasi_otel::instrument]
+#[qwasr_wasi_otel::instrument]
 async fn train_avl(payload: Vec<u8>) -> Result<()> {
     TrainAvlMessage::handler(payload)?
         .provider(&Provider::new())
@@ -157,7 +157,7 @@ async fn train_avl(payload: Vec<u8>) -> Result<()> {
         .map_err(Into::into)
 }
 
-#[wasi_otel::instrument]
+#[qwasr_wasi_otel::instrument]
 async fn passenger_count(payload: Vec<u8>) -> Result<()> {
     PassengerCountMessage::handler(payload)?
         .provider(&Provider::new())

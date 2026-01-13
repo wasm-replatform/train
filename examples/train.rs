@@ -1,13 +1,13 @@
 cfg_if::cfg_if! {
     if #[cfg(not(target_arch = "wasm32"))] {
-        use wasi_http::{WasiHttp, HttpDefault};
-        use wasi_identity::{WasiIdentity,  IdentityDefault};
-        use wasi_keyvalue::{WasiKeyValue, KeyValueDefault};
-        use wasi_messaging::{WasiMessaging, MessagingDefault};
-        use wasi_otel::{WasiOtel,  OtelDefault};
-        use wasi_config::{WasiConfig, ConfigDefault};
-        
-        warp::runtime!({
+        use qwasr_wasi_http::{WasiHttp, HttpDefault};
+        use qwasr_wasi_identity::{WasiIdentity,  IdentityDefault};
+        use qwasr_wasi_keyvalue::{WasiKeyValue, KeyValueDefault};
+        use qwasr_wasi_messaging::{WasiMessaging, MessagingDefault};
+        use qwasr_wasi_otel::{WasiOtel,  OtelDefault};
+        use qwasr_wasi_config::{WasiConfig, ConfigDefault};
+
+        qwasr::runtime!({
             main: true,
             hosts: {
                 WasiConfig: ConfigDefault,

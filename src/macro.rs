@@ -8,9 +8,9 @@ use smartrak_gtfs::{
     CafAvlMessage, PassengerCountMessage, ResetReply, ResetRequest, SetTripReply, SetTripRequest,
     SmarTrakMessage, TrainAvlMessage, VehicleInfoReply, VehicleInfoRequest,
 };
-use warp_sdk::{Config, HttpRequest, Identity, Publisher, StateStore, ensure_env};
+use qwasr_sdk::{Config, HttpRequest, Identity, Publisher, StateStore, ensure_env};
 
-warp_sdk::guest!({
+qwasr_sdk::guest!({
     owner: "at",
     provider: Provider,
     http: [

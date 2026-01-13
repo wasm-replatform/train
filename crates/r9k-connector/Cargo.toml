@@ -22,7 +22,7 @@ anyhow.workspace = true
 quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-warp-sdk.workspace = true
+qwasr-sdk.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

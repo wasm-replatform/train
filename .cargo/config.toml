@@ -10,3 +10,6 @@ global-credential-providers = [
     "cargo:macos-keychain",
     # "cargo-credential-1password --account credibil.1password.com --vault Credibil",
 ]
+
+[net]
+git-fetch-with-cli = true

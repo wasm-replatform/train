@@ -3,7 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
-use warp_sdk::{Config, Message, Publisher};
+use qwasr_sdk::{Config, Message, Publisher};
 
 #[derive(Default, Clone)]
 pub struct MockProvider {

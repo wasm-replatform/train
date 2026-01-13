@@ -8,9 +8,10 @@ use std::fs::{self, File};
 use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use r9k_adapter::R9kMessage;
+use test_utils::TestCase;
 use warp_sdk::Client;
 
-use crate::provider::{Replay, ReplayTransform, TestCase};
+use crate::provider::{Replay, ReplayTransform};
 
 // Load each test case. For each, present the input to the adapter and compare
 // the output expected.
@@ -25,7 +26,7 @@ async fn run() {
 
 async fn replay(fixture: Replay) {
     let test_case = TestCase::new(fixture).prepare(shift_time);
-    let provider = provider::MockProvider::new_replay2(test_case.clone());
+    let provider = provider::MockProvider::new_replay(test_case.clone());
     let client = Client::new("at").provider(provider.clone());
 
     let result = client.request(test_case.input).await;

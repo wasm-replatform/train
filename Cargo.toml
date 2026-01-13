@@ -141,6 +141,9 @@ wasi-keyvalue = { version = "0.23.0", registry = "credibil" }
 wasi-messaging = { version = "0.23.0", registry = "credibil" }
 wasi-otel = { version = "0.23.0", registry = "credibil" }
 
+# Shared repositories
+test-utils = { git = "https://github.com/wasm-replatform/realtime.git", branch = "main" }
+
 # Internally referenced crates
 common = { path = "crates/common" }
 

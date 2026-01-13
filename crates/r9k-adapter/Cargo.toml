@@ -34,4 +34,5 @@ tracing.workspace = true
 warp-sdk.workspace = true
 
 [dev-dependencies]
+test-utils.workspace = true
 tokio.workspace = true

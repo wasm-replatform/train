@@ -6,7 +6,7 @@ cfg_if::cfg_if! {
         use wasi_messaging::{WasiMessaging, MessagingDefault};
         use wasi_otel::{WasiOtel,  OtelDefault};
         use wasi_config::{WasiConfig, ConfigDefault};
-        
+
         warp::runtime!({
             main: true,
             hosts: {

@@ -5,12 +5,12 @@ use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Result, anyhow};
+use augentic_test::{Fixture, PreparedTestCase};
 use bytes::Bytes;
 use http::{Request, Response};
 use qwasr_sdk::{Config, HttpRequest, Identity, Message, Publisher};
 use r9k_adapter::{R9kMessage, SmarTrakEvent, StopInfo};
 use serde::Deserialize;
-use test_utils::{Fixture, PreparedTestCase};
 
 #[allow(dead_code)]
 #[derive(Clone)]

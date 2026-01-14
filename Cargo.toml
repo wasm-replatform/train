@@ -142,7 +142,7 @@ qwasr-wasi-messaging = { version = "0.25.0", registry = "credibil" }
 qwasr-wasi-otel = { version = "0.25.0", registry = "credibil" }
 
 # Shared repositories
-test-utils = { git = "https://github.com/wasm-replatform/realtime.git", branch = "main" }
+augentic-test = { git = "https://github.com/augentic/test.git", branch = "main" }
 
 # Internally referenced crates
 common = { path = "crates/common" }

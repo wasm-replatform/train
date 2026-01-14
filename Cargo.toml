@@ -132,17 +132,17 @@ wasmtime-wasi = { version = "40.0.1", features = ["p3"] }
 wit-bindgen = { version = "0.50.0", features = ["async-spawn"] }
 
 # Credibil registry
-qwasr = { version = "0.24.0", registry = "credibil" }
-qwasr-sdk = { version = "0.24.0", registry = "credibil" }
-qwasr-wasi-config = { version = "0.24.0", registry = "credibil" }
-qwasr-wasi-http = { version = "0.24.0", registry = "credibil" }
-qwasr-wasi-identity = { version = "0.24.0", registry = "credibil" }
-qwasr-wasi-keyvalue = { version = "0.24.0", registry = "credibil" }
-qwasr-wasi-messaging = { version = "0.24.0", registry = "credibil" }
-qwasr-wasi-otel = { version = "0.24.0", registry = "credibil" }
+qwasr = { version = "0.25.0", registry = "credibil" }
+qwasr-sdk = { version = "0.25.0", registry = "credibil" }
+qwasr-wasi-config = { version = "0.25.0", registry = "credibil" }
+qwasr-wasi-http = { version = "0.25.0", registry = "credibil" }
+qwasr-wasi-identity = { version = "0.25.0", registry = "credibil" }
+qwasr-wasi-keyvalue = { version = "0.25.0", registry = "credibil" }
+qwasr-wasi-messaging = { version = "0.25.0", registry = "credibil" }
+qwasr-wasi-otel = { version = "0.25.0", registry = "credibil" }
 
 # Shared repositories
-test-utils = { git = "https://github.com/wasm-replatform/realtime.git", branch = "main" }
+augentic-test = { git = "https://github.com/augentic/test.git", branch = "main" }
 
 # Internally referenced crates
 common = { path = "crates/common" }

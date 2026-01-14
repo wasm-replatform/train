@@ -5,11 +5,11 @@ mod provider;
 
 use std::fs::{self, File};
 
+use augentic_test::TestCase;
 use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use qwasr_sdk::Client;
 use r9k_adapter::R9kMessage;
-use test_utils::TestCase;
 
 use crate::provider::{Replay, ReplayTransform};
 

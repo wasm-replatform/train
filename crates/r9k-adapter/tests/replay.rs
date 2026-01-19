@@ -6,9 +6,10 @@ mod provider;
 use std::fs::{self, File};
 
 use augentic_test::TestCase;
+use augentic_test::testdef::TestDef;
 use chrono::{Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
-use qwasr_sdk::Client;
+use qwasr_sdk::{Client, Error};
 use r9k_adapter::R9kMessage;
 
 use crate::provider::{Replay, ReplayTransform};
@@ -19,17 +20,18 @@ use crate::provider::{Replay, ReplayTransform};
 async fn run() {
     for entry in fs::read_dir("data/sessions").expect("should read directory") {
         let file = File::open(entry.expect("should read entry").path()).expect("should open file");
-        let fixture: Replay = serde_json::from_reader(&file).expect("should deserialize session");
-        replay(fixture).await;
+        let test_def: TestDef<Error> =
+            serde_json::from_reader(&file).expect("should deserialize session");
+        replay(test_def).await;
     }
 }
 
-async fn replay(fixture: Replay) {
-    let test_case = TestCase::new(fixture).prepare(shift_time);
+async fn replay(test_def: TestDef<Error>) {
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
     let provider = provider::MockProvider::new_replay(test_case.clone());
     let client = Client::new("at").provider(provider.clone());
 
-    let result = client.request(test_case.input).await;
+    let result = client.request(test_case.input.expect("replay test input expected")).await;
     let curr_events = provider.events();
 
     let Some(expected_result) = &test_case.output else {
@@ -39,11 +41,7 @@ async fn replay(fixture: Replay) {
 
     match expected_result {
         Ok(expected_events) => {
-            let Some(orig_events) = expected_events else {
-                assert!(curr_events.is_empty());
-                return;
-            };
-            orig_events.iter().zip(curr_events).for_each(|(published, mut actual)| {
+            expected_events.iter().zip(curr_events).for_each(|(published, mut actual)| {
                 // add 5 seconds to the actual message timestamp the adapter sleeps 5 seconds
                 // before output the first round
                 let now = Utc::now().with_timezone(&Auckland);
@@ -68,12 +66,12 @@ async fn replay(fixture: Replay) {
     }
 }
 
-fn shift_time(input: R9kMessage, params: Option<&ReplayTransform>) -> R9kMessage {
+fn shift_time(input: &R9kMessage, params: Option<&ReplayTransform>) -> R9kMessage {
     if params.is_none() {
-        return input;
+        return input.clone();
     }
     let delay = params.as_ref().map_or(0, |p| p.delay);
-    let mut request = input;
+    let mut request = input.clone();
     let Some(change) = request.train_update.changes.get_mut(0) else {
         return request;
     };

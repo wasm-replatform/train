@@ -5,6 +5,6 @@ on:
 
 jobs:
   patch:
-    uses: augentic/pipeline/.github/workflows/patch.yaml@main
+    uses: augentic/.github/.github/workflows/patch.yaml@main
     secrets:
       CARGO_REGISTRIES_CREDIBIL_TOKEN: ${{ secrets.CARGO_REGISTRIES_CREDIBIL_TOKEN }}

@@ -1224,16 +1224,6 @@ version = "0.51.0"
 when = "2026-01-12"
 trusted-publisher = "github:bytecodealliance/wit-bindgen"
 
-[[publisher.wit-bindgen]]
-version = "0.48.1"
-when = "2025-11-22"
-trusted-publisher = "github:bytecodealliance/wit-bindgen"
-
-[[publisher.wit-bindgen]]
-version = "0.51.0"
-when = "2026-01-12"
-trusted-publisher = "github:bytecodealliance/wit-bindgen"
-
 [[publisher.wit-bindgen-core]]
 version = "0.48.1"
 when = "2025-11-22"
@@ -1695,14 +1685,6 @@ who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 trusted-publisher = "github:bytecodealliance/wasmtime"
 start = "2026-01-07"
-end = "2027-01-08"
-notes = "The Bytecode Alliance is the author of this crate"
-
-[[audits.bytecode-alliance.wildcard-audits.wit-bindgen]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-trusted-publisher = "github:bytecodealliance/wit-bindgen"
-start = "2025-08-13"
 end = "2027-01-08"
 notes = "The Bytecode Alliance is the author of this crate"
 

@@ -3,18 +3,66 @@
     "params": {
         "delay": 1
     },
-    "extension": {
-        "stop_info": {
-            "stop_code": "9218",
-            "stop_lat": -36.99388,
-            "stop_lon": 174.87739
+    "http_requests": [
+        {
+            "path": "/gtfs/stops",
+            "method": "GET",
+            "response": {
+                "body": [
+                    {
+                        "stop_code": "9218",
+                        "stop_lat": -36.99388,
+                        "stop_lon": 174.87739
+                    }
+                ]
+            }
         },
-        "vehicles": [
-            "AMP        958"
+        {
+            "path": "/allocations/trips",
+            "method": "GET",
+            "response": {
+                "body": [
+                    "AMP        958"
+                ]
+            }
+        }
+    ],
+    "output": {
+        "success": [
+            {
+                "eventType": "Location",
+                "receivedAt": "2025-10-07T11:00:00.000Z",
+                "messageData": {
+                    "timestamp": "2025-10-08T09:01:55.222Z"
+                },
+                "eventData": {},
+                "remoteData": {
+                    "externalId": "AMP958"
+                },
+                "locationData": {
+                    "gpsAccuracy": 0,
+                    "latitude": -36.99412,
+                    "longitude": 174.877,
+                    "speed": 0
+                }
+            },
+            {
+                "eventType": "Location",
+                "receivedAt": "2025-10-07T11:00:00.000Z",
+                "messageData": {
+                    "timestamp": "2025-10-08T09:02:00.222Z"
+                },
+                "eventData": {},
+                "remoteData": {
+                    "externalId": "AMP958"
+                },
+                "locationData": {
+                    "gpsAccuracy": 0,
+                    "latitude": -36.99412,
+                    "longitude": 174.877,
+                    "speed": 0
+                }
+            }
         ]
-    },
-    "output": [
-        "{\"eventType\":\"Location\",\"receivedAt\":\"2025-10-07T11:00:00.000Z\",\"messageData\":{\"timestamp\":\"2025-10-08T09:01:55.222Z\"},\"eventData\":{},\"remoteData\":{\"externalId\":\"AMP958\"},\"locationData\":{\"gpsAccuracy\":0,\"latitude\":-36.99412,\"longitude\":174.877,\"speed\":0}}",
-        "{\"eventType\":\"Location\",\"receivedAt\":\"2025-10-07T11:00:00.000Z\",\"messageData\":{\"timestamp\":\"2025-10-08T09:02:00.222Z\"},\"eventData\":{},\"remoteData\":{\"externalId\":\"AMP958\"},\"locationData\":{\"gpsAccuracy\":0,\"latitude\":-36.99412,\"longitude\":174.877,\"speed\":0}}"
-    ]
+    }
 }

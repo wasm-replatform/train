@@ -3,8 +3,10 @@
 
 mod provider;
 
+use std::fs::File;
 use std::ops::Sub;
 
+use augentic_test::{TestCase, TestDef};
 use chrono::{Duration, Timelike, Utc};
 use chrono_tz::Pacific::Auckland;
 use qwasr_sdk::Error;
@@ -12,6 +14,7 @@ use qwasr_sdk::api::Client;
 use r9k_adapter::{ChangeType, EventType, R9kMessage};
 
 use self::provider::MockProvider;
+use crate::provider::{Replay, shift_time};
 
 // Should deserialize XML into R9K message.
 #[tokio::test]
@@ -30,13 +33,14 @@ async fn deserialize_xml() {
 // Should create an arrival event with a normal stop location.
 #[tokio::test]
 async fn arrival_event() {
-    let provider = MockProvider::new_static();
+    let file = File::open("data/static/0001.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case);
+
     let client = Client::new("at").provider(provider.clone());
-
-    let xml = XmlBuilder::new().xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
-
     client.request(message).await.expect("should process");
 
     let events = provider.events();
@@ -54,14 +58,16 @@ async fn arrival_event() {
 // Should create a departure event with an stop location updated.
 #[tokio::test]
 async fn departure_event() {
-    let provider = MockProvider::new_static();
+    let file = File::open("data/static/0002.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case);
+
     let client = Client::new("at").provider(provider.clone());
-
-    let xml = XmlBuilder::new().arrival(false).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
-
     client.request(message).await.expect("should process");
+
     let events = provider.events();
     assert_eq!(events.len(), 2);
 
@@ -76,14 +82,16 @@ async fn departure_event() {
 // Should return no events for an unmapped station.
 #[tokio::test]
 async fn unmapped_station() {
-    let provider = MockProvider::new_static();
+    let file = File::open("data/static/0003.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case);
+
     let client = Client::new("at").provider(provider.clone());
-
-    let xml = XmlBuilder::new().station(5).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
-
     client.request(message).await.expect("should process");
+
     let events = provider.events();
     assert!(events.is_empty());
 }
@@ -91,14 +99,16 @@ async fn unmapped_station() {
 // Should return no events when there are no vehicles found for the train id.
 #[tokio::test]
 async fn no_matching_vehicle() {
-    let provider = MockProvider::new_static();
+    let file = File::open("data/static/0004.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case);
+
     let client = Client::new("at").provider(provider.clone());
-
-    let xml = XmlBuilder::new().vehicle("445").xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
-
     client.request(message).await.expect("should process");
+
     let events = provider.events();
     assert!(events.is_empty());
 }
@@ -106,14 +116,16 @@ async fn no_matching_vehicle() {
 // Should return no events when there are no stop is found for the station.
 #[tokio::test]
 async fn no_matching_stop() {
-    let provider = MockProvider::new_static();
+    let file = File::open("data/static/0005.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case);
+
     let client = Client::new("at").provider(provider.clone());
-
-    let xml = XmlBuilder::new().station(80).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
-
     client.request(message).await.expect("should process");
+
     let events = provider.events();
     assert!(events.is_empty());
 }
@@ -121,90 +133,130 @@ async fn no_matching_stop() {
 // Should return no events when there is no train update.
 #[tokio::test]
 async fn no_train_update() {
-    let provider = MockProvider::new_static();
-    let client = Client::new("at").provider(provider);
+    let file = File::open("data/static/0006.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case.clone());
 
-    let xml = XmlBuilder::new().update(UpdateType::None).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
+    let client = Client::new("at").provider(provider.clone());
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
-        panic!("should return BadRequest error");
+    let Some(expected_result) = &test_case.output else {
+        panic!("should have expected output");
     };
-    assert_eq!(code, "no_update");
-    assert_eq!(description, "contains no updates");
+    match expected_result {
+        Ok(_) => panic!("should have error"),
+        Err(expected_error) => {
+            let actual_error = client.request(message).await.expect_err("should have error");
+            assert_eq!(actual_error.code(), expected_error.code());
+            assert_eq!(actual_error.description(), expected_error.description());
+        }
+    }
 }
 
 // Should return no events when there is a train update but it contains no
 // changes.
 #[tokio::test]
 async fn no_changes() {
-    let provider = MockProvider::new_static();
-    let client = Client::new("at").provider(provider);
+    let file = File::open("data/static/0007.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case.clone());
 
-    let xml = XmlBuilder::new().update(UpdateType::NoChanges).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
+    let client = Client::new("at").provider(provider.clone());
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
-        panic!("should return BadRequest error");
+    let Some(expected_result) = &test_case.output else {
+        panic!("should have expected output");
     };
-    assert_eq!(code, "no_update");
-    assert_eq!(description, "contains no updates");
+    match expected_result {
+        Ok(_) => panic!("should have error"),
+        Err(expected_error) => {
+            let actual_error = client.request(message).await.expect_err("should have error");
+            assert_eq!(actual_error.code(), expected_error.code());
+            assert_eq!(actual_error.description(), expected_error.description());
+        }
+    }
 }
 
 // Should return no events when there is a train update but it contains no
 // actual changes.
 #[tokio::test]
 async fn no_actual_changes() {
-    let provider = MockProvider::new_static();
-    let client = Client::new("at").provider(provider);
+    let file = File::open("data/static/0008.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case.clone());
 
-    let xml = XmlBuilder::new().update(UpdateType::NoActualChanges).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
+    let client = Client::new("at").provider(provider.clone());
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
-        panic!("should return BadRequest error");
+    let Some(expected_result) = &test_case.output else {
+        panic!("should have expected output");
     };
-    assert_eq!(code, "no_update");
-    assert_eq!(description, "arrival/departure time <= 0");
+    match expected_result {
+        Ok(_) => panic!("should have error"),
+        Err(expected_error) => {
+            let actual_error = client.request(message).await.expect_err("should have error");
+            assert_eq!(actual_error.code(), expected_error.code());
+            assert_eq!(actual_error.description(), expected_error.description());
+        }
+    }
 }
 
 // Should return no events when train update arrives more than 60 seconds after
 // the current time.
 #[tokio::test]
 async fn too_late() {
-    let provider = MockProvider::new_static();
-    let client = Client::new("at").provider(provider);
+    let file = File::open("data/static/0009.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case.clone());
 
-    let xml = XmlBuilder::new().delay_secs(61).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
+    let client = Client::new("at").provider(provider.clone());
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
-        panic!("should return no actual update error");
+    let Some(expected_result) = &test_case.output else {
+        panic!("should have expected output");
     };
-    assert_eq!(code, "bad_time");
-    assert_eq!(description, "outdated by 61 seconds");
+    match expected_result {
+        Ok(_) => panic!("should have error"),
+        Err(expected_error) => {
+            let actual_error = client.request(message).await.expect_err("should have error");
+            assert_eq!(actual_error.code(), expected_error.code());
+            assert_eq!(actual_error.description(), expected_error.description());
+        }
+    }
 }
 
 // Should return no events when train update arrives more than 30 seconds before
 // the current time.
 #[tokio::test]
 async fn too_early() {
-    let provider = MockProvider::new_static();
-    let client = Client::new("at").provider(provider);
+    let file = File::open("data/static/0010.json").expect("should open file");
+    let test_def: TestDef<Error> =
+        serde_json::from_reader(&file).expect("should deserialize test file");
+    let test_case = TestCase::<Replay>::new(test_def).prepare(shift_time);
+    let message = test_case.input.as_ref().expect("should have input message").clone();
+    let provider = MockProvider::new(test_case.clone());
 
-    let xml = XmlBuilder::new().delay_secs(-32).xml();
-    let message: R9kMessage =
-        quick_xml::de::from_reader(xml.as_bytes()).expect("should deserialize");
+    let client = Client::new("at").provider(provider.clone());
 
-    let Err(Error::BadRequest { code, description }) = client.request(message).await else {
-        panic!("should return no actual update error");
+    let Some(expected_result) = &test_case.output else {
+        panic!("should have expected output");
     };
-    assert_eq!(code, "bad_time");
-    assert_eq!(description, "too early by 32 seconds");
+    match expected_result {
+        Ok(_) => panic!("should have error"),
+        Err(expected_error) => {
+            let actual_error = client.request(message).await.expect_err("should have error");
+            assert_eq!(actual_error.code(), expected_error.code());
+            assert_eq!(actual_error.description(), expected_error.description());
+        }
+    }
 }
 
 struct XmlBuilder<'a> {
@@ -216,6 +268,7 @@ struct XmlBuilder<'a> {
 }
 
 #[derive(PartialEq, Eq)]
+#[allow(dead_code)]
 enum UpdateType {
     None,
     Full,
@@ -223,6 +276,7 @@ enum UpdateType {
     NoActualChanges,
 }
 
+#[allow(dead_code)]
 impl<'a> XmlBuilder<'a> {
     const fn new() -> Self {
         Self { station: 0, vehicle: "5226", arrival: true, delay_secs: 0, update: UpdateType::Full }

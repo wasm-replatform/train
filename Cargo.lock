@@ -123,7 +123,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 [[package]]
 name = "augentic-test"
 version = "0.1.0"
-source = "git+https://github.com/augentic/test.git?branch=main#cd0e14e0e9d467de502e7ccd2ca591a88eba88d3"
+source = "git+https://github.com/augentic/test.git?branch=main#32e226b1aaf696f758a5d20bf2972b6b17814e50"
 dependencies = [
  "anyhow",
  "bytes",
@@ -898,6 +898,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
 
 [[package]]
+name = "fallible-streaming-iterator"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
 name = "fd-lock"
 version = "4.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -925,6 +931,12 @@ name = "foldhash"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
+
+[[package]]
+name = "foldhash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "form_urlencoded"
@@ -1141,7 +1153,7 @@ version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 dependencies = [
- "foldhash",
+ "foldhash 0.1.5",
  "serde",
 ]
 
@@ -1150,6 +1162,18 @@ name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
+dependencies = [
+ "foldhash 0.2.0",
+]
+
+[[package]]
+name = "hashlink"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea0b22561a9c04a7cb1a302c013e0259cd3b4bb619f145b32f72b8b4bcbed230"
+dependencies = [
+ "hashbrown 0.16.1",
+]
 
 [[package]]
 name = "heck"
@@ -1438,6 +1462,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "inherent"
+version = "1.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c727f80bfa4a6c6e2508d2f05b6f4bfce242030bd88ed15ae5331c5b5d30fba7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "io-extras"
 version = "0.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1561,6 +1596,17 @@ name = "libm"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
+
+[[package]]
+name = "libsqlite3-sys"
+version = "0.36.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95b4103cffefa72eb8428cb6b47d6627161e51c2739fc5e3b734584157bc642a"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
 
 [[package]]
 name = "linux-raw-sys"
@@ -1917,6 +1963,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
+name = "pkg-config"
+version = "0.3.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
+
+[[package]]
 name = "postcard"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1964,9 +2016,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.105"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]
@@ -2129,9 +2181,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "e6b3741c9146780f357c424510bfc54bdf3128f350c80cc1319b3ac70210c323"
+checksum = "fc1a9d3b7a883d08201eb337b6b2dab7eac6489babf81c6ab8fba9c94b6673ad"
 dependencies = [
  "anyhow",
  "clap",
@@ -2147,9 +2199,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-guest-macro"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "f39e24294de84396d198b7415f4b5ecd5709446e9ad7a045b62cb80fe8fa01f2"
+checksum = "0acec520976a57a5e8ec45aea17519989b429218cd61789f74db67ba3ade32e8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2158,9 +2210,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-otel"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "3636cb397e7e3e77910216e0bc5c10e0e10236911429550ca64694736f239391"
+checksum = "0d1fd37e5d8cd7b1bd4200ddb4f01ec58ff33dae673294459ce20defd6bf9dcb"
 dependencies = [
  "anyhow",
  "http",
@@ -2176,9 +2228,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-runtime-macro"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "9153751e533877b8dc05f082c5af6c0e9d265831c575b64aab8c8adb7c55244b"
+checksum = "d1702708b7cddf14059683bf212c66e59e61b282532b943a25f99daafc927235"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2187,9 +2239,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-sdk"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "6e7add2175b0d093fc299dc178d702ef81e9699d1ada13d20bb8dc5f448d236f"
+checksum = "b9ec146d395e7f7b51d2d0d12db3f6ff1dc82a4bdf93297eac8f0c66436e323b"
 dependencies = [
  "anyhow",
  "axum",
@@ -2203,6 +2255,7 @@ dependencies = [
  "qwasr-wasi-keyvalue",
  "qwasr-wasi-messaging",
  "qwasr-wasi-otel",
+ "qwasr-wasi-sql",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -2213,9 +2266,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-config"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "d9f4fa1b1c970ff38f446a033df3890949f848d4177503a8247b96f8f2f20d42"
+checksum = "4d19c162f8e16f5fde769f1dbb6acce774419b7af7606d52cef789062b4a0261"
 dependencies = [
  "anyhow",
  "qwasr",
@@ -2227,9 +2280,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-http"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "b29b7f9020f01ab24acee1da30217e1b0dcb526728d7158da6acd93ff62e6cf5"
+checksum = "e35bf7d2fcacbcde420b5616c723ba34a85004543b9e04037d3420c35e1e2ca1"
 dependencies = [
  "anyhow",
  "axum",
@@ -2259,9 +2312,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-identity"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "3e1b0e3c69b2250d04951a3a1fba8f9d5eab00b9bed30cd657942dc488dd4ebb"
+checksum = "78932b160028b265ccbe8e45fd07b2e1237d1b088b3fd2f3fcc9a3e374aa6ea1"
 dependencies = [
  "anyhow",
  "fromenv",
@@ -2277,9 +2330,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-keyvalue"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "146ad2df3d76fd315fa8f780c35db672f5a85b4b2e91ad6b963bc3f42fa206f7"
+checksum = "5183d1d7202d5eba90faa8ade29931d67ff1f377be672b1e28cc4028a705a839"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2296,9 +2349,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-messaging"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "51a3dc09ff1314d91207ab2006cc0c1cec5dc7fdb3bb38d185790d3f15e6ca50"
+checksum = "486e640f8865ae5cf654b41b19573bf89d05640088fe6ae4279416d1f7aa6bc6"
 dependencies = [
  "anyhow",
  "futures",
@@ -2316,9 +2369,9 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-otel"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "f62486248ccc7ac39df1ed8df0dbeadb7fcf513bd9b4533b2125356639342b09"
+checksum = "946ccc5d195571cff084cfa0b3efc0ae74ae64685689b81553e10f68e9392891"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -2341,13 +2394,35 @@ dependencies = [
 
 [[package]]
 name = "qwasr-wasi-otel-attr"
-version = "0.25.0"
+version = "0.26.0"
 source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
-checksum = "67f07594640194779dbd9c57fd03034cc9515590b6940caab6d997ac0776e9ad"
+checksum = "46f71afe14fcf5a7abf5c3eb333b0d2fb9256dd77e7611c61aa6da68c239db47"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "qwasr-wasi-sql"
+version = "0.26.0"
+source = "sparse+https://pkgs.dev.azure.com/credibil/_packaging/credibil/Cargo/index/"
+checksum = "5a8c06f80c37dbd882009b6a505eff5c5e714683b16e6c14abc1454188bfc4cf"
+dependencies = [
+ "anyhow",
+ "base64ct",
+ "chrono",
+ "fromenv",
+ "futures",
+ "parking_lot",
+ "qwasr",
+ "rusqlite",
+ "sea-query",
+ "serde_json",
+ "tracing",
+ "wasmtime",
+ "wasmtime-wasi",
+ "wit-bindgen 0.51.0",
 ]
 
 [[package]]
@@ -2659,6 +2734,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "rsqlite-vfs"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8a1f2315036ef6b1fbacd1972e8ee7688030b0a2121edfc2a6550febd41574d"
+dependencies = [
+ "hashbrown 0.16.1",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "rusqlite"
+version = "0.38.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1c93dd1c9683b438c392c492109cb702b8090b2bfc8fed6f6e4eb4523f17af3"
+dependencies = [
+ "bitflags",
+ "fallible-iterator",
+ "fallible-streaming-iterator",
+ "hashlink",
+ "libsqlite3-sys",
+ "smallvec",
+ "sqlite-wasm-rs",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2836,6 +2936,16 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "sea-query"
+version = "0.32.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a5d1c518eaf5eda38e5773f902b26ab6d5e9e9e2bb2349ca6c64cf96f80448c"
+dependencies = [
+ "chrono",
+ "inherent",
+]
 
 [[package]]
 name = "security-framework"
@@ -3028,6 +3138,18 @@ checksum = "17129e116933cf371d018bb80ae557e889637989d8638274fb25622827b03881"
 dependencies = [
  "libc",
  "windows-sys 0.60.2",
+]
+
+[[package]]
+name = "sqlite-wasm-rs"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f4206ed3a67690b9c29b77d728f6acc3ce78f16bf846d83c94f76400320181b"
+dependencies = [
+ "cc",
+ "js-sys",
+ "rsqlite-vfs",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -3571,6 +3693,12 @@ name = "valuable"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
+
+[[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "version_check"

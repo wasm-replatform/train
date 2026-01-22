@@ -11,6 +11,7 @@ allowed-duplicate-crates = [
     "axum-core",
     "core-foundation",
     "embedded-io",
+    "foldhash",
     "getrandom",
     "hashbrown",
     "linux-raw-sys",
